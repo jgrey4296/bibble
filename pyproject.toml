@@ -1,6 +1,6 @@
 [project]
 name            = "bib-middleware"
-version         = "0.0.1"
+version         = "0.1.0"
 description     = ""
 readme          = "README.md"
 requires-python = ">=3.10"
@@ -15,6 +15,11 @@ classifiers     = [
 
 dependencies   = [
                "tomlguard",
+               "pyisbn",
+               "isbn_hypehenate",
+               "waybackpy"
+               "python-bibtexparser",
+
 ]
 
 [project.optional-dependencies]
