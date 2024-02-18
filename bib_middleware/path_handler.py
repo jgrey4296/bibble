@@ -50,7 +50,7 @@ class PathReader(BlockMiddleware):
 
     @staticmethod
     def metadata_key():
-        return "jg-paths-in"
+        return "jg-path-reader"
 
     def __init__(self, lib_root:pl.Path=None):
         super().__init__(True, True)
@@ -82,7 +82,7 @@ class PathWriter(BlockMiddleware):
 
     @staticmethod
     def metadata_key():
-        return "jg-paths-out"
+        return "jg-path-writer"
 
     def __init__(self, lib_root:pl.Path=None):
         super().__init__(True, True)

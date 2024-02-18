@@ -45,7 +45,7 @@ from bibtexparser.middlewares.names import parse_single_name_into_parts, NamePar
 
 class HashValidator(BlockMiddleware):
     """
-      Generate and check hashes of pdfs and epubs
+      Generate and check hashes of pdfs and epubs. Use after pathreader
     """
 
     @staticmethod
@@ -54,19 +54,10 @@ class HashValidator(BlockMiddleware):
 
     def transform_entry(self, entry, library):
         for field in entry.fields:
-            if not ("file" in field.key or "look_in" in field.key):
+            if not "file" in field.key:
                 continue
 
             base = pl.Path(field.value)
-            match base.parts[0]:
-                case "/":
-                    field.value = base
-                case "~":
-                    field.value = base.expanduser().absolute()
-                case _:
-                    field.value = self._lib_root / base
-
-            if not field.value.exists():
-                printer.warning("On Import file does not exist: %s", field.value)
+            # TODO get hash of file
 
         return entry

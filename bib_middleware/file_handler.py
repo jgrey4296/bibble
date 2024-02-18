@@ -43,49 +43,26 @@ from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
+from dootle.tags.structs import NameFile
 
-class YearSorter(LibraryMiddleware):
-    """ TODO Sort a library accordiing to year """
+# TODO: add metadata to pdf/epubs
+# TODO: add to pdf bookmarks if subciting
+# TODO: file existance validator
 
-    @staticmethod
-    def metadata_key():
-        return "jg-year-sorter"
+class PdfMetadataWriter(BlockMiddleware):
 
-    def transform(self, library):
-        sorted_entries = sorted(library.entries, key=self.get_year)
+    def transform_entry(self, entry):
+        # If no pdf file associated, return
 
-        library.entries = sorted_entries
-        return library
+        # else add bib info
 
-    def get_year(self, entry):
-        return entry.fields_dict['year'].value
+        return entry
 
-class EntryTypeSorter(LibraryMiddleware):
-    """ TODO Sort a library accordiing to entry type"""
+class EpubMetadataWriter(BlockMiddleware):
 
-    @staticmethod
-    def metadata_key():
-        return "jg-entry-sorter"
+    def transform_entry(self, entry):
+        # If no epub file associated, return
 
-    def transform(self, library):
-        sorted_entries = sorted(library.entries, key=lambda x: x.entry_type)
+        # else add bib info
 
-        library.entries = sorted_entries
-        return library
-
-
-class AuthorSorter(LibraryMiddleware):
-    """ TODO Sort a library accordiing to author """
-
-    @staticmethod
-    def metadata_key():
-        return "jg-author-sorter"
-
-    def transform(self, library):
-        sorted_entries = sorted(library.entries, key=self.get_author)
-
-        library.entries = sorted_entries
-        return library
-
-    def get_author(self, entry):
-        raise NotImplementedError()
+        return entry

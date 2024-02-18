@@ -45,7 +45,7 @@ from bibtexparser.middlewares.names import parse_single_name_into_parts, NamePar
 
 class DoiValidator(BlockMiddleware):
     """
-      Convert file paths in bibliography to pl.Path's, expanding relative paths according to lib_root
+      Validate Doi's, check for retractions
     """
 
     @staticmethod

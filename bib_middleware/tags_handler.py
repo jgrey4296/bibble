@@ -47,28 +47,28 @@ from dootle.tags.structs import TagFile
 
 class TagsReader(BlockMiddleware):
     """
-      Read Tag strings, split them into a set
+      Read Tag strings, split them into a set, and keep track of all mentioned tags
     """
     _all_tags : TagFile = TagFile()
 
     @staticmethod
     def metadata_key():
-        return "jg-tags-in"
+        return "jg-tags-reader"
 
     @staticmethod
     def tags_to_str():
-        return str(ParseTagsMiddleware._all_tags)
+        return str(TagsReader._all_tags)
 
     def __init__(self, clear=False):
         super().__init__(True, True)
         if clear:
-            ParseTagsMiddleware._all_tags = TagFile()
+            TagsReader._all_tags = TagFile()
 
     def transform_entry(self, entry, library):
         for field in entry.fields:
             if field.key == "tags":
                 field.value = set(field.value.split(","))
-                ParseTagsMiddleware._all_tags.update(field.value)
+                TagsReader._all_tags.update(field.value)
 
         return entry
 
@@ -79,7 +79,7 @@ class TagsWriter(BlockMiddleware):
 
     @staticmethod
     def metadata_key():
-        return "jg-tags-out"
+        return "jg-tags-writer"
 
     def __init__(self):
         super().__init__(True, True)
@@ -87,6 +87,6 @@ class TagsWriter(BlockMiddleware):
     def transform_entry(self, entry, library):
         for field in entry.fields:
             if field.key == "tags":
-                field.value = ",".join(field.value)
+                field.value = ",".join(sorted(field.value))
 
         return entry

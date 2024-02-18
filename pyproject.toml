@@ -7,7 +7,7 @@ requires-python = ">=3.10"
 license         = {file = "LICENSE"}
 keywords        = []
 authors         = [
-  {name  = "John Grey", email = "jgrey.n.plus.one at gmail.com"},
+  {name  = "John Grey", email = "jgrey.n.plus.one@gmail.com"},
 ]
 classifiers     = [
   "Programming Language :: Python"
@@ -16,15 +16,14 @@ classifiers     = [
 dependencies   = [
                "tomlguard",
                "pyisbn",
-               "isbn_hypehenate",
-               "waybackpy"
-               "python-bibtexparser",
-
+               "isbn_hyphenate",
+               "waybackpy",
+               "bibtexparser>=2.0.0b4",
 ]
 
 [project.optional-dependencies]
 docs = [ "sphinx" ]
-dev  = [ "https://github.com/jgrey4296/doot", "pipreqs"]
+# dev  = [ "https://github.com/jgrey4296/doot", "pipreqs"]
 test = [ "pytest > 7.0.0" ]
 
 ##-- urls
@@ -38,7 +37,7 @@ changelog     = "https://github.com//bib-middleware/blob/master/CHANGELOG.md"
 
 ##-- scripts
 [project.scripts]
-bib-middleware = "bib-middleware.__main__:main"
+# bib-middleware = "bib-middleware.__main__:main"
 
 [project.gui-scripts]
 # spam-gui      = "spam:main_gui"
@@ -63,11 +62,11 @@ include-package-data = true
 [tool.setuptools.packages.find]
 namespaces = true
 where      = ["."]
-include    = ["bib-middleware*"]
+include    = ["bib_middleware*"]
 
 [tool.setuptools.package-data]
 "*" = ["*"]
-"bib-middleware.__data"    = ["*.so"]
+"bib_middleware.__data"    = ["*.so"]
 
 [tool.setuptools.exclude-package-data]
 

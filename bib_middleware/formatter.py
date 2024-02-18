@@ -39,11 +39,8 @@ printer = logmod.getLogger("doot._printer")
 
 import bibtexparser
 import bibtexparser.model as model
-from bibtexparser import middlewares as ms
-from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
-from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
-bib_format                              = b.BibtexFormat()
+bib_format                              = bibtexparser.BibtexFormat()
 bib_format.value_column                 = 15
 bib_format.indent                       = " "
 bib_format.block_separator              = "\n"

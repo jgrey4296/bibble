@@ -44,11 +44,13 @@ from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddlewa
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
 class LatexReader(ms.LatexDecodingMiddleware):
-    """Latex-Encodes all strings in the library"""
+    """ Latex-Encodes all strings in the library, except urls, files, doi's and crossrefs """
+
     _skip_fields = ["url", "file", "doi", "crossref"]
 
-    def metadata_key(self) -> str:
-        return "field_aware_latex_decoding"
+    @staticmethod
+    def metadata_key() -> str:
+        return "jg-latex-reader"
 
     def transform_entry(self, entry: Entry, library: Library) -> Block:
         errors = []
@@ -79,11 +81,13 @@ class LatexReader(ms.LatexDecodingMiddleware):
             return entry
 
 class LatexWriter(ms.LatexEncodingMiddleware):
-    """Latex-Encodes all strings in the library"""
+    """ Latex-Encodes all strings in the library except urls, files, dois and crossrefs """
+
     _skip_fields = ["url", "file", "doi", "crossref"]
 
-    def metadata_key(self) -> str:
-        return "field_aware_latex_encoding"
+    @staticmethod
+    def metadata_key() -> str:
+        return "jg-latex-writer"
 
     def transform_entry(self, entry: Entry, library: Library) -> Block:
         errors = []

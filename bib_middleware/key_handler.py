@@ -43,7 +43,11 @@ from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
+KEY_CLEAN_RE = re.compile(r"[/:{}]")
+KEY_SUB_CHAR = "_"
+
 class DuplicateHandler(LibraryMiddleware):
+    """ take duplciate entries and mark them as such """
 
     @staticmethod
     def metadata_key():
@@ -55,7 +59,7 @@ class DuplicateHandler(LibraryMiddleware):
                 case model.DuplicateBlockKeyBlock():
                     uuid = uuid1().hex
                     duplicate = block.ignore_error_block
-                    duplicate.key = f"{duplicate.key}_{uuid}"
+                    duplicate.key = f"{duplicate.key}_dup_{uuid}"
                     library.add(duplicate)
                     library.remove(block)
                 case _:
@@ -67,8 +71,9 @@ class DuplicateHandler(LibraryMiddleware):
 class LockCrossrefKeys(BlockMiddleware):
     """ ensure crossref consistency by appending _ to keys and removing chars i don't like"""
 
-    def metadata_key(self):
-        return str(self.__class__.__name__)
+    @staticmethod
+    def metadata_key():
+        return "jg-lock-crossrefs"
 
     def transform_entry(self, entry, library):
         clean_key = KEY_CLEAN_RE.sub(KEY_SUB_CHAR, entry.key)
@@ -76,6 +81,11 @@ class LockCrossrefKeys(BlockMiddleware):
         if "crossref" in entry.fields_dict:
             orig = entry.fields_dict['crossref'].value
             clean_ref = KEY_CLEAN_RE.sub(KEY_SUB_CHAR, orig)
-            entry.set_field(BTP.model.Field("crossref", f"{clean_ref}_"))
+            entry.set_field(model.Field("crossref", f"{clean_ref}_"))
 
         return entry
+
+class CrossrefValidator(BlockMiddleware):
+    """ TODO Ensure crossrefs exist """
+
+    pass

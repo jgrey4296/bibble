@@ -37,28 +37,31 @@ import more_itertools as mitz
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
+import bib_middleware as BM
 
 def build_parse_stack(spec, state):
+    """ Build a default parse stack """
     read_mids = [
-        dmids.DuplicateHandler(),
+        BM.DuplicateHandler(),
         ms.ResolveStringReferencesMiddleware(True),
         ms.RemoveEnclosingMiddleware(True),
-        dmids.FieldAwareLatexDecodingMiddleware(True, keep_braced_groups=True, keep_math_mode=True),
-        dmids.ParsePathsMiddleware(lib_root=doot.locs["{lib-root}"]),
-        dmids.ParseTagsMiddleware(),
+        BM.LatexReader(True, keep_braced_groups=True, keep_math_mode=True),
+        BM.PathReader(lib_root=doot.locs["{lib-root}"]),
+        BM.TagsReader(),
         ms.SeparateCoAuthors(True),
-        dmids.RelaxedSplitNameParts(True),
-        dmids.TitleStripMiddleware(True)
+        BM.NameReader(True),
+        BM.TitleReader(True)
     ]
     return {spec.kwargs.update_ : read_mids}
 
 def build_write_stack(spec, state):
+    """ build a default write stack """
     write_mids = [
-        dmids.MergeLastNameFirstName(True),
+        BM.NameWriter(True),
         ms.MergeCoAuthors(True),
-        dmids.FieldAwareLatexEncodingMiddleware(keep_math=True, enclose_urls=False),
-        dmids.WriteTagsMiddleware(),
-        dmids.WritePathsMiddleware(lib_root=doot.locs["{lib-root}"]),
+        BM.LatexWriter(keep_math=True, enclose_urls=False),
+        BM.TagsWriter(),
+        BM.PathsWriter(lib_root=doot.locs["{lib-root}"]),
         ms.AddEnclosingMiddleware(allow_inplace_modification=True, default_enclosing="{", reuse_previous_enclosing=False, enclose_integers=True),
     ]
     return {spec.kwargs.update_ : write_mids}

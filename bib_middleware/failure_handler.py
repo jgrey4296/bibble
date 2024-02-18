@@ -45,6 +45,7 @@ from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddlewa
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
 class FailureHandler(LibraryMiddleware):
+    """ Processes remaining parse failures. Put at end of parse stack """
 
     @staticmethod
     def metadata_key():
@@ -53,12 +54,6 @@ class FailureHandler(LibraryMiddleware):
     def transform(self, library):
         for block in library.failed_blocks:
             match block:
-                case model.DuplicateBlockKeyBlock():
-                    uuid = uuid1().hex
-                    duplicate = block.ignore_error_block
-                    duplicate.key = f"{duplicate.key}_{uuid}"
-                    library.add(duplicate)
-                    library.remove(block)
                 case _:
                     printer.warning("Bad Block: : %s", block.start_line)
 

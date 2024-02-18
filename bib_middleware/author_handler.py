@@ -46,10 +46,11 @@ from bibtexparser.middlewares.names import parse_single_name_into_parts, NamePar
 from dootle.tags.structs import NameFile
 
 class NameReader(ms.SplitNameParts):
+    """ For use after stock "separatecoauthors", """
 
     @staticmethod
     def metadata_key() -> str:
-        return "jg-split_name_parts"
+        return "jg-name-reader"
 
     def _transform_field_value(self, name) -> List[NameParts]:
         if not isinstance(name, list):
@@ -67,7 +68,7 @@ class NameReader(ms.SplitNameParts):
 
 class NameWriter(ms.MergeNameParts):
     """Middleware to merge a persons name parts (first, von, last, jr) into a single string.
-
+      for use before stock MergeCoAuthors
     Name fields (e.g. author, editor, translator) are expected to be lists of NameParts.
     """
     _all_names = NameFile()
@@ -76,11 +77,11 @@ class NameWriter(ms.MergeNameParts):
 
     @staticmethod
     def metadata_key() -> str:
-        return "dootle_merge_name_parts"
+        return "jg-name-witer"
 
     @staticmethod
     def names_to_str():
-        return str(MergeLastNameFirstName._all_names)
+        return str(NameWriter._all_names)
 
     def _transform_field_value(self, name) -> List[str]:
         if not isinstance(name, list) and all(isinstance(n, NameParts) for n in name):
@@ -106,15 +107,16 @@ class NameWriter(ms.MergeNameParts):
         result.append(" ".join(name.first))
 
         full_name = "".join(result).removesuffix(", ")
-        MergeLastNameFirstName._all_names.update(full_name)
+        NameWriter._all_names.update(full_name)
         return full_name
 
 
 class MergeMultipleAuthorsEditors(BlockMiddleware):
     """ Merge multiple fields of the same name """
 
-    def metadata_key(self):
-        return str(self.__class__.__name__)
+    @staticmethod
+    def metadata_key():
+        return "jg-merge-multi-author-fields"
 
     def transform_entry(self, entry, library):
         fields  = []
@@ -133,9 +135,9 @@ class MergeMultipleAuthorsEditors(BlockMiddleware):
             joined_authors = " and ".join(authors)
             if skip_re.search(joined_authors):
                 return None
-            fields.append(BTP.model.Field("author", joined_authors))
+            fields.append(model.Field("author", joined_authors))
         if bool(editors):
-            fields.append(BTP.model.Field("editor", " and ".join(editors)))
+            fields.append(model.Field("editor", " and ".join(editors)))
 
 
         entry.fields = fields

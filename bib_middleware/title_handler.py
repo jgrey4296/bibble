@@ -50,11 +50,10 @@ class TitleReader(BlockMiddleware):
 
     @staticmethod
     def metadata_key():
-        return "jg-title-strip"
+        return "jg-title-reader"
 
-    def __init__(self, lib_root:pl.Path=None):
+    def __init__(self):
         super().__init__(True, True)
-        self._lib_root = lib_root
 
     def transform_entry(self, entry, library):
         for field in entry.fields:
@@ -67,22 +66,28 @@ class TitleReader(BlockMiddleware):
 
 class SubTitleReader(BlockMiddleware):
     """
-      strip whitespace from the title
+      split title into title and subtitle, if subtitle doesn't exist yet
     """
 
     @staticmethod
     def metadata_key():
-        return "jg-title-strip"
+        return "jg-subtitle-reader"
 
-    def __init__(self, lib_root:pl.Path=None):
+    def __init__(self):
         super().__init__(True, True)
-        self._lib_root = lib_root
 
     def transform_entry(self, entry, library):
-        for field in entry.fields:
-            if not "title" in field.key:
-                continue
+        f_dict = entry.fields_dict
+        if "subtitle" in f_dict:
+            return entry
+        if 'title' not in f_dict:
+            return entry
 
-            field.value = field.value.strip()
+        if ":" not in f_dict['title'].value:
+            return entry
+
+        parts = f_dict['title'].value.split(":")
+        entry.set_field(model.Field("title", parts[0]))
+        entry.set_field(model.Field("subtitle", ": ".join(parts[1:])))
 
         return entry
