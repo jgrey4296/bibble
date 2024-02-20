@@ -97,7 +97,8 @@ class IsbnWriter(BlockMiddleware):
         try:
             isbn = isbn_hyphenate.hyphenate(f_dict['isbn'].value)
             entry.set_field(model.Field("isbn", isbn))
-        except isbn_hyphenate.IsbnMalformedError:
+        except isbn_hyphenate.IsbnError as err:
+            printer.warning("Writing ISBN failed: %s : %s", f_dict['isbn'].value, err)
             pass
 
         return entry
