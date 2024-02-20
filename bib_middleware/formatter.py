@@ -39,9 +39,20 @@ printer = logmod.getLogger("doot._printer")
 
 import bibtexparser
 import bibtexparser.model as model
+from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 
 bib_format                              = bibtexparser.BibtexFormat()
 bib_format.value_column                 = 15
 bib_format.indent                       = " "
 bib_format.block_separator              = "\n"
 bib_format.trailing_comma               = True
+
+class FieldSorter(BlockMiddleware):
+
+    @staticmethod
+    def metadata_key():
+        return "jg-field-sorter"
+
+    def transform_entry(self, entry):
+        # TODO put fields into a set order
+        return entry
