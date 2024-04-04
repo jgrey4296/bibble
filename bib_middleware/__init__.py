@@ -14,6 +14,7 @@ from bib_middleware.sorting_handler import YearSorter, EntryTypeSorter, AuthorSo
 from bib_middleware.tags_handler import TagsReader, TagsWriter
 from bib_middleware.title_handler import TitleReader, SubTitleReader
 from bib_middleware.url_handler import WaybackReader, CleanUrls
+from bib_middleware.online_handler import OnlineHandler
 
 from bib_middleware.formatter import bib_format
 # from bib_middleware.selectors import
