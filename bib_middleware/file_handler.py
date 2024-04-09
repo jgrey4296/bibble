@@ -44,12 +44,14 @@ from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddlewa
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
 from dootle.tags.structs import NameFile
+from bib_middleware.base_writer import BaseWriter
+
 
 # TODO: add metadata to pdf/epubs
 # TODO: add to pdf bookmarks if subciting
 # TODO: file existance validator
 
-class PdfMetadataWriter(BlockMiddleware):
+class PdfMetadataWriter(BaseWriter):
 
     def transform_entry(self, entry):
         # If no pdf file associated, return
@@ -58,7 +60,7 @@ class PdfMetadataWriter(BlockMiddleware):
 
         return entry
 
-class EpubMetadataWriter(BlockMiddleware):
+class EpubMetadataWriter(BaseWriter):
 
     def transform_entry(self, entry):
         # If no epub file associated, return

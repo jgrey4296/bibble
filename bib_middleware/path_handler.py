@@ -42,6 +42,8 @@ import bibtexparser.model as model
 from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
+from bib_middleware.base_writer import BaseWriter
+
 
 class PathReader(BlockMiddleware):
     """
@@ -75,7 +77,7 @@ class PathReader(BlockMiddleware):
 
         return entry
 
-class PathWriter(BlockMiddleware):
+class PathWriter(BaseWriter):
     """
       Relativize library paths back to strings
     """
@@ -85,7 +87,7 @@ class PathWriter(BlockMiddleware):
         return "jg-path-writer"
 
     def __init__(self, lib_root:pl.Path=None):
-        super().__init__(True, True)
+        super().__init__()
         self._lib_root = lib_root
 
     def transform_entry(self, entry, library):

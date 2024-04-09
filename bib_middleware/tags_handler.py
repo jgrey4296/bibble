@@ -44,10 +44,13 @@ from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddlewa
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
 from dootle.tags.structs import TagFile
+from bib_middleware.base_writer import BaseWriter
+
 
 class TagsReader(BlockMiddleware):
     """
       Read Tag strings, split them into a set, and keep track of all mentioned tags
+      By default the classvar _all_tags is cleared on init, pass clear=False to not
     """
     _all_tags : TagFile = TagFile()
 
@@ -59,7 +62,7 @@ class TagsReader(BlockMiddleware):
     def tags_to_str():
         return str(TagsReader._all_tags)
 
-    def __init__(self, clear=False):
+    def __init__(self, clear=True):
         super().__init__(True, True)
         if clear:
             TagsReader._all_tags = TagFile()
@@ -72,7 +75,7 @@ class TagsReader(BlockMiddleware):
 
         return entry
 
-class TagsWriter(BlockMiddleware):
+class TagsWriter(BaseWriter):
     """
       Reduce tag set to a string
     """
@@ -80,9 +83,6 @@ class TagsWriter(BlockMiddleware):
     @staticmethod
     def metadata_key():
         return "jg-tags-writer"
-
-    def __init__(self):
-        super().__init__(True, True)
 
     def transform_entry(self, entry, library):
         for field in entry.fields:

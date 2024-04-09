@@ -44,13 +44,14 @@ import bibtexparser.model as model
 from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
+from bib_middleware.base_writer import BaseWriter
 
 ISBN_STRIP_RE = re.compile(r"[\s-]")
 
 
 class IsbnValidator(BlockMiddleware):
     """
-      Convert file paths in bibliography to pl.Path's, expanding relative paths according to lib_root
+      Try to validate the entry's isbn number
     """
 
     @staticmethod
@@ -76,14 +77,17 @@ class IsbnValidator(BlockMiddleware):
 
         return entry
 
-class IsbnWriter(BlockMiddleware):
+class IsbnWriter(BaseWriter):
     """
-      Convert file paths in bibliography to pl.Path's, expanding relative paths according to lib_root
+      format the isbn for writing
     """
 
     @staticmethod
     def metadata_key():
         return "jg-isbn-writer"
+
+    def __init__(self):
+        super().__init__(True, False)
 
     def transform_entry(self, entry, library):
         f_dict = entry.fields_dict

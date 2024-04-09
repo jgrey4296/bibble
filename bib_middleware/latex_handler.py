@@ -89,6 +89,9 @@ class LatexWriter(ms.LatexEncodingMiddleware):
     def metadata_key() -> str:
         return "jg-latex-writer"
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs, allow_inplace_modification=False)
+
     def transform_entry(self, entry: Entry, library: Library) -> Block:
         errors = []
         for field in entry.fields:

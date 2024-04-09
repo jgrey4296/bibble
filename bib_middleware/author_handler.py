@@ -43,6 +43,8 @@ from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
+from bib_middleware.base_writer import BaseWriter
+
 from dootle.tags.structs import NameFile
 
 class NameReader(ms.SplitNameParts):
@@ -83,6 +85,9 @@ class NameWriter(ms.MergeNameParts):
     def names_to_str():
         return str(NameWriter._all_names)
 
+    def __init__(self):
+        super().__init__(allow_inplace_modification=False)
+
     def _transform_field_value(self, name) -> List[str]:
         if not isinstance(name, list) and all(isinstance(n, NameParts) for n in name):
             raise ValueError("Expected a list of NameParts, got {}. ".format(name))
@@ -91,7 +96,6 @@ class NameWriter(ms.MergeNameParts):
 
     def _merge_name(self, name):
         result = []
-
         if name.von:
             result.append(" ".join(name.von))
             result.append(" ")

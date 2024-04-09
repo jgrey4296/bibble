@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 
+
 See EOF for license/metadata/notes as applicable
 """
 
@@ -29,32 +30,18 @@ from uuid import UUID, uuid1
 ##-- end builtin imports
 
 ##-- lib imports
-import more_itertools as mitz
+# import more_itertools as mitz
+# from boltons import
 ##-- end lib imports
 
 ##-- logging
 logging = logmod.getLogger(__name__)
-printer = logmod.getLogger("doot._printer")
 ##-- end logging
 
-import bibtexparser
-import bibtexparser.model as model
-from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
-from bib_middleware.base_writer import BaseWriter
+import bibtexparser.middlewares as ms
 
+class BaseWriter(ms.BlockMiddleware):
+    """ A Base Writer class that does't allow inplace changes when writing """
 
-bib_format                              = bibtexparser.BibtexFormat()
-bib_format.value_column                 = 15
-bib_format.indent                       = " "
-bib_format.block_separator              = "\n"
-bib_format.trailing_comma               = True
-
-class FieldSorter(BaseWriter):
-
-    @staticmethod
-    def metadata_key():
-        return "jg-field-sorter"
-
-    def transform_entry(self, entry):
-        # TODO put fields into a set order
-        return entry
+    def __init__(self):
+        super().__init__(allow_inplace_modification=False)

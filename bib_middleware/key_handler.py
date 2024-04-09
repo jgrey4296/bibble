@@ -85,7 +85,7 @@ class LockCrossrefKeys(BlockMiddleware):
 
         return entry
 
-class CrossrefValidator(BlockMiddleware):
+class CrossrefValidator(LibraryMiddleware):
     """ TODO Ensure crossrefs exist """
 
     pass

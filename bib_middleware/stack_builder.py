@@ -57,11 +57,11 @@ def build_parse_stack(spec, state):
 def build_write_stack(spec, state):
     """ build a default write stack """
     write_mids = [
-        BM.NameWriter(True),
-        ms.MergeCoAuthors(True),
+        BM.NameWriter(),
+        ms.MergeCoAuthors(allow_inplace_modification=False),
         BM.LatexWriter(keep_math=True, enclose_urls=False),
         BM.TagsWriter(),
         BM.PathsWriter(lib_root=doot.locs["{lib-root}"]),
-        ms.AddEnclosingMiddleware(allow_inplace_modification=True, default_enclosing="{", reuse_previous_enclosing=False, enclose_integers=True),
+        ms.AddEnclosingMiddleware(allow_inplace_modification=False, default_enclosing="{", reuse_previous_enclosing=False, enclose_integers=True),
     ]
     return {spec.kwargs.update_ : write_mids}
