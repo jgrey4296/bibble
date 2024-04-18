@@ -14,12 +14,13 @@ classifiers     = [
 ]
 
 dependencies   = [
-               "tomlguard",
-               "pyisbn",
-               "isbn_hyphenate",
-               "waybackpy",
-               "bibtexparser>=2.0.0b4",
-               "internetarchive",
+    "jgdv",
+    "tomlguard",
+    "pyisbn",
+    "isbn_hyphenate",
+    "waybackpy",
+    "bibtexparser>=2.0.0b4",
+    "internetarchive",
 ]
 
 [project.optional-dependencies]

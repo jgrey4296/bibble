@@ -49,8 +49,8 @@ import doot
 import doot.errors
 from doot.structs import DootKey
 from doot.enums import ActionResponseEnum
-from dootle.tags.structs import TagFile
-from dootle.bookmarks.structs import BookmarkCollection
+from jgdv.files.tags.base import TagFile
+from jgdv.files.bookmarks.collection import BookmarkCollection
 
 FF_DRIVER          = "__$ff_driver"
 READER_PREFIX      = "about:reader?url="

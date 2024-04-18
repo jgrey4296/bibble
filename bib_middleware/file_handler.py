@@ -43,7 +43,7 @@ from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
-from dootle.tags.structs import NameFile
+from jgdv.files.tags.name import NameFile
 from bib_middleware.base_writer import BaseWriter
 
 

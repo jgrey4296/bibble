@@ -45,7 +45,7 @@ from bibtexparser.middlewares.names import parse_single_name_into_parts, NamePar
 
 from bib_middleware.base_writer import BaseWriter
 
-from dootle.tags.structs import NameFile
+from jgdv.files.tags.name import NameFile
 
 class NameReader(ms.SplitNameParts):
     """ For use after stock "separatecoauthors", """

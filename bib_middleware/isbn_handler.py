@@ -87,7 +87,7 @@ class IsbnWriter(BaseWriter):
         return "jg-isbn-writer"
 
     def __init__(self):
-        super().__init__(True, False)
+        super().__init__()
 
     def transform_entry(self, entry, library):
         f_dict = entry.fields_dict
