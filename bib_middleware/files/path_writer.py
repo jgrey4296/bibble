@@ -42,28 +42,31 @@ import bibtexparser.model as model
 from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
+from bib_middleware.util.base_writer import BaseWriter
 
-from bib_middleware.base_writer import BaseWriter
+class PathWriter(BaseWriter):
+    """
+      Relativize library paths back to strings
+    """
 
+    @staticmethod
+    def metadata_key():
+        return "jg-path-writer"
 
-# TODO: add metadata to pdf/epubs
-# TODO: add to pdf bookmarks if subciting
-# TODO: file existance validator
+    def __init__(self, lib_root:pl.Path=None):
+        super().__init__()
+        self._lib_root = lib_root
 
-class PdfMetadataWriter(BaseWriter):
-
-    def transform_entry(self, entry):
-        # If no pdf file associated, return
-
-        # else add bib info
-
-        return entry
-
-class EpubMetadataWriter(BaseWriter):
-
-    def transform_entry(self, entry):
-        # If no epub file associated, return
-
-        # else add bib info
+    def transform_entry(self, entry, library):
+        for field in entry.fields:
+            try:
+                if "file" in field.key:
+                    if not field.value.exists():
+                        printer.warning("On Export file does not exist: %s", field.value)
+                    field.value = str(field.value.relative_to(self._lib_root))
+                elif "look_in" in field.key:
+                    field.value = str(field.value.relative_to(self._lib_root))
+            except ValueError:
+                field.value = str(field.value)
 
         return entry

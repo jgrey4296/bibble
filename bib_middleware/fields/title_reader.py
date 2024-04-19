@@ -43,49 +43,24 @@ from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
-
-class YearSorter(LibraryMiddleware):
-    """ TODO Sort a library accordiing to year """
-
-    @staticmethod
-    def metadata_key():
-        return "jg-year-sorter"
-
-    def transform(self, library):
-        sorted_entries = sorted(library.entries, key=self.get_year)
-
-        library.entries = sorted_entries
-        return library
-
-    def get_year(self, entry):
-        return entry.fields_dict['year'].value
-
-class EntryTypeSorter(LibraryMiddleware):
-    """ TODO Sort a library accordiing to entry type"""
+class TitleReader(BlockMiddleware):
+    """
+      strip whitespace from the title
+    """
 
     @staticmethod
     def metadata_key():
-        return "jg-entry-sorter"
+        return "jg-title-reader"
 
-    def transform(self, library):
-        sorted_entries = sorted(library.entries, key=lambda x: x.entry_type)
+    def __init__(self):
+        super().__init__(True, True)
 
-        library.entries = sorted_entries
-        return library
+    def transform_entry(self, entry, library):
+        for field in entry.fields:
+            if not "title" in field.key:
+                continue
 
+            field.value = field.value.strip()
 
-class AuthorSorter(LibraryMiddleware):
-    """ TODO Sort a library accordiing to author """
+        return entry
 
-    @staticmethod
-    def metadata_key():
-        return "jg-author-sorter"
-
-    def transform(self, library):
-        sorted_entries = sorted(library.entries, key=self.get_author)
-
-        library.entries = sorted_entries
-        return library
-
-    def get_author(self, entry):
-        raise NotImplementedError()

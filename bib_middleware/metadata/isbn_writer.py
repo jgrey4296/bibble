@@ -37,24 +37,43 @@ logging = logmod.getLogger(__name__)
 printer = logmod.getLogger("doot._printer")
 ##-- end logging
 
+import pyisbn
+import isbn_hyphenate
 import bibtexparser
 import bibtexparser.model as model
+from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
-from bib_middleware.base_writer import BaseWriter
+from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
+from bib_middleware.util.base_writer import BaseWriter
 
+ISBN_STRIP_RE = re.compile(r"[\s-]")
 
-bib_format                              = bibtexparser.BibtexFormat()
-bib_format.value_column                 = 15
-bib_format.indent                       = " "
-bib_format.block_separator              = "\n"
-bib_format.trailing_comma               = True
-
-class FieldSorter(BaseWriter):
+class IsbnWriter(BaseWriter):
+    """
+      format the isbn for writing
+    """
 
     @staticmethod
     def metadata_key():
-        return "jg-field-sorter"
+        return "jg-isbn-writer"
 
-    def transform_entry(self, entry):
-        # TODO put fields into a set order
+    def __init__(self):
+        super().__init__()
+
+    def transform_entry(self, entry, library):
+        f_dict = entry.fields_dict
+        if 'isbn' not in f_dict:
+            return entry
+        if "invalid_isbn" in f_dict:
+            return entry
+        if not bool(f_dict['isbn'].value):
+            return entry
+
+        try:
+            isbn = isbn_hyphenate.hyphenate(f_dict['isbn'].value)
+            entry.set_field(model.Field("isbn", isbn))
+        except isbn_hyphenate.IsbnError as err:
+            printer.warning("Writing ISBN failed: %s : %s", f_dict['isbn'].value, err)
+            pass
+
         return entry

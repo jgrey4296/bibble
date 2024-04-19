@@ -43,43 +43,6 @@ from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
-class LatexReader(ms.LatexDecodingMiddleware):
-    """ Latex-Encodes all strings in the library, except urls, files, doi's and crossrefs """
-
-    _skip_fields = ["url", "file", "doi", "crossref"]
-
-    @staticmethod
-    def metadata_key() -> str:
-        return "jg-latex-reader"
-
-    def transform_entry(self, entry: Entry, library: Library) -> Block:
-        errors = []
-        for field in entry.fields:
-            if any(x in field.key for x in self._skip_fields):
-                continue
-            if isinstance(field.value, str):
-                field.value, e = self._transform_python_value_string(field.value)
-                errors.append(e)
-            elif isinstance(field.value, ms.NameParts):
-                field.value.first = self._transform_all_strings(
-                    field.value.first, errors
-                )
-                field.value.last = self._transform_all_strings(field.value.last, errors)
-                field.value.von = self._transform_all_strings(field.value.von, errors)
-                field.value.jr = self._transform_all_strings(field.value.jr, errors)
-            else:
-                logging.info(
-                    f" [{self.metadata_key()}] Cannot python-str transform field {field.key}"
-                    f" with value type {type(field.value)}"
-                )
-
-        errors = [e for e in errors if e != ""]
-        if len(errors) > 0:
-            errors = ms.PartialMiddlewareException(errors)
-            return ms.MiddlewareErrorBlock(block=entry, error=errors)
-        else:
-            return entry
-
 class LatexWriter(ms.LatexEncodingMiddleware):
     """ Latex-Encodes all strings in the library except urls, files, dois and crossrefs """
 

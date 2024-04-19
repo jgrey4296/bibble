@@ -43,30 +43,7 @@ from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
-from bib_middleware.base_writer import BaseWriter
-
 # from jgdv.files.tags import NameFile
-
-class NameReader(ms.SplitNameParts):
-    """ For use after stock "separatecoauthors", """
-
-    @staticmethod
-    def metadata_key() -> str:
-        return "jg-name-reader"
-
-    def _transform_field_value(self, name) -> List[NameParts]:
-        if not isinstance(name, list):
-            raise ValueError(
-                "Expected a list of strings, got {}. "
-                "Make sure to use `SeparateCoAuthors` middleware"
-                "before using `SplitNameParts` middleware".format(name)
-            )
-        result = []
-        for n in name:
-            wrapped = n.startswith("{") and n.endswith("}")
-            result.append(parse_single_name_into_parts(n, strict=False))
-
-        return result
 
 class NameWriter(ms.MergeNameParts):
     """Middleware to merge a persons name parts (first, von, last, jr) into a single string.
@@ -111,38 +88,7 @@ class NameWriter(ms.MergeNameParts):
         result.append(" ".join(name.first))
 
         full_name = "".join(result).removesuffix(", ")
-        NameWriter._all_names.update(full_name)
+        # NameWriter._all_names.update(full_name)
         return full_name
 
 
-class MergeMultipleAuthorsEditors(BlockMiddleware):
-    """ Merge multiple fields of the same name """
-
-    @staticmethod
-    def metadata_key():
-        return "jg-merge-multi-author-fields"
-
-    def transform_entry(self, entry, library):
-        fields  = []
-        authors = []
-        editors = []
-        for x in entry.fields:
-            match x.key.lower():
-                case "author":
-                    authors.append(x.value)
-                case "editor":
-                    editors.append(x.value)
-                case _:
-                    fields.append(x)
-
-        if bool(authors):
-            joined_authors = " and ".join(authors)
-            if skip_re.search(joined_authors):
-                return None
-            fields.append(model.Field("author", joined_authors))
-        if bool(editors):
-            fields.append(model.Field("editor", " and ".join(editors)))
-
-
-        entry.fields = fields
-        return entry

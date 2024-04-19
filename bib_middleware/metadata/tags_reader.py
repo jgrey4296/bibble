@@ -43,21 +43,34 @@ from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
-class HashValidator(BlockMiddleware):
+from jgdv.files.tags import TagFile
+
+
+class TagsReader(BlockMiddleware):
     """
-      Generate and check hashes of pdfs and epubs. Use after pathreader
+      Read Tag strings, split them into a set, and keep track of all mentioned tags
+      By default the classvar _all_tags is cleared on init, pass clear=False to not
     """
+    _all_tags : TagFile = TagFile()
 
     @staticmethod
     def metadata_key():
-        return "jg-hash-validator"
+        return "jg-tags-reader"
+
+    @staticmethod
+    def tags_to_str():
+        return str(TagsReader._all_tags)
+
+    def __init__(self, clear=True):
+        super().__init__(True, True)
+        if clear:
+            TagsReader._all_tags = TagFile()
 
     def transform_entry(self, entry, library):
         for field in entry.fields:
-            if not "file" in field.key:
-                continue
-
-            base = pl.Path(field.value)
-            # TODO get hash of file
+            if field.key == "tags":
+                field.value = set(field.value.split(","))
+                TagsReader._all_tags.update(field.value)
 
         return entry
+
