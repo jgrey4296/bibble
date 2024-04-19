@@ -42,41 +42,6 @@ import bibtexparser.model as model
 from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
-from waybackpy import WaybackMachineSaveAPI, WaybackMachineCDXServerAPI
-
-user_agent = "Mozilla/5.0 (Windows NT 5.1; rv:40.0) Gecko/20100101 Firefox/40.0"
-
-class WaybackReader(BlockMiddleware):
-    """
-      wayback urls
-    """
-
-    @staticmethod
-    def metadata_key():
-        return "jg-wayback-reader"
-
-    def transform_entry(self, entry, library):
-        if entry.entry_type.lower() != "online":
-            return entry
-
-        url    = entry.fields_dict['url'].value
-        cdx = WaybackMachineCDXServerAPI(url, user_agent)
-        for item in cdx.snapshots():
-            item
-            # if good status code:
-            # set url, and original_url
-            # return
-
-
-        # No snapshot, so make one
-        saver  = WaybackMachineSaveAPI(url, user_agent)
-        result = saver.save()
-        entry.set_field(model.Field("original_url", url))
-        entry.set_field(model.Field("url", result))
-        return entry
-
-
-
 
 class CleanUrls(BlockMiddleware):
     """ Strip unnecessary doi and dblp prefixes from urls  """
@@ -103,7 +68,6 @@ class CleanUrls(BlockMiddleware):
             url = fields_dict['ee'].value
             del fields_dict['ee']
             fields_dict['url'] = model.Field("url", url)
-
 
         entry.fields = list(fields_dict.values())
         return entry

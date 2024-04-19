@@ -43,51 +43,28 @@ from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
-class TitleReader(BlockMiddleware):
-    """
-      strip whitespace from the title
-    """
+KEY_CLEAN_RE = re.compile(r"[/:{}]")
+KEY_SUB_CHAR = "_"
+
+class DuplicateHandler(LibraryMiddleware):
+    """ take duplciate entries and mark them as such """
 
     @staticmethod
     def metadata_key():
-        return "jg-title-reader"
+        return "jg-duplicate-handler"
 
-    def __init__(self):
-        super().__init__(True, True)
+    def transform(self, library):
+        for block in library.failed_blocks:
+            match block:
+                case model.DuplicateBlockKeyBlock():
+                    uuid = uuid1().hex
+                    duplicate = block.ignore_error_block
+                    duplicate.key = f"{duplicate.key}_dup_{uuid}"
+                    library.add(duplicate)
+                    library.remove(block)
+                case _:
+                    printer.warning("Bad Block: : %s", block.start_line)
 
-    def transform_entry(self, entry, library):
-        for field in entry.fields:
-            if not "title" in field.key:
-                continue
+        return library
 
-            field.value = field.value.strip()
 
-        return entry
-
-class SubTitleReader(BlockMiddleware):
-    """
-      split title into title and subtitle, if subtitle doesn't exist yet
-    """
-
-    @staticmethod
-    def metadata_key():
-        return "jg-subtitle-reader"
-
-    def __init__(self):
-        super().__init__(True, True)
-
-    def transform_entry(self, entry, library):
-        f_dict = entry.fields_dict
-        if "subtitle" in f_dict:
-            return entry
-        if 'title' not in f_dict:
-            return entry
-
-        if ":" not in f_dict['title'].value:
-            return entry
-
-        parts = f_dict['title'].value.split(":")
-        entry.set_field(model.Field("title", parts[0]))
-        entry.set_field(model.Field("subtitle", ": ".join(parts[1:])))
-
-        return entry

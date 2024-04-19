@@ -43,50 +43,34 @@ from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
-from jgdv.files.tags import TagFile
-from bib_middleware.base_writer import BaseWriter
-
-
-class TagsReader(BlockMiddleware):
+class PathReader(BlockMiddleware):
     """
-      Read Tag strings, split them into a set, and keep track of all mentioned tags
-      By default the classvar _all_tags is cleared on init, pass clear=False to not
+      Convert file paths in bibliography to pl.Path's, expanding relative paths according to lib_root
     """
-    _all_tags : TagFile = TagFile()
 
     @staticmethod
     def metadata_key():
-        return "jg-tags-reader"
+        return "jg-path-reader"
 
-    @staticmethod
-    def tags_to_str():
-        return str(TagsReader._all_tags)
-
-    def __init__(self, clear=True):
+    def __init__(self, lib_root:pl.Path=None):
         super().__init__(True, True)
-        if clear:
-            TagsReader._all_tags = TagFile()
+        self._lib_root = lib_root
 
     def transform_entry(self, entry, library):
         for field in entry.fields:
-            if field.key == "tags":
-                field.value = set(field.value.split(","))
-                TagsReader._all_tags.update(field.value)
+            if not ("file" in field.key or "look_in" in field.key):
+                continue
 
-        return entry
+            base = pl.Path(field.value)
+            match base.parts[0]:
+                case "/":
+                    field.value = base
+                case "~":
+                    field.value = base.expanduser().absolute()
+                case _:
+                    field.value = self._lib_root / base
 
-class TagsWriter(BaseWriter):
-    """
-      Reduce tag set to a string
-    """
-
-    @staticmethod
-    def metadata_key():
-        return "jg-tags-writer"
-
-    def transform_entry(self, entry, library):
-        for field in entry.fields:
-            if field.key == "tags":
-                field.value = ",".join(sorted(field.value))
+            if not field.value.exists():
+                printer.warning("On Import file does not exist: %s", field.value)
 
         return entry
