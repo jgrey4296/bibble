@@ -74,30 +74,3 @@ class PathReader(BlockMiddleware):
                 printer.warning("On Import file does not exist: %s", field.value)
 
         return entry
-
-class PathWriter(BlockMiddleware):
-    """
-      Relativize library paths back to strings
-    """
-
-    @staticmethod
-    def metadata_key():
-        return "jg-path-writer"
-
-    def __init__(self, lib_root:pl.Path=None):
-        super().__init__(True, True)
-        self._lib_root = lib_root
-
-    def transform_entry(self, entry, library):
-        for field in entry.fields:
-            try:
-                if "file" in field.key:
-                    if not field.value.exists():
-                        printer.warning("On Export file does not exist: %s", field.value)
-                    field.value = str(field.value.relative_to(self._lib_root))
-                elif "look_in" in field.key:
-                    field.value = str(field.value.relative_to(self._lib_root))
-            except ValueError:
-                field.value = str(field.value)
-
-        return entry

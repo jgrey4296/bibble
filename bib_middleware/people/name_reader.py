@@ -43,50 +43,25 @@ from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
-from dootle.tags.structs import TagFile
+# from jgdv.files.tags import NameFile
 
-class TagsReader(BlockMiddleware):
-    """
-      Read Tag strings, split them into a set, and keep track of all mentioned tags
-    """
-    _all_tags : TagFile = TagFile()
+class NameReader(ms.SplitNameParts):
+    """ For use after stock "separatecoauthors", """
 
     @staticmethod
-    def metadata_key():
-        return "jg-tags-reader"
+    def metadata_key() -> str:
+        return "jg-name-reader"
 
-    @staticmethod
-    def tags_to_str():
-        return str(TagsReader._all_tags)
+    def _transform_field_value(self, name) -> List[NameParts]:
+        if not isinstance(name, list):
+            raise ValueError(
+                "Expected a list of strings, got {}. "
+                "Make sure to use `SeparateCoAuthors` middleware"
+                "before using `SplitNameParts` middleware".format(name)
+            )
+        result = []
+        for n in name:
+            wrapped = n.startswith("{") and n.endswith("}")
+            result.append(parse_single_name_into_parts(n, strict=False))
 
-    def __init__(self, clear=False):
-        super().__init__(True, True)
-        if clear:
-            TagsReader._all_tags = TagFile()
-
-    def transform_entry(self, entry, library):
-        for field in entry.fields:
-            if field.key == "tags":
-                field.value = set(field.value.split(","))
-                TagsReader._all_tags.update(field.value)
-
-        return entry
-
-class TagsWriter(BlockMiddleware):
-    """
-      Reduce tag set to a string
-    """
-
-    @staticmethod
-    def metadata_key():
-        return "jg-tags-writer"
-
-    def __init__(self):
-        super().__init__(True, True)
-
-    def transform_entry(self, entry, library):
-        for field in entry.fields:
-            if field.key == "tags":
-                field.value = ",".join(sorted(field.value))
-
-        return entry
+        return result

@@ -43,21 +43,28 @@ from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
-class HashValidator(BlockMiddleware):
-    """
-      Generate and check hashes of pdfs and epubs. Use after pathreader
-    """
+KEY_CLEAN_RE = re.compile(r"[/:{}]")
+KEY_SUB_CHAR = "_"
+
+class DuplicateHandler(LibraryMiddleware):
+    """ take duplciate entries and mark them as such """
 
     @staticmethod
     def metadata_key():
-        return "jg-hash-validator"
+        return "jg-duplicate-handler"
 
-    def transform_entry(self, entry, library):
-        for field in entry.fields:
-            if not "file" in field.key:
-                continue
+    def transform(self, library):
+        for block in library.failed_blocks:
+            match block:
+                case model.DuplicateBlockKeyBlock():
+                    uuid = uuid1().hex
+                    duplicate = block.ignore_error_block
+                    duplicate.key = f"{duplicate.key}_dup_{uuid}"
+                    library.add(duplicate)
+                    library.remove(block)
+                case _:
+                    printer.warning("Bad Block: : %s", block.start_line)
 
-            base = pl.Path(field.value)
-            # TODO get hash of file
+        return library
 
-        return entry
+

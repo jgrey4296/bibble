@@ -50,7 +50,7 @@ ISBN_STRIP_RE = re.compile(r"[\s-]")
 
 class IsbnValidator(BlockMiddleware):
     """
-      Convert file paths in bibliography to pl.Path's, expanding relative paths according to lib_root
+      Try to validate the entry's isbn number
     """
 
     @staticmethod
@@ -73,33 +73,6 @@ class IsbnValidator(BlockMiddleware):
             entry.set_field(model.Field("invalid_isbn", f_dict['isbn'].value))
             entry.set_field(model.Field("isbn", ""))
 
-
-        return entry
-
-class IsbnWriter(BlockMiddleware):
-    """
-      Convert file paths in bibliography to pl.Path's, expanding relative paths according to lib_root
-    """
-
-    @staticmethod
-    def metadata_key():
-        return "jg-isbn-writer"
-
-    def transform_entry(self, entry, library):
-        f_dict = entry.fields_dict
-        if 'isbn' not in f_dict:
-            return entry
-        if "invalid_isbn" in f_dict:
-            return entry
-        if not bool(f_dict['isbn'].value):
-            return entry
-
-        try:
-            isbn = isbn_hyphenate.hyphenate(f_dict['isbn'].value)
-            entry.set_field(model.Field("isbn", isbn))
-        except isbn_hyphenate.IsbnError as err:
-            printer.warning("Writing ISBN failed: %s : %s", f_dict['isbn'].value, err)
-            pass
 
         return entry
 
