@@ -45,7 +45,7 @@ from bibtexparser.middlewares.names import parse_single_name_into_parts, NamePar
 
 from bib_middleware.base_writer import BaseWriter
 
-from jgdv.files.tags.name import NameFile
+# from jgdv.files.tags import NameFile
 
 class NameReader(ms.SplitNameParts):
     """ For use after stock "separatecoauthors", """
@@ -73,7 +73,7 @@ class NameWriter(ms.MergeNameParts):
       for use before stock MergeCoAuthors
     Name fields (e.g. author, editor, translator) are expected to be lists of NameParts.
     """
-    _all_names = NameFile()
+    # _all_names = NameFile()
 
     # docstr-coverage: inherited
 
