@@ -88,7 +88,6 @@ class OnlineDownloader(BlockMiddleware):
         # save the url
         url  = fields['url'].value
         dest = (self._target / entry.key).with_suffix(".pdf")
-        printer.warning("Would be saving entry to: %s", dest)
         self.save_pdf(url, dest)
         # add it to the entry
         entry.set_field(model.Field("file", value=dest))
@@ -138,7 +137,7 @@ class OnlineDownloader(BlockMiddleware):
             raise doot.errors.DootActionError("Destination already exists", dest)
 
         driver = OnlineDownloader.setup_firefox()
-        printer.info("Saving: %s", url)
+        printer.info("Download: %s", url)
         print_ops = PrintOptions()
         print_ops.page_range = "all"
 
@@ -147,5 +146,10 @@ class OnlineDownloader(BlockMiddleware):
         pdf       = driver.print_page(print_options=print_ops)
         pdf_bytes = base64.b64decode(pdf)
 
+        if not bool(pdf_bytes):
+            printer.warning("No Bytes were downloaded")
+            return
+
+        printer.info("Saving to: %s", dest)
         with open(dest, "wb") as f:
             f.write(pdf_bytes)
