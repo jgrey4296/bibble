@@ -86,8 +86,9 @@ class OnlineDownloader(BlockMiddleware):
             return entry
 
         # save the url
-        url  = fields['url'].value
-        dest = (self._target / entry.key).with_suffix(".pdf")
+        url      = fields['url'].value
+        safe_key = entry.key.replace(":","_")
+        dest     = (self._target / safe_key).with_suffix(".pdf")
         self.save_pdf(url, dest)
         # add it to the entry
         entry.set_field(model.Field("file", value=dest))
