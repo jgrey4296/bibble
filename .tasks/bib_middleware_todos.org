@@ -1,0 +1,31 @@
+#+TITLE: Bib Middleware Todos
+#+STARTUP: agenda
+
+* bibtex-middlewares
+** [∅] crossref validator
+** [∅] doi handler
+** [∅] field sorter
+** [∅] hash validator
+** [∅] metadata writer
+** [∅] stack builder
+** [∅] waybacker
+** [∅] online downloader
+make filenames safe
+
+
+* from dootle
+** ideal stemmer
+** library location enforcer
+** field lowercaser
+** year checker
+** title split
+** output name formatting
+** ISBN formatting
+** pdf metadata application
+** Url way-backer / checker
+** &amp; -> \&
+** reporters - author/editor counts, year entries, types, entries with files
+** journal/booktitle caps normalization
+** warn on missing doi/tags/url
+** DONE bibtex metadata task
+* Links
