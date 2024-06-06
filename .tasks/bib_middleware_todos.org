@@ -7,25 +7,31 @@
 ** [∅] field sorter
 ** [∅] hash validator
 ** [∅] metadata writer
+*** add bookmarks when for subcite entries
+*** use pdfinfo to validate along with qpdf
+*** do finalizing in a tempdir?
+*** store links of encrypted and password protected
 ** [∅] stack builder
 ** [∅] waybacker
 ** [∅] online downloader
 make filenames safe
 
 
-* from dootle
-** ideal stemmer
-** library location enforcer
-** field lowercaser
-** year checker
-** title split
-** output name formatting
-** ISBN formatting
-** pdf metadata application
-** Url way-backer / checker
-** &amp; -> \&
-** reporters - author/editor counts, year entries, types, entries with files
-** journal/booktitle caps normalization
-** warn on missing doi/tags/url
+* Triage
+** TRIAGE ideal stemmer
+** TRIAGE library location enforcer
+** TRIAGE field lowercaser
+** TRIAGE year checker
+** TRIAGE title split
+** TRIAGE output name formatting
+** TRIAGE ISBN formatting
+** TRIAGE pdf metadata application
+** TRIAGE Url way-backer / checker
+** TRIAGE &amp; -> \&
+** TRIAGE reporters - author/editor counts, year entries, types, entries with files
+** TRIAGE journal/booktitle caps normalization
+** TRIAGE warn on missing doi/tags/url
 ** DONE bibtex metadata task
+
+
 * Links

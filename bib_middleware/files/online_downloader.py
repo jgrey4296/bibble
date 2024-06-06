@@ -138,7 +138,7 @@ class OnlineDownloader(BlockMiddleware):
             raise doot.errors.DootActionError("Destination already exists", dest)
 
         driver = OnlineDownloader.setup_firefox()
-        printer.info("Download: %s", url)
+        printer.info("Saving: %s", url)
         print_ops = PrintOptions()
         print_ops.page_range = "all"
 
