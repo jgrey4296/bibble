@@ -50,7 +50,7 @@ class MergeMultipleAuthorsEditors(BlockMiddleware):
 
     @staticmethod
     def metadata_key():
-        return "jg-merge-multi-author-fields"
+        return "BM-merge-multi-author-fields"
 
     def transform_entry(self, entry, library):
         fields  = []

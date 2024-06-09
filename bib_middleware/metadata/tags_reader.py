@@ -55,7 +55,7 @@ class TagsReader(BlockMiddleware):
 
     @staticmethod
     def metadata_key():
-        return "jg-tags-reader"
+        return "BM-tags-reader"
 
     @staticmethod
     def tags_to_str():

@@ -50,7 +50,7 @@ class SubTitleReader(BlockMiddleware):
 
     @staticmethod
     def metadata_key():
-        return "jg-subtitle-reader"
+        return "BM-subtitle-reader"
 
     def __init__(self):
         super().__init__(True, True)

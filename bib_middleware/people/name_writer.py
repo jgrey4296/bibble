@@ -56,7 +56,7 @@ class NameWriter(ms.MergeNameParts):
 
     @staticmethod
     def metadata_key() -> str:
-        return "jg-name-witer"
+        return "BM-name-witer"
 
     @staticmethod
     def names_to_str():

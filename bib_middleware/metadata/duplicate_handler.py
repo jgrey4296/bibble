@@ -51,7 +51,7 @@ class DuplicateHandler(LibraryMiddleware):
 
     @staticmethod
     def metadata_key():
-        return "jg-duplicate-handler"
+        return "BM-duplicate-handler"
 
     def transform(self, library):
         for block in library.failed_blocks:

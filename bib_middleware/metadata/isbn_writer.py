@@ -55,7 +55,7 @@ class IsbnWriter(BaseWriter):
 
     @staticmethod
     def metadata_key():
-        return "jg-isbn-writer"
+        return "BM-isbn-writer"
 
     def __init__(self):
         super().__init__()

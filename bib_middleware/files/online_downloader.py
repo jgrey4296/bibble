@@ -65,7 +65,7 @@ class OnlineDownloader(BlockMiddleware):
 
     @staticmethod
     def metadata_key():
-        return "jg-online-handler"
+        return "BM-online-handler"
 
     def __init__(self, target:pl.Path):
         super().__init__()

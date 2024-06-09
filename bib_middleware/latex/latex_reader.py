@@ -50,7 +50,7 @@ class LatexReader(ms.LatexDecodingMiddleware):
 
     @staticmethod
     def metadata_key() -> str:
-        return "jg-latex-reader"
+        return "BM-latex-reader"
 
     def transform_entry(self, entry: Entry, library: Library) -> Block:
         errors = []

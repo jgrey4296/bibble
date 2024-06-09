@@ -49,7 +49,7 @@ class FailureHandler(LibraryMiddleware):
 
     @staticmethod
     def metadata_key():
-        return "jg-failure-handler"
+        return "BM-failure-handler"
 
     def transform(self, library):
         for block in library.failed_blocks:

@@ -51,7 +51,7 @@ class SelectN(LibraryMiddleware):
 
     @staticmethod
     def metadata_key():
-        return "jg-select-n"
+        return "BM-select-n"
 
     def __init__(self, count=1):
         super().__init__()
@@ -70,7 +70,7 @@ class SelectEntries(LibraryMiddleware):
 
     @staticmethod
     def metadata_key():
-        return "jg-select-type"
+        return "BM-select-type"
 
     def __init__(self, target="article"):
         super().__init__()
@@ -88,7 +88,7 @@ class SelectTags(LibraryMiddleware):
 
     @staticmethod
     def metadata_key():
-        return "jg-select-tag"
+        return "BM-select-tag"
 
     def __init__(self, targets=None):
         super().__init__()
@@ -105,7 +105,7 @@ class SelectAuthor(LibraryMiddleware):
 
     @staticmethod
     def metadata_key():
-        return "jg-select-author"
+        return "BM-select-author"
 
     def __init__(self, targets=None):
         super().__init__()
