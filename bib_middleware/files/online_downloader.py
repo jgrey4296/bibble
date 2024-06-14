@@ -45,10 +45,6 @@ import bibtexparser
 import bibtexparser.model as model
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 import base64
-import doot
-import doot.errors
-from doot.structs import DootKey
-from doot.enums import ActionResponseEnum
 from jgdv.files.tags import TagFile
 from jgdv.files.bookmarks import BookmarkCollection
 
@@ -129,13 +125,13 @@ class OnlineDownloader(BlockMiddleware):
     def save_pdf(self, url, dest):
         """ prints a url to a pdf file using selenium """
         if not isinstance(dest, pl.Path):
-            raise doot.errors.DootActionError("Destination to save pdf to is not a path", dest)
+            raise FileNotFoundError("Destination to save pdf to is not a path", dest)
 
         if dest.suffix != ".pdf":
-            raise doot.errors.DootActionError("Destination isn't a pdf", dest)
+            raise FileNotFoundError("Destination isn't a pdf", dest)
 
         if dest.exists():
-            raise doot.errors.DootActionError("Destination already exists", dest)
+            raise FileExistsError("Destination already exists", dest)
 
         driver = OnlineDownloader.setup_firefox()
         printer.info("Saving: %s", url)
