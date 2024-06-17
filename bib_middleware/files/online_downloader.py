@@ -131,7 +131,8 @@ class OnlineDownloader(BlockMiddleware):
             raise FileNotFoundError("Destination isn't a pdf", dest)
 
         if dest.exists():
-            raise FileExistsError("Destination already exists", dest)
+            printer.warning("Destination already exists: %s", dest)
+            return
 
         driver = OnlineDownloader.setup_firefox()
         printer.info("Saving: %s", url)
