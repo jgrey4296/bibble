@@ -204,7 +204,7 @@ class _Epub_Update_m:
     """A Mixin for epub-specific metadata manipulation"""
 
     def update_epub_by_calibre(self, path, entry) -> None:
-        args = self._entry_to_calibre_args(entry)
+        args = self.entry_to_calibre_args(entry)
 
         logging.debug("Ebook update args: %s : %s", path, args)
         try:

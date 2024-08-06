@@ -69,7 +69,7 @@ class LatexReader(ms.LatexDecodingMiddleware):
                 field.value.jr = self._transform_all_strings(field.value.jr, errors)
             else:
                 logging.info(
-                    f" [{self.metadata_key()}] Cannot python-str transform field {field.key}"
+                    f"[{self.metadata_key()}] Cannot python-str transform field {field.key}"
                     f" with value type {type(field.value)}"
                 )
 
