@@ -51,7 +51,7 @@ class LockCrossrefKeys(BlockMiddleware):
 
     @staticmethod
     def metadata_key():
-        return "jg-lock-crossrefs"
+        return "BM-lock-crossrefs"
 
     def transform_entry(self, entry, library):
         clean_key = KEY_CLEAN_RE.sub(KEY_SUB_CHAR, entry.key)

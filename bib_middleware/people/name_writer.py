@@ -56,7 +56,7 @@ class NameWriter(ms.MergeNameParts):
 
     @staticmethod
     def metadata_key() -> str:
-        return "jg-name-witer"
+        return "BM-name-witer"
 
     @staticmethod
     def names_to_str():
@@ -88,7 +88,7 @@ class NameWriter(ms.MergeNameParts):
         result.append(" ".join(name.first))
 
         full_name = "".join(result).removesuffix(", ")
-        NameWriter._all_names.update(full_name)
+        # NameWriter._all_names.update(full_name)
         return full_name
 
 

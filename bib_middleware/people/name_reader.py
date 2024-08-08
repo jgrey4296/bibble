@@ -50,7 +50,7 @@ class NameReader(ms.SplitNameParts):
 
     @staticmethod
     def metadata_key() -> str:
-        return "jg-name-reader"
+        return "BM-name-reader"
 
     def _transform_field_value(self, name) -> List[NameParts]:
         if not isinstance(name, list):

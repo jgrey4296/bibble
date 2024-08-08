@@ -51,7 +51,7 @@ class PathWriter(BaseWriter):
 
     @staticmethod
     def metadata_key():
-        return "jg-path-writer"
+        return "BM-path-writer"
 
     def __init__(self, lib_root:pl.Path=None):
         super().__init__()

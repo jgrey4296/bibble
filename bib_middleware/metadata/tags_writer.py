@@ -53,7 +53,7 @@ class TagsWriter(BaseWriter):
 
     @staticmethod
     def metadata_key():
-        return "jg-tags-writer"
+        return "BM-tags-writer"
 
     def transform_entry(self, entry, library):
         for field in entry.fields:

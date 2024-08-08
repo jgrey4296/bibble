@@ -1,0 +1,37 @@
+#+TITLE: Bib Middleware Todos
+#+STARTUP: agenda
+
+* bibtex-middlewares
+** [∅] crossref validator
+** [∅] doi handler
+** [∅] field sorter
+** [∅] hash validator
+** [∅] metadata writer
+*** add bookmarks when for subcite entries
+*** use pdfinfo to validate along with qpdf
+*** do finalizing in a tempdir?
+*** store links of encrypted and password protected
+** [∅] stack builder
+** [∅] waybacker
+** [∅] online downloader
+make filenames safe
+
+
+* Triage
+** TRIAGE ideal stemmer
+** TRIAGE library location enforcer
+** TRIAGE field lowercaser
+** TRIAGE year checker
+** TRIAGE title split
+** TRIAGE output name formatting
+** TRIAGE ISBN formatting
+** TRIAGE pdf metadata application
+** TRIAGE Url way-backer / checker
+** TRIAGE &amp; -> \&
+** TRIAGE reporters - author/editor counts, year entries, types, entries with files
+** TRIAGE journal/booktitle caps normalization
+** TRIAGE warn on missing doi/tags/url
+** DONE bibtex metadata task
+
+
+* Links

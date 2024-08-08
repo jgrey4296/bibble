@@ -48,7 +48,7 @@ class CleanUrls(BlockMiddleware):
 
     @staticmethod
     def metadata_key():
-        return "jg-clean-urls"
+        return "BM-clean-urls"
 
     def transform_entry(self, entry, library):
         fields_dict = entry.fields_dict

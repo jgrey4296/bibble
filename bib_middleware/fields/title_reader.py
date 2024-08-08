@@ -50,7 +50,7 @@ class TitleReader(BlockMiddleware):
 
     @staticmethod
     def metadata_key():
-        return "jg-title-reader"
+        return "BM-title-reader"
 
     def __init__(self):
         super().__init__(True, True)

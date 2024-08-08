@@ -55,7 +55,7 @@ class IsbnValidator(BlockMiddleware):
 
     @staticmethod
     def metadata_key():
-        return "jg-isbn-validator"
+        return "BM-isbn-validator"
 
     def transform_entry(self, entry, library):
         f_dict = entry.fields_dict

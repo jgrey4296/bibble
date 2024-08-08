@@ -50,7 +50,7 @@ class LatexWriter(ms.LatexEncodingMiddleware):
 
     @staticmethod
     def metadata_key() -> str:
-        return "jg-latex-writer"
+        return "BM-latex-writer"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs, allow_inplace_modification=False)

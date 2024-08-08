@@ -45,10 +45,6 @@ import bibtexparser
 import bibtexparser.model as model
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 import base64
-import doot
-import doot.errors
-from doot.structs import DootKey
-from doot.enums import ActionResponseEnum
 from jgdv.files.tags import TagFile
 from jgdv.files.bookmarks import BookmarkCollection
 
@@ -65,7 +61,7 @@ class OnlineDownloader(BlockMiddleware):
 
     @staticmethod
     def metadata_key():
-        return "jg-online-handler"
+        return "BM-online-handler"
 
     def __init__(self, target:pl.Path):
         super().__init__()
@@ -86,9 +82,9 @@ class OnlineDownloader(BlockMiddleware):
             return entry
 
         # save the url
-        url  = fields['url'].value
-        dest = (self._target / entry.key).with_suffix(".pdf")
-        printer.warning("Would be saving entry to: %s", dest)
+        url      = fields['url'].value
+        safe_key = entry.key.replace(":","_")
+        dest     = (self._target / safe_key).with_suffix(".pdf")
         self.save_pdf(url, dest)
         # add it to the entry
         entry.set_field(model.Field("file", value=dest))
@@ -129,13 +125,14 @@ class OnlineDownloader(BlockMiddleware):
     def save_pdf(self, url, dest):
         """ prints a url to a pdf file using selenium """
         if not isinstance(dest, pl.Path):
-            raise doot.errors.DootActionError("Destination to save pdf to is not a path", dest)
+            raise FileNotFoundError("Destination to save pdf to is not a path", dest)
 
         if dest.suffix != ".pdf":
-            raise doot.errors.DootActionError("Destination isn't a pdf", dest)
+            raise FileNotFoundError("Destination isn't a pdf", dest)
 
         if dest.exists():
-            raise doot.errors.DootActionError("Destination already exists", dest)
+            printer.warning("Destination already exists: %s", dest)
+            return
 
         driver = OnlineDownloader.setup_firefox()
         printer.info("Saving: %s", url)
@@ -147,5 +144,10 @@ class OnlineDownloader(BlockMiddleware):
         pdf       = driver.print_page(print_options=print_ops)
         pdf_bytes = base64.b64decode(pdf)
 
+        if not bool(pdf_bytes):
+            printer.warning("No Bytes were downloaded")
+            return
+
+        printer.info("Saving to: %s", dest)
         with open(dest, "wb") as f:
             f.write(pdf_bytes)

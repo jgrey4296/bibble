@@ -50,7 +50,7 @@ class PathReader(BlockMiddleware):
 
     @staticmethod
     def metadata_key():
-        return "jg-path-reader"
+:        return "BM-path-reader"
 
     def __init__(self, lib_root:pl.Path=None):
         super().__init__(True, True)
