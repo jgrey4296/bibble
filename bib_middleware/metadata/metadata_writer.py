@@ -56,6 +56,19 @@ calibre  = sh.ebook_meta
 qpdf     = sh.qpdf
 pdfinfo  = sh.pdfinfo
 
+class _EntryFileGetter_m:
+
+    def _get_file(self, entry) -> None|pl.Path:
+        match entry.fields_dict.get("file", None):
+            case None:
+                return None
+            case pl.Path() as path:
+                return path
+            case BTP.model.Field() as path if isinstance(path.value, pl.Path) :
+                return path.value
+            case _:
+                raise TypeError("Bad File Path Type", path)
+
 class _Metadata_Check_m:
     """A mixin for checking the metadata fof files"""
 
@@ -257,7 +270,7 @@ class _Epub_Update_m:
 
         return args
 
-class MetadataApplicator(_Pdf_Update_m, _Epub_Update_m, _Metadata_Check_m, LibraryMiddleware):
+class MetadataApplicator(_Pdf_Update_m, _Epub_Update_m, _EntryFileGetter_m, _Metadata_Check_m, LibraryMiddleware):
     """ Apply metadata to files mentioned in bibtex entries
       uses xmp-prism tags and some custom ones for pdfs,
       and epub standard.
@@ -281,10 +294,16 @@ class MetadataApplicator(_Pdf_Update_m, _Epub_Update_m, _Metadata_Check_m, Libra
         return library
 
     def transform_entry(self, entry,  library) -> Any:
+        # TODO add a 'meta_update' status field to the entry for [locked,failed]
         match self._get_file(entry):
             case None:
                 pass
+            case x if not x.exists():
+                update = BTP.model.Field("orphaned", "True"),
+                entry.set_field(update)
             case x if x.suffix == ".pdf" and not self.pdf_is_modifiable(x):
+                update = BTP.model.Field("pdf_locked", "True"),
+                entry.set_field(update)
                 self._failures.append(("locked", x, None))
                 fail_l.warning("PDF is locked: %s", x)
             case x if self.metadata_matches_entry(x, entry):
@@ -311,13 +330,33 @@ class MetadataApplicator(_Pdf_Update_m, _Epub_Update_m, _Metadata_Check_m, Libra
 
         return entry
 
-    def _get_file(self, entry) -> None|pl.Path:
-        match entry.fields_dict.get("file", None):
+
+class FileCheck(_Pdf_Update_m, _EntryFileGetter_m, LibraryMiddleware):
+    """
+      Annotate entries with 'pdf_locked' if the pdf can't be modified,
+      "orphan_file" if the pdf or epub does not exist
+    """
+
+    @staticmethod
+    def metadata_key():
+        return "PdfLockCheck"
+
+
+    def transform(self, library:BTP.Library) -> BTP.Library:
+        total = len(library.entries)
+        logging.info("Checking library files")
+        for i, entry in enumerate(library.entries):
+            self.transform_entry(entry, library)
+
+        return library
+
+    def transform_entry(self, entry, library) -> Any:
+        match self._get_file(entry):
             case None:
-                return None
-            case pl.Path() as path:
-                return path
-            case BTP.model.Field() as path if isinstance(path.value, pl.Path) :
-                return path.value
-            case _:
-                raise TypeError("Bad File Path Type", path)
+                return
+            case x if not x.exists():
+                update = BTP.model.Field("orphaned", "True"),
+                entry.set_field(update)
+            case x if x.suffix == ".pdf" and not self.pdf_is_modifiable(x):
+                update = BTP.model.Field("pdf_locked", "True"),
+                entry.set_field(update)
