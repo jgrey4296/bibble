@@ -299,10 +299,10 @@ class MetadataApplicator(_Pdf_Update_m, _Epub_Update_m, _EntryFileGetter_m, _Met
             case None:
                 pass
             case x if not x.exists():
-                update = BTP.model.Field("orphaned", "True"),
+                update = BTP.model.Field("orphaned", "True")
                 entry.set_field(update)
             case x if x.suffix == ".pdf" and not self.pdf_is_modifiable(x):
-                update = BTP.model.Field("pdf_locked", "True"),
+                update = BTP.model.Field("pdf_locked", "True")
                 entry.set_field(update)
                 self._failures.append(("locked", x, None))
                 fail_l.warning("PDF is locked: %s", x)
@@ -355,8 +355,8 @@ class FileCheck(_Pdf_Update_m, _EntryFileGetter_m, LibraryMiddleware):
             case None:
                 return
             case x if not x.exists():
-                update = BTP.model.Field("orphaned", "True"),
+                update = BTP.model.Field("orphaned", "True")
                 entry.set_field(update)
             case x if x.suffix == ".pdf" and not self.pdf_is_modifiable(x):
-                update = BTP.model.Field("pdf_locked", "True"),
+                update = BTP.model.Field("pdf_locked", "True")
                 entry.set_field(update)
