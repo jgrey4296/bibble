@@ -32,17 +32,16 @@ from uuid import UUID, uuid1
 import more_itertools as mitz
 ##-- end lib imports
 
-##-- logging
-logging = logmod.getLogger(__name__)
-printer = logmod.getLogger("doot._printer")
-##-- end logging
-
 from random import choices
 import bibtexparser
 import bibtexparser.model as model
 from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
+
+##-- logging
+logging = logmod.getLogger(__name__)
+##-- end logging
 
 # TODO Selectors to filter by tag, author
 
@@ -64,7 +63,6 @@ class SelectN(LibraryMiddleware):
         library.entries = chosen
         return library
 
-
 class SelectEntries(LibraryMiddleware):
     """ Select entries of a particular type """
 
@@ -82,7 +80,6 @@ class SelectEntries(LibraryMiddleware):
         library.entries = chosen
         return library
 
-
 class SelectTags(LibraryMiddleware):
     """ Select entries of with a particular tag """
 
@@ -99,7 +96,6 @@ class SelectTags(LibraryMiddleware):
 
         library.entries = chosen
         return library
-
 
 class SelectAuthor(LibraryMiddleware):
 

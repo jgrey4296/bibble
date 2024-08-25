@@ -14,7 +14,7 @@ classifiers     = [
 ]
 
 dependencies   = [
-    "jgdv",
+    "jgdv>=0.2",
     "tomlguard",
     "pyisbn",
     "isbn_hyphenate",
@@ -25,7 +25,7 @@ dependencies   = [
 
 [project.optional-dependencies]
 docs = [ "sphinx" ]
-# dev  = [ "https://github.com/jgrey4296/doot", "pipreqs"]
+# dev  = [ "pipreqs"]
 test = [ "pytest > 7.0.0" ]
 
 ##-- urls

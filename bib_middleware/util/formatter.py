@@ -32,19 +32,16 @@ from uuid import UUID, uuid1
 import more_itertools as mitz
 ##-- end lib imports
 
-##-- logging
-logging = logmod.getLogger(__name__)
-printer = logmod.getLogger("doot._printer")
-##-- end logging
-
 import bibtexparser
 import bibtexparser.model as model
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 
+##-- logging
+logging = logmod.getLogger(__name__)
+##-- end logging
 
 bib_format                              = bibtexparser.BibtexFormat()
 bib_format.value_column                 = 15
 bib_format.indent                       = " "
 bib_format.block_separator              = "\n"
 bib_format.trailing_comma               = True
-

@@ -34,7 +34,6 @@ import more_itertools as mitz
 
 ##-- logging
 logging = logmod.getLogger(__name__)
-printer = logmod.getLogger("doot._printer")
 ##-- end logging
 
 import bibtexparser

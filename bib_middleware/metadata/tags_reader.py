@@ -32,11 +32,6 @@ from uuid import UUID, uuid1
 import more_itertools as mitz
 ##-- end lib imports
 
-##-- logging
-logging = logmod.getLogger(__name__)
-printer = logmod.getLogger("doot._printer")
-##-- end logging
-
 import bibtexparser
 import bibtexparser.model as model
 from bibtexparser import middlewares as ms
@@ -45,6 +40,9 @@ from bibtexparser.middlewares.names import parse_single_name_into_parts, NamePar
 
 from jgdv.files.tags import TagFile
 
+##-- logging
+logging = logmod.getLogger(__name__)
+##-- end logging
 
 class TagsReader(BlockMiddleware):
     """
@@ -73,4 +71,3 @@ class TagsReader(BlockMiddleware):
                 TagsReader._all_tags.update(field.value)
 
         return entry
-

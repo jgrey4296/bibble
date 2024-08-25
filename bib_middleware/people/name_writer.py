@@ -32,11 +32,6 @@ from uuid import UUID, uuid1
 import more_itertools as mitz
 ##-- end lib imports
 
-##-- logging
-logging = logmod.getLogger(__name__)
-printer = logmod.getLogger("doot._printer")
-##-- end logging
-
 import bibtexparser
 import bibtexparser.model as model
 from bibtexparser import middlewares as ms
@@ -44,6 +39,10 @@ from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddlewa
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
 # from jgdv.files.tags import NameFile
+
+##-- logging
+logging = logmod.getLogger(__name__)
+##-- end logging
 
 class NameWriter(ms.MergeNameParts):
     """Middleware to merge a persons name parts (first, von, last, jr) into a single string.
@@ -90,5 +89,3 @@ class NameWriter(ms.MergeNameParts):
         full_name = "".join(result).removesuffix(", ")
         # NameWriter._all_names.update(full_name)
         return full_name
-
-

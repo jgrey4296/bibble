@@ -33,11 +33,6 @@ from uuid import UUID, uuid1
 # from boltons import
 ##-- end lib imports
 
-##-- logging
-logging = logmod.getLogger(__name__)
-printer = logmod.getLogger("doot._printer")
-##-- end logging
-
 from selenium.webdriver import FirefoxOptions, FirefoxService, Firefox
 from selenium.webdriver.common.print_page_options import PrintOptions
 from waybackpy import WaybackMachineSaveAPI
@@ -48,10 +43,14 @@ import base64
 from jgdv.files.tags import TagFile
 from jgdv.files.bookmarks import BookmarkCollection
 
-FF_DRIVER          = "__$ff_driver"
-READER_PREFIX      = "about:reader?url="
-LOAD_TIMEOUT       = 2
-WAYBACK_USER_AGENT = "Mozilla/5.0 (Windows NT 5.1; rv:40.0) Gecko/20100101 Firefox/40.0"
+##-- logging
+logging = logmod.getLogger(__name__)
+##-- end logging
+
+FF_DRIVER          : Final[str] = "__$ff_driver"
+READER_PREFIX      : Final[str] = "about:reader?url="
+LOAD_TIMEOUT       : Final[int] = 2
+WAYBACK_USER_AGENT : Final[str] = "Mozilla/5.0 (Windows NT 5.1; rv:40.0) Gecko/20100101 Firefox/40.0"
 
 class OnlineDownloader(BlockMiddleware):
     """

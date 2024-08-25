@@ -32,11 +32,6 @@ from uuid import UUID, uuid1
 import more_itertools as mitz
 ##-- end lib imports
 
-##-- logging
-logging = logmod.getLogger(__name__)
-printer = logmod.getLogger("doot._printer")
-##-- end logging
-
 import pyisbn
 import isbn_hyphenate
 import bibtexparser
@@ -45,6 +40,10 @@ from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 from bib_middleware.util.base_writer import BaseWriter
+
+##-- logging
+logging = logmod.getLogger(__name__)
+##-- end logging
 
 ISBN_STRIP_RE = re.compile(r"[\s-]")
 
