@@ -67,7 +67,7 @@ class IsbnValidator(BlockMiddleware):
             if not isbn.validate():
                 raise pyisbn.IsbnError("validation fail")
         except pyisbn.IsbnError:
-            printer.warning("ISBN validation fail: %s : %s", entry.key, f_dict['isbn'].value)
+            logging.warning("ISBN validation fail: %s : %s", entry.key, f_dict['isbn'].value)
             entry.set_field(model.Field("invalid_isbn", f_dict['isbn'].value))
             entry.set_field(model.Field("isbn", ""))
 

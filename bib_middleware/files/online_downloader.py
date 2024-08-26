@@ -68,16 +68,16 @@ class OnlineDownloader(BlockMiddleware):
 
     def transform_entry(self, entry, library):
         if entry.entry_type != "online":
-            printer.info("Entry %s : Skipping non-online entry", entry.key)
+            logging.info("Entry %s : Skipping non-online entry", entry.key)
             return entry
 
         fields = entry.fields_dict
         if "url" not in fields:
-            printer.warning("Entry %s : no url found", entry.key)
+            logging.warning("Entry %s : no url found", entry.key)
             return entry
 
         if "file" in fields:
-            printer.info("Entry %s : Already has file", entry.key)
+            logging.info("Entry %s : Already has file", entry.key)
             return entry
 
         # save the url
@@ -96,7 +96,7 @@ class OnlineDownloader(BlockMiddleware):
         if hasattr(OnlineDownloader, FF_DRIVER):
             return getattr(OnlineDownloader, FF_DRIVER)
 
-        printer.info("Setting up headless Firefox")
+        logging.info("Setting up headless Firefox")
         options = FirefoxOptions()
         # options.add_argument("--start-maximized")
         options.add_argument("--headless")
@@ -118,7 +118,7 @@ class OnlineDownloader(BlockMiddleware):
         if not hasattr(OnlineDownloader, FF_DRIVER):
             return
 
-        printer.info("Closing Firefox")
+        logging.info("Closing Firefox")
         getattr(OnlineDownloader, FF_DRIVER).quit()
 
     def save_pdf(self, url, dest):
@@ -130,11 +130,11 @@ class OnlineDownloader(BlockMiddleware):
             raise FileNotFoundError("Destination isn't a pdf", dest)
 
         if dest.exists():
-            printer.warning("Destination already exists: %s", dest)
+            logging.warning("Destination already exists: %s", dest)
             return
 
         driver = OnlineDownloader.setup_firefox()
-        printer.info("Saving: %s", url)
+        logging.info("Saving: %s", url)
         print_ops = PrintOptions()
         print_ops.page_range = "all"
 
@@ -144,9 +144,9 @@ class OnlineDownloader(BlockMiddleware):
         pdf_bytes = base64.b64decode(pdf)
 
         if not bool(pdf_bytes):
-            printer.warning("No Bytes were downloaded")
+            logging.warning("No Bytes were downloaded")
             return
 
-        printer.info("Saving to: %s", dest)
+        logging.info("Saving to: %s", dest)
         with open(dest, "wb") as f:
             f.write(pdf_bytes)

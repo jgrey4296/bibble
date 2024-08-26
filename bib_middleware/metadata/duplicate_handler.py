@@ -63,7 +63,7 @@ class DuplicateHandler(LibraryMiddleware):
                     library.add(duplicate)
                     library.remove(block)
                 case _:
-                    printer.warning("Bad Block: : %s", block.start_line)
+                    logging.warning("Bad Block: : %s", block.start_line)
 
         return library
 

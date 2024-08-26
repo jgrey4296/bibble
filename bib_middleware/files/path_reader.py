@@ -70,6 +70,6 @@ class PathReader(BlockMiddleware):
                     field.value = self._lib_root / base
 
             if not field.value.exists():
-                printer.warning("On Import file does not exist: %s", field.value)
+                logging.warning("On Import file does not exist: %s", field.value)
 
         return entry

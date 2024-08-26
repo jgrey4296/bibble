@@ -53,6 +53,6 @@ class FailureHandler(LibraryMiddleware):
         for block in library.failed_blocks:
             match block:
                 case _:
-                    printer.warning("Bad Block: : %s", block.start_line)
+                    logging.warning("Bad Block: : %s", block.start_line)
 
         return library

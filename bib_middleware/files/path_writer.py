@@ -61,7 +61,7 @@ class PathWriter(BaseWriter):
             try:
                 if "file" in field.key:
                     if not field.value.exists():
-                        printer.warning("On Export file does not exist: %s", field.value)
+                        logging.warning("On Export file does not exist: %s", field.value)
                     field.value = str(field.value.relative_to(self._lib_root))
                 elif "look_in" in field.key:
                     field.value = str(field.value.relative_to(self._lib_root))
