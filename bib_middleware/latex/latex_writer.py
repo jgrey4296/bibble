@@ -34,16 +34,36 @@ import more_itertools as mitz
 
 import bibtexparser
 import bibtexparser.model as model
+from bibtexparser import exceptions as bexp
 from bibtexparser import middlewares as ms
+from bibtexparser.model import MiddlewareErrorBlock
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
+from pylatexenc.latexencode import UnicodeToLatexConversionRule, RULE_REGEX, UnicodeToLatexEncoder
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
+DEFAULT_ENCODING_RULES : Final[list[UnicodeToLatexConversionRule]] = [
+    UnicodeToLatexConversionRule(rule_type=RULE_REGEX,
+                                 rule=[
+                                     (re.compile("ǒ"), r'\\v{o}'),
+                                     (re.compile("ǔ"), r'\\v{u}'),
+                                     (re.compile("ụ"), r'\\d{u}'),
+                                     (re.compile("ọ"), r'\\d{o}'),
+                                     (re.compile("Ẇ"), r'\\.{W}'),
+
+                                 ])
+]
+URL_RULE  : Final[UnicodeToLatexConversionRule] = UnicodeToLatexConversionRule(rule_type=RULE_REGEX, rule=[(re.compile(r"(https?://\S*\.\S*)"), r"\\url{\1}"), (re.compile(r"(www.\S*\.\S*)"), r"\\url{\1}")])
+MATH_RULE : Final[UnicodeToLatexConversionRule] = UnicodeToLatexConversionRule(rule_type=RULE_REGEX, rule=[(re.compile(r"(?<!\\)(\$.*[^\\]\$)"), r"\1")])
+
 class LatexWriter(ms.LatexEncodingMiddleware):
-    """ Latex-Encodes all strings in the library except urls, files, dois and crossrefs """
+    """ Unicode->Latex Transform.
+    all strings in the library except urls, files, dois and crossrefs
+    see https://pylatexenc.readthedocs.io/en/latest/latexencode/
+    """
 
     _skip_fields = ["url", "file", "doi", "crossref"]
 
@@ -51,8 +71,32 @@ class LatexWriter(ms.LatexEncodingMiddleware):
     def metadata_key() -> str:
         return "BM-latex-writer"
 
+    @staticmethod
+    def build_encoder(*, rules:None|list[UnicodeToLatexConversionRule]=None, **kwargs) -> UnicodeToLatexEncoder:
+        rules = (rules or DEFAULT_ENCODING_RULES)[:]
+        rules.append("defaults")
+        logging.debug("Building Latex Encoder: %s", rules)
+        return UnicodeToLatexEncoder(conversion_rules=rules, **kwargs)
+
     def __init__(self, **kwargs):
-        super().__init__(**kwargs, allow_inplace_modification=False)
+        kwargs['allow_inplace_modification'] = kwargs.get('allow_inplace_modification', False)
+        super().__init__(**kwargs)
+        self._total_rules = DEFAULT_ENCODING_RULES[:]
+        if kwargs.get('keep_math', True):
+            self._total_rules.append(MATH_RULE)
+
+        if kwargs.get('enclose_urls', False):
+            self._total_rules.append(URL_RULE)
+        self._total_options = {}
+        self.rebuild_encoder()
+
+    def rebuild_encoder(self, *, rules:list[UnicodeToLatexConversionRule]=None, **kwargs):
+        """ Accumulates rules and rebuilds the encoder """
+        self._total_rules += (rules or [])
+        self._total_options.update(kwargs)
+        rules = self._total_rules[:]
+
+        self._encoder = LatexWriter.build_encoder(rules=rules, **self._total_options)
 
     def transform_entry(self, entry: Entry, library: Library) -> Block:
         errors = []
@@ -80,7 +124,10 @@ class LatexWriter(ms.LatexEncodingMiddleware):
 
         errors = [e for e in errors if e != ""]
         if len(errors) > 0:
-            errors = ms.PartialMiddlewareException(errors)
-            return ms.MiddlewareErrorBlock(block=entry, error=errors)
+            errors = bexp.PartialMiddlewareException(errors)
+            return MiddlewareErrorBlock(block=entry, error=errors)
         else:
             return entry
+
+    def _test_string(self, text) -> str:
+        return self._encoder.unicode_to_latex(text)
