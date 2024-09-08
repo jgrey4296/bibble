@@ -32,25 +32,64 @@ from uuid import UUID, uuid1
 import more_itertools as mitz
 ##-- end lib imports
 
-##-- logging
-logging = logmod.getLogger(__name__)
-printer = logmod.getLogger("doot._printer")
-##-- end logging
-
 import bibtexparser
 import bibtexparser.model as model
+from bibtexparser import exceptions as bexp
 from bibtexparser import middlewares as ms
+from bibtexparser.model import MiddlewareErrorBlock
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
+from pylatexenc.latex2text import LatexNodes2Text, MacroTextSpec, get_default_latex_context_db
+
+##-- logging
+logging = logmod.getLogger(__name__)
+##-- end logging
+
+DEFAULT_DECODE_RULES : Final[dict] = {
+    "BM-reader-simplify-urls" : MacroTextSpec("url", simplify_repl="%s"),
+}
+
 class LatexReader(ms.LatexDecodingMiddleware):
-    """ Latex-Encodes all strings in the library, except urls, files, doi's and crossrefs """
+    """ Latex->unicode transform.
+    all strings in the library, except urls, files, doi's and crossrefs
+    """
 
     _skip_fields = ["url", "file", "doi", "crossref"]
 
     @staticmethod
     def metadata_key() -> str:
         return "BM-latex-reader"
+
+    @staticmethod
+    def build_decoder(*, rules:None|dict=None, **kwargs) -> LatexNodes2Text:
+        context_db = get_default_latex_context_db()
+        rules         = rules or DEFAULT_DECODE_RULES.copy()
+        logging.debug("Building Latex Decoder: %s", rules)
+        for x, y in rules.items():
+            match y:
+                case list() if all(isinstance(y2, MacroTextSpec) for y2 in y):
+                    context_db.add_context_category(x, prepend=True, macros=y)
+                case MacroTextSpec():
+                     context_db.add_context_category(x, prepend=True, macros=[y])
+                case _:
+                    raise TypeError("Bad Decode Rules Specified", y)
+
+        return LatexNodes2Text(latex_context=context_db, **kwargs)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._total_rules = DEFAULT_DECODE_RULES
+        self._total_options = {
+            "keep_braced_groups" : kwargs.get('keep_braced_groups', False),
+            "math_mode"          : kwargs.get('math_mode', 'text'),
+        }
+        self.rebuild_decoder()
+
+    def rebuild_decoder(self, *, rules:dict=None, **kwargs):
+        self._total_rules.update(rules or {})
+        self._total_options.update(kwargs)
+        self._decoder                = LatexReader.build_decoder(rules=self._total_rules, **self._total_options)
 
     def transform_entry(self, entry: Entry, library: Library) -> Block:
         errors = []
@@ -75,8 +114,11 @@ class LatexReader(ms.LatexDecodingMiddleware):
 
         errors = [e for e in errors if e != ""]
         if len(errors) > 0:
-            errors = ms.PartialMiddlewareException(errors)
-            return ms.MiddlewareErrorBlock(block=entry, error=errors)
+            errors = bexp.PartialMiddlewareException(errors)
+            return MiddlewareErrorBlock(block=entry, error=errors)
         else:
             return entry
 
+
+    def _test_string(self, text) -> str:
+        return self._decoder.latex_to_text(text)

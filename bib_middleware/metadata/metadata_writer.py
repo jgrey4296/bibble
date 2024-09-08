@@ -299,10 +299,10 @@ class MetadataApplicator(_Pdf_Update_m, _Epub_Update_m, _EntryFileGetter_m, _Met
             case None:
                 pass
             case x if not x.exists():
-                update = BTP.model.Field("orphaned", "True"),
+                update = BTP.model.Field("orphaned", "True")
                 entry.set_field(update)
             case x if x.suffix == ".pdf" and not self.pdf_is_modifiable(x):
-                update = BTP.model.Field("pdf_locked", "True"),
+                update = BTP.model.Field("pdf_locked", "True")
                 entry.set_field(update)
                 self._failures.append(("locked", x, None))
                 fail_l.warning("PDF is locked: %s", x)
@@ -317,6 +317,9 @@ class MetadataApplicator(_Pdf_Update_m, _Epub_Update_m, _EntryFileGetter_m, _Met
                 except (ValueError, ChildProcessError, FileExistsError) as err:
                     self._failures.append(("pdf_fail", x, err))
                     fail_l.warning("Pdf Update Failed: %s : %s", x, err)
+                finally:
+                    if not x.exists():
+                        raise FileNotFoundError("File has gone missing", x)
             case x if x.suffix == ".epub":
                 try:
                     self.backup_original_metadata(x)
@@ -324,6 +327,9 @@ class MetadataApplicator(_Pdf_Update_m, _Epub_Update_m, _EntryFileGetter_m, _Met
                 except (ValueError, ChildProcessError) as err:
                     self._failures.append(("epub_fail", x, err))
                     fail_l.warning("Epub Update failed: %s : %s", x, err)
+                finally:
+                    if not x.exists():
+                        raise FileNotFoundError("File has gone missing", x)
             case x:
                 self._failures.append(("unknown", x, None))
                 fail_l.warning("Found a file that wasn't an epub or pdf: %s", x)
@@ -355,8 +361,13 @@ class FileCheck(_Pdf_Update_m, _EntryFileGetter_m, LibraryMiddleware):
             case None:
                 return
             case x if not x.exists():
-                update = BTP.model.Field("orphaned", "True"),
+                update = BTP.model.Field("orphaned", "True")
                 entry.set_field(update)
+            case x if x.suffix == ".pdf" and "pdf_locked" in entry.fields_dict:
+                pass
             case x if x.suffix == ".pdf" and not self.pdf_is_modifiable(x):
-                update = BTP.model.Field("pdf_locked", "True"),
+                update = BTP.model.Field("pdf_locked", "True")
+                entry.set_field(update)
+            case x if x.suffix == ".pdf":
+                update = BTP.model.Field("pdf_locked", "False")
                 entry.set_field(update)

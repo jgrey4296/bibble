@@ -32,16 +32,15 @@ from uuid import UUID, uuid1
 import more_itertools as mitz
 ##-- end lib imports
 
-##-- logging
-logging = logmod.getLogger(__name__)
-printer = logmod.getLogger("doot._printer")
-##-- end logging
-
 import bibtexparser
 import bibtexparser.model as model
 from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
+
+##-- logging
+logging = logmod.getLogger(__name__)
+##-- end logging
 
 class PathReader(BlockMiddleware):
     """
@@ -50,7 +49,7 @@ class PathReader(BlockMiddleware):
 
     @staticmethod
     def metadata_key():
-:        return "BM-path-reader"
+        return "BM-path-reader"
 
     def __init__(self, lib_root:pl.Path=None):
         super().__init__(True, True)
@@ -71,6 +70,6 @@ class PathReader(BlockMiddleware):
                     field.value = self._lib_root / base
 
             if not field.value.exists():
-                printer.warning("On Import file does not exist: %s", field.value)
+                logging.warning("On Import file does not exist: %s", field.value)
 
         return entry
