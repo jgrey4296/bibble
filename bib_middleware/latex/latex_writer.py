@@ -48,6 +48,8 @@ logging = logmod.getLogger(__name__)
 DEFAULT_ENCODING_RULES : Final[list[UnicodeToLatexConversionRule]] = [
     UnicodeToLatexConversionRule(rule_type=RULE_REGEX,
                                  rule=[
+                                     (re.compile("ẹ"), r'\\{d}'),
+
                                      (re.compile("ǒ"), r'\\v{o}'),
                                      (re.compile("ọ"), r'\\d{o}'),
 
