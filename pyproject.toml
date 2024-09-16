@@ -24,14 +24,20 @@ dependencies   = [
 ]
 
 [project.optional-dependencies]
-docs = [ "sphinx" ]
+docs = [
+    "Sphinx >=7.4.0",
+    "sphinx-rtd-theme",
+    "myst_parser >= 4.0.0",
+    # "sphinx-tomlconf@git+https://github.com/jgrey4296/sphinx-tomlconf",
+
+]
 # dev  = [ "pipreqs"]
 test = [ "pytest > 7.0.0" ]
 
 ##-- urls
 [project.urls]
 homepage      = "https://github.com/jgrey4296/bib-middleware"
-documentation = "https://readthedocs.org/bib-middleware"
+documentation = "https://bib-middleware.readthedocs.io/en/latest"
 repository    = "https://github.com/jgrey4296/bib-middleware"
 changelog     = "https://github.com//bib-middleware/blob/master/CHANGELOG.md"
 
