@@ -49,6 +49,7 @@ DEFAULT_ENCODING_RULES : Final[list[UnicodeToLatexConversionRule]] = [
     UnicodeToLatexConversionRule(rule_type=RULE_REGEX,
                                  rule=[
                                      (re.compile("ẹ"), r'\\{d}'),
+                                     (re.compile("é"), r"\\'{e}"),
 
                                      (re.compile("ǒ"), r'\\v{o}'),
                                      (re.compile("ọ"), r'\\d{o}'),
