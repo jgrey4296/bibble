@@ -52,15 +52,18 @@ class FieldSubstitutor(ErrorRaiser_m, FieldMatcher_m, BaseWriter):
     def metadata_key():
         return "BM-field-sub"
 
-    def __init__(self, field:str, subs:SubstitutionFile, force_single_value:bool=False, **kwargs):
+    def __init__(self, field:str, subs:None|SubstitutionFile, force_single_value:bool=False, **kwargs):
         super().__init__(**kwargs)
         self._target_field       = field
         self._subs               = subs
         self._force_single_value = force_single_value
-
+        self.set_field_matchers(white=[self._target_field])
 
     def transform_entry(self, entry, library):
-        entry, errors = self.match_on_field(entry, library)
+        if self._subs is None or not bool(self._subs):
+            return entry
+
+        entry, errors = self.match_on_fields(entry, library)
         match self.maybe_error_block(entry, errors):
             case None:
                 return entry
@@ -80,4 +83,6 @@ class FieldSubstitutor(ErrorRaiser_m, FieldMatcher_m, BaseWriter):
                 return model.Field(field.key, result), []
             case value:
                 logging.warning("Unsupported replacement field value type(%s): %s", entry.key, type(value))
+                breakpoint()
+                pass
                 return field, []

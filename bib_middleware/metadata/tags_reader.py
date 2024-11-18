@@ -72,8 +72,8 @@ class TagsReader(BlockMiddleware):
             case model.Field(value=val) if not bool(val):
                 logging.warning("Entry has no Tags on parse: %s", entry.key)
                 entry.set_field(model.Field("tags", set()))
-            case model.Field(value=str()):
-                as_set = set(field.value.split(","))
+            case model.Field(value=str() as val):
+                as_set = set(val.split(","))
                 entry.set_field(model.Field("tags", as_set))
                 TagsReader._all_tags.update(as_set)
 

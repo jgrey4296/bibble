@@ -71,7 +71,7 @@ DEFAULT_ENCODING_RULES : Final[list[UnicodeToLatexConversionRule]] = [
 URL_RULE  : Final[UnicodeToLatexConversionRule] = UnicodeToLatexConversionRule(rule_type=RULE_REGEX, rule=[(re.compile(r"(https?://\S*\.\S*)"), r"\\url{\1}"), (re.compile(r"(www.\S*\.\S*)"), r"\\url{\1}")])
 MATH_RULE : Final[UnicodeToLatexConversionRule] = UnicodeToLatexConversionRule(rule_type=RULE_REGEX, rule=[(re.compile(r"(?<!\\)(\$.*[^\\]\$)"), r"\1")])
 
-class LatexWriter(FieldMatcher_m, StringTransform_m, BlockMiddleWare):
+class LatexWriter(FieldMatcher_m, StringTransform_m, BlockMiddleware):
     """ Unicode->Latex Transform.
     all strings in the library except urls, files, dois and crossrefs
     see https://pylatexenc.readthedocs.io/en/latest/latexencode/

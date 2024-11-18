@@ -67,7 +67,7 @@ class PathReader(FieldMatcher_m, BlockMiddleware):
         base = pl.Path(field.value)
         match base.parts[0]:
             case "/":
-                value = base
+                field.value = base
             case "~":
                 field.value = base.expanduser().absolute()
             case _:

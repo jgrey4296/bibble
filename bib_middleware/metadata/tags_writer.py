@@ -61,15 +61,18 @@ class TagsWriter(BaseWriter):
 
     def transform_entry(self, entry, library):
         match entry.get("tags"):
-            case None | model.Field(value=val) if not bool(val):
+            case None:
                 logging.warning("Entry has No Tags on write: %s", entry.key)
                 entry.set_field(model.Field("tags", ""))
-            case model.Field(value=set() as val):
-                entry.set_field(model.Field("tags", ",".join(val)))
+            case model.Field(value=val) if not bool(val):
+                logging.warning("Entry has No Tags on write: %s", entry.key)
+                entry.set_field(model.Field("tags", ""))
+            case model.Field(value=set() as vals):
+                entry.set_field(model.Field("tags", ",".join(sorted(vals))))
 
 
         if self._to_keywords:
-            entry.set_field(model.Field("keywords", entry.get("tags").value)
+            entry.set_field(model.Field("keywords", entry.get("tags").value))
 
         return entry
 

@@ -68,12 +68,12 @@ class PathWriter(ErrorRaiser_m, FieldMatcher_m, BaseWriter):
             case errblock:
                 return errblock
 
-    def field_matcher(self, field, entry):
+    def field_handler(self, field, entry):
         errors = []
         match field.value:
             case str():
                 pass
-            case pl.Path() as val: if not val.exists():
+            case pl.Path() as val if not val.exists():
                 logging.warning("On Export file does not exist: %s", val)
             case pl.Path() as val:
                 try:

@@ -59,7 +59,7 @@ class TitleReader(BlockMiddleware):
             case None:
                 logging.warning("Entry has no title: %s", entry.key)
             case model.Field(value=value):
-                field.value = value.strip()
+                entry.set_field(model.field("title", value.strip()))
 
         return entry
 

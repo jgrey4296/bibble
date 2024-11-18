@@ -58,11 +58,13 @@ class SubTitleReader(BlockMiddleware):
         match entry.get("title"), entry.get("subtitle"):
             case None, _:
                 logging.warning("Entry has no title: %s", entry.key)
-            case model.Field(), model.Field():
+            case model.Field(value=title), model.Field(value=subtitle):
+                entry.set_field(model.Field("title", title.strip()))
+                entry.set_field(model.Field("subtitle", subtitle.strip()))
                 pass
             case model.Field(value=value), None if ":" in value:
                 title, *rest = value.split(":")
-                entry.set_field(model.Field("title", title))
-                entry.set_field(model.Field("subtitle", ": ".join(rest)))
+                entry.set_field(model.Field("title", title.strip()))
+                entry.set_field(model.Field("subtitle", " ".join(rest).strip()))
 
         return entry

@@ -53,7 +53,7 @@ DEFAULT_DECODE_RULES : Final[dict] = {
     "BM-reader-simplify-urls" : MacroTextSpec("url", simplify_repl="%s"),
 }
 
-class LatexReader(ErrorRaiser_m, FieldMatcher_m, StringTransform_m, BlockMiddleWare):
+class LatexReader(ErrorRaiser_m, FieldMatcher_m, StringTransform_m, BlockMiddleware):
     """ Latex->unicode transform.
     all strings in the library, except urls, files, doi's and crossrefs
     """

@@ -65,7 +65,7 @@ class CleanUrls(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
     def field_handler(self, field, entry):
         fields = []
         match field.value:
-            case str() as value if value.startswith("https://doi.org") if name == "doi" or "doi" not in entry:
+            case str() as value if value.startswith("https://doi.org") and (name == "doi" or "doi" not in entry):
                 clean = value.removeprefix("https://doi.org/")
                 fields.append(model.Field("doi", clean))
             case str() as value if value.startswith("db/") and "bibsource" not in entry:

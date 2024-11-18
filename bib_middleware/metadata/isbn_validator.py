@@ -56,19 +56,19 @@ class IsbnValidator(BlockMiddleware):
         return "BM-isbn-validator"
 
     def transform_entry(self, entry, library):
-        f_dict = entry.fields_dict
-        if 'isbn' not in f_dict:
-            return entry
-        if not bool(f_dict['isbn'].value):
-            return entry
-
-        try:
-            isbn = pyisbn.Isbn(ISBN_STRIP_RE.sub("", f_dict['isbn'].value))
-            if not isbn.validate():
-                raise pyisbn.IsbnError("validation fail")
-        except pyisbn.IsbnError:
-            logging.warning("ISBN validation fail: %s : %s", entry.key, f_dict['isbn'].value)
-            entry.set_field(model.Field("invalid_isbn", f_dict['isbn'].value))
-            entry.set_field(model.Field("isbn", ""))
+        match entry.get("isbn"):
+            case None:
+                return entry
+            case model.Field(value=str() as val) if bool(val):
+                try:
+                    isbn = pyisbn.Isbn(ISBN_STRIP_RE.sub("", val))
+                    if not isbn.validate():
+                        raise pyisbn.IsbnError("validation fail")
+                except pyisbn.IsbnError:
+                    logging.warning("ISBN validation fail: %s : %s", entry.key, val)
+                    entry.set_field(model.Field("invalid_isbn", val))
+                    entry.set_field(model.Field("isbn", ""))
+            case model.Field(value=str() as val):
+                del entry['isbn']
 
         return entry

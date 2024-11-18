@@ -51,7 +51,7 @@ class FieldMatcher_m:
         super().__init__(**kwargs)
         self.set_field_matchers([],[])
 
-    def set_field_matchers(self, white:list[str], black:list[str], keep_default=True) -> Self:
+    def set_field_matchers(self, white:list[str]=None, black:list[str]=None, keep_default=True) -> Self:
         """ sets the blacklist and whitelist regex's
         returns self to help in building parse stacks
         """
@@ -84,9 +84,7 @@ class FieldMatcher_m:
         for field in entry.fields:
             res = None
             match field:
-                case model.Field(key=key) if blacklist.match(key):
-                    continue
-                case model.Field(key=key) if whitelist.match(key):
+                case model.Field(key=key) if whitelist.match(key) and not blacklist.match(key):
                     res, errs = self.field_handler(field, entry)
                     errors += errs
 

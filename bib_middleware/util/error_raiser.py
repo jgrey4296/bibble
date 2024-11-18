@@ -42,7 +42,7 @@ class ErrorRaiser_m:
     """ Mixin for easily raising middleware errors """
 
     def maybe_error_block(self, entry:Entry, errs:list[str]) -> None|MiddlewareErrorBlock:
-        errors = [e for e in errors if e != ""]
+        errors = [e for e in errs if e != ""]
         if not bool(errors):
             return None
 
