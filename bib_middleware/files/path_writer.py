@@ -38,34 +38,49 @@ from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 from bib_middleware.util.base_writer import BaseWriter
+from bib_middleware.util.field_matcher import FieldMatcher_m
+from bib_middleware.util.error_raiser import ErrorRaiser_m
 
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-class PathWriter(BaseWriter):
+class PathWriter(ErrorRaiser_m, FieldMatcher_m, BaseWriter):
     """
       Relativize library paths back to strings
     """
+
+    _field_whitelist = ["file"]
 
     @staticmethod
     def metadata_key():
         return "BM-path-writer"
 
-    def __init__(self, lib_root:pl.Path=None):
-        super().__init__()
+    def __init__(self, lib_root:pl.Path=None, **kwargs):
+        super().__init__(**kwargs)
         self._lib_root = lib_root
 
     def transform_entry(self, entry, library):
-        for field in entry.fields:
-            try:
-                if "file" in field.key:
-                    if not field.value.exists():
-                        logging.warning("On Export file does not exist: %s", field.value)
-                    field.value = str(field.value.relative_to(self._lib_root))
-                elif "look_in" in field.key:
-                    field.value = str(field.value.relative_to(self._lib_root))
-            except ValueError:
-                field.value = str(field.value)
+        entry, errors = self.match_on_fields(entry, library)
+        match self.maybe_error_block(entry, errors):
+            case None:
+                return entry
+            case errblock:
+                return errblock
 
-        return entry
+    def field_matcher(self, field, entry):
+        errors = []
+        match field.value:
+            case str():
+                pass
+            case pl.Path() as val: if not val.exists():
+                logging.warning("On Export file does not exist: %s", val)
+            case pl.Path() as val:
+                try:
+                    as_str = val.relative_to(self._lib_root)
+                    field.value = as_str
+                except ValueError:
+                    field.value = str(val)
+                    errors.append(f"Failed to Relativize path (%s): %s ", entry.key, val)
+
+        return field, errors
