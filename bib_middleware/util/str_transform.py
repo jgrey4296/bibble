@@ -32,13 +32,15 @@ from bibtexparser.middlewares.names import parse_single_name_into_parts, NamePar
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-class _PyStringTransformerMiddleware(BlockMiddleware, abc.ABC):
-    """Abstract utility class allowing to modify python-strings
-    extracted from bibtexparser middlewares
+class StringTransform_m:
+    """ Mixin for handling transform of strings
+    extracted from bibtexparser middlewares.
+
+    Implement _transform_python_value_string,
+    and call transform_string_like
     """
 
-    @abc.abstractmethod
-    def _transform_python_value_string(self, python_string: str) -> Tuple[str, str]:
+    def _transform_python_value_string(self, python_string:str) -> Tuple[str, str]:
         """Called for every python (value, not key) string found on Entry and String blocks.
 
         Returns:
@@ -58,29 +60,26 @@ class _PyStringTransformerMiddleware(BlockMiddleware, abc.ABC):
         return res
 
     # docstr-coverage: inherited
-    def transform_entry(self, entry: Entry, library: Library) -> Block:
+    def transform_string_like(self, value:str|NameParts|list|set) -> tuple[Any,list[str]]:
         errors = []
-        for field in entry.fields:
-            if isinstance(field.value, str):
-                field.value, e = self._transform_python_value_string(field.value)
+        match val:
+            case str() if val.startswith("{"):
+                val, e = self._transform_python_value_string(val[1:-1])
+                val = "".join(["{", value,"}"])
                 errors.append(e)
-            elif isinstance(field.value, NameParts):
-                field.value.first = self._transform_all_strings(field.value.first, errors)
-                field.value.last = self._transform_all_strings(field.value.last, errors)
-                field.value.von = self._transform_all_strings(field.value.von, errors)
-                field.value.jr = self._transform_all_strings(field.value.jr, errors)
-            else:
-                logging.info(
-                    f" [{self.metadata_key()}] Cannot python-str transform field {field.key}"
-                    f" with value type {type(field.value)}"
-                )
+            case str():
+                val, e = self._transform_python_value_string(field.value)
+                errors.append(e)
+            case NameParts():
+                val.first = self._transform_all_strings(val.first, errors)
+                val.last  = self._transform_all_strings(val.last,  errors)
+                val.von   = self._transform_all_strings(val.von,   errors)
+                val.jr    = self._transform_all_strings(val.jr,    errors)
+            case _:
+                pass
 
         errors = [e for e in errors if e != ""]
-        if len(errors) > 0:
-            errors = PartialMiddlewareException(errors)
-            return MiddlewareErrorBlock(block=entry, error=errors)
-        else:
-            return entry
+        return val, errors
 
     # docstr-coverage: inherited
     def transform_string(self, string: String, library: "Library") -> Block:
