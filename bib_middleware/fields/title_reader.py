@@ -55,11 +55,11 @@ class TitleReader(BlockMiddleware):
         super().__init__(True, True)
 
     def transform_entry(self, entry, library):
-        for field in entry.fields:
-            if not "title" in field.key:
-                continue
-
-            field.value = field.value.strip()
+        match entry.get("title"):
+            case None:
+                logging.warning("Entry has no title: %s", entry.key)
+            case model.Field(value=value):
+                field.value = value.strip()
 
         return entry
 

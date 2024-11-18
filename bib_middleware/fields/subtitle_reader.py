@@ -32,7 +32,6 @@ from uuid import UUID, uuid1
 import more_itertools as mitz
 ##-- end lib imports
 
-
 import bibtexparser
 import bibtexparser.model as model
 from bibtexparser import middlewares as ms
@@ -56,17 +55,14 @@ class SubTitleReader(BlockMiddleware):
         super().__init__(True, True)
 
     def transform_entry(self, entry, library):
-        f_dict = entry.fields_dict
-        if "subtitle" in f_dict:
-            return entry
-        if 'title' not in f_dict:
-            return entry
-
-        if ":" not in f_dict['title'].value:
-            return entry
-
-        parts = f_dict['title'].value.split(":")
-        entry.set_field(model.Field("title", parts[0]))
-        entry.set_field(model.Field("subtitle", ": ".join(parts[1:])))
+        match entry.get("title"), entry.get("subtitle"):
+            case None, _:
+                logging.warning("Entry has no title: %s", entry.key)
+            case model.Field(), model.Field():
+                pass
+            case model.Field(value=value), None if ":" in value:
+                title, *rest = value.split(":")
+                entry.set_field(model.Field("title", title))
+                entry.set_field(model.Field("subtitle", ": ".join(rest)))
 
         return entry
