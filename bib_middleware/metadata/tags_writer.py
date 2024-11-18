@@ -32,7 +32,6 @@ from uuid import UUID, uuid1
 import more_itertools as mitz
 ##-- end lib imports
 
-
 import bibtexparser
 import bibtexparser.model as model
 from bibtexparser import middlewares as ms
@@ -48,16 +47,23 @@ logging = logmod.getLogger(__name__)
 
 class TagsWriter(BaseWriter):
     """
-      Reduce tag set to a string
+      Reduce tag set to a string.
+      Pass in to_keywords=True to convert tags -> keywords for bibtex2html
     """
 
     @staticmethod
     def metadata_key():
         return "BM-tags-writer"
 
+    def __init__(self, to_keywords=False, **kwargs):
+        super().__init__(**kwargs)
+        self._to_keywords = to_keywords
+
     def transform_entry(self, entry, library):
         for field in entry.fields:
             if field.key == "tags":
                 field.value = ",".join(sorted(field.value))
+            if field.key == "tags" and self._to_keywords:
+                field.key = "keywords"
 
         return entry
