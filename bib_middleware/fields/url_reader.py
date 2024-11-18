@@ -38,35 +38,42 @@ from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
+from bib_middleware.util.error_raiser import ErrorRaiser_m
+from bib_middleware.util.field_matcher import FieldMatcher_m
+
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-class CleanUrls(BlockMiddleware):
+class CleanUrls(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
     """ Strip unnecessary doi and dblp prefixes from urls  """
+
+    _field_whiteist = ["doi", "url", "ee"]
 
     @staticmethod
     def metadata_key():
         return "BM-clean-urls"
 
     def transform_entry(self, entry, library):
-        fields_dict = entry.fields_dict
-        if "doi" in fields_dict:
-            clean = fields_dict['doi'].value.removeprefix("https://doi.org/")
-            fields_dict['doi'] = model.Field("doi", clean)
+        entry, errors = self.match_on_fields(entry, library)
+        match self.maybe_error_block(entry, errors):
+            case None:
+                return entry
+            case errblock:
+                return errblock
 
-        if "url" in fields_dict:
-            url = fields_dict['url'].value
-            if url.startswith("db/"):
-                joined                   = "".join(["https://dblp.org/", url])
-                fields_dict['biburl']    = model.Field("biburl", joined)
-                fields_dict['bibsource'] = model.Field('bibsource', "dblp computer science bibliography, https://dblp.org")
-                del fields_dict['url']
+    def field_handler(self, field, entry):
+        fields = []
+        match field.value:
+            case str() as value if value.startswith("https://doi.org") if name == "doi" or "doi" not in entry:
+                clean = value.removeprefix("https://doi.org/")
+                fields.append(model.Field("doi", clean))
+            case str() as value if value.startswith("db/") and "bibsource" not in entry:
+                url = "".join(["https://dblp.org/", url])
+                fields.append(model.Field("biburl", url))
+                fields.append(model.Field("bibsource", "dblp computer science bibliography, https://dblp.org"))
+            case str() as value if field.key == "ee" and "url" not in entry:
+                fields.append(model.Field("url", value))
+                fields.append(model.Field("ee", ""))
 
-        if "ee" in fields_dict:
-            url = fields_dict['ee'].value
-            del fields_dict['ee']
-            fields_dict['url'] = model.Field("url", url)
-
-        entry.fields = list(fields_dict.values())
         return entry
