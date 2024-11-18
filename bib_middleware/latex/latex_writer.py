@@ -41,6 +41,9 @@ from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddlewa
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
 from pylatexenc.latexencode import UnicodeToLatexConversionRule, RULE_REGEX, UnicodeToLatexEncoder
+
+from bib_middleware.latex._str_transform import _PyStringTransformerMiddleware
+
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
@@ -58,15 +61,22 @@ DEFAULT_ENCODING_RULES : Final[list[UnicodeToLatexConversionRule]] = [
                                      (re.compile("ụ"), r'\\d{u}'),
 
                                      (re.compile("Ẇ"), r'\\.{W}'),
+
+                                     (re.compile("ș"), r''),
+                                     (re.compile("Ș"), r''),
                                  ])
 ]
 URL_RULE  : Final[UnicodeToLatexConversionRule] = UnicodeToLatexConversionRule(rule_type=RULE_REGEX, rule=[(re.compile(r"(https?://\S*\.\S*)"), r"\\url{\1}"), (re.compile(r"(www.\S*\.\S*)"), r"\\url{\1}")])
 MATH_RULE : Final[UnicodeToLatexConversionRule] = UnicodeToLatexConversionRule(rule_type=RULE_REGEX, rule=[(re.compile(r"(?<!\\)(\$.*[^\\]\$)"), r"\1")])
 
-class LatexWriter(ms.LatexEncodingMiddleware):
+class LatexWriter(_PyStringTransformerMiddleware):
     """ Unicode->Latex Transform.
     all strings in the library except urls, files, dois and crossrefs
     see https://pylatexenc.readthedocs.io/en/latest/latexencode/
+
+    to customize the conversion rules, use pylatexenc.latexencode
+    and call rebuild_encoder with them
+
     """
 
     _skip_fields = ["url", "file", "doi", "crossref"]
@@ -135,3 +145,9 @@ class LatexWriter(ms.LatexEncodingMiddleware):
 
     def _test_string(self, text) -> str:
         return self._encoder.unicode_to_latex(text)
+
+    def _transform_python_value_string(self, python_string: str) -> Tuple[str, str]:
+        try:
+            return self._encoder.unicode_to_latex(python_string), ""
+        except Exception as e:
+            return python_string, str(e)

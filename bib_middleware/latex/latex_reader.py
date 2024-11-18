@@ -42,6 +42,8 @@ from bibtexparser.middlewares.names import parse_single_name_into_parts, NamePar
 
 from pylatexenc.latex2text import LatexNodes2Text, MacroTextSpec, get_default_latex_context_db
 
+from bib_middleware.latex._str_transform import _PyStringTransformerMiddleware
+
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
@@ -50,7 +52,7 @@ DEFAULT_DECODE_RULES : Final[dict] = {
     "BM-reader-simplify-urls" : MacroTextSpec("url", simplify_repl="%s"),
 }
 
-class LatexReader(ms.LatexDecodingMiddleware):
+class LatexReader(_PyStringTransformerMiddleware):
     """ Latex->unicode transform.
     all strings in the library, except urls, files, doi's and crossrefs
     """
@@ -122,3 +124,14 @@ class LatexReader(ms.LatexDecodingMiddleware):
 
     def _test_string(self, text) -> str:
         return self._decoder.latex_to_text(text)
+
+    def _transform_python_value_string(self, python_string: str) -> Tuple[str, str]:
+        """Transforms a python string to a latex string
+
+        Returns:
+            Tuple[str, str]: The transformed string and a possible error message
+        """
+        try:
+            return self._decoder.latex_to_text(python_string), ""
+        except Exception as e:
+            return python_string, str(e)
