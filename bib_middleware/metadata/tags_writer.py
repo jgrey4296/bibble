@@ -38,7 +38,7 @@ from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
-from jgdv.files.tags import TagFile
+from jgdv.files.tags import SubstitutionFile
 from bib_middleware.util.base_writer import BaseWriter
 
 ##-- logging
@@ -60,10 +60,16 @@ class TagsWriter(BaseWriter):
         self._to_keywords = to_keywords
 
     def transform_entry(self, entry, library):
-        for field in entry.fields:
-            if field.key == "tags":
-                field.value = ",".join(sorted(field.value))
-            if field.key == "tags" and self._to_keywords:
-                field.key = "keywords"
+        match entry.get("tags"):
+            case None | model.Field(value=val) if not bool(val):
+                logging.warning("Entry has No Tags on write: %s", entry.key)
+                entry.set_field(model.Field("tags", ""))
+            case model.Field(value=set() as val):
+                entry.set_field(model.Field("tags", ",".join(val)))
+
+
+        if self._to_keywords:
+            entry.set_field(model.Field("keywords", entry.get("tags").value)
 
         return entry
+

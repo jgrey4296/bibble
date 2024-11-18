@@ -65,9 +65,16 @@ class TagsReader(BlockMiddleware):
             TagsReader._all_tags = TagFile()
 
     def transform_entry(self, entry, library):
-        for field in entry.fields:
-            if field.key == "tags":
-                field.value = set(field.value.split(","))
-                TagsReader._all_tags.update(field.value)
+        match entry.get("tags"):
+            case None:
+                logging.warning("Entry has no Tags on parse: %s", entry.key)
+                entry.set_field(model.Field("tags", set()))
+            case model.Field(value=val) if not bool(val):
+                logging.warning("Entry has no Tags on parse: %s", entry.key)
+                entry.set_field(model.Field("tags", set()))
+            case model.Field(value=str()):
+                as_set = set(field.value.split(","))
+                entry.set_field(model.Field("tags", as_set))
+                TagsReader._all_tags.update(as_set)
 
         return entry
