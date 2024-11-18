@@ -38,9 +38,10 @@ logging = logmod.getLogger(__name__)
 
 class FieldMatcher_m:
     """ Mixin to process fields if their key matchs a regex
-    defaults are in the attrs _field_blacklist and _field_whitelist
+    defaults are in the attrs _field_blacklist and _field_whitelist, _entry_whitelist
     Call set_field_matchers to extend.
     Call match_on_fields to start.
+    Call maybe_skip_entry to compare the lowercase entry type to a whitelist
     Implement field_handler to use.
 
     match_on_fields calls entry.set_field on the field_handlers result
@@ -81,17 +82,27 @@ class FieldMatcher_m:
         errors = []
         whitelist, blacklist = self._field_white_re, self._field_black_re
         for field in entry.fields:
+            res = None
             match field:
                 case model.Field(key=key) if blacklist.match(key):
                     continue
                 case model.Field(key=key) if whitelist.match(key):
-                    res, errs = self.field_handler(field)
+                    res, errs = self.field_handler(field, entry)
                     errors += errs
+
+            match res:
+                case model.Field():
                     entry.set_field(res)
+                case [*xs]:
+                    for x in xs:
+                        entry.set_field(x)
 
         else:
             return entry, errors
 
 
-    def field_handler(self, field:model.Field) -> tuple[model.Field, list[str]]:
+    def field_handler(self, field:model.Field, entry:Entry) -> tuple[model.Field|list[model.Field], list[str]]:
         raise NotImplementedError("Implement the field handler")
+
+    def should_skip_entry(self, entry, library) -> bool:
+        return entry.entry_type.lower() not in getattr(self, "_entry_whitelist", [])
