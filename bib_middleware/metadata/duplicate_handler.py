@@ -59,11 +59,16 @@ class DuplicateHandler(LibraryMiddleware):
                 case model.DuplicateBlockKeyBlock():
                     uuid = uuid1().hex
                     duplicate = block.ignore_error_block
+                    original = duplicate.key
                     duplicate.key = f"{duplicate.key}_dup_{uuid}"
+                    logging.warning("Duplicate Key found: %s -> %s", original, duplicate.key)
                     library.add(duplicate)
                     library.remove(block)
                 case _:
-                    logging.warning("Bad Block: : %s", block.start_line)
+                    raw = ""
+                    if block._raw:
+                        raw = block._raw[:20]
+                    logging.warning("Bad Block: : %s : %s", block.start_line, raw)
 
         return library
 
