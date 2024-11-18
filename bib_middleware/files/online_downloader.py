@@ -42,6 +42,7 @@ from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddlewa
 import base64
 from jgdv.files.tags import TagFile
 from jgdv.files.bookmarks import BookmarkCollection
+from bib_middleware.util.field_matcher import FieldMatcher_m
 
 ##-- logging
 logging = logmod.getLogger(__name__)
@@ -52,41 +53,39 @@ READER_PREFIX      : Final[str] = "about:reader?url="
 LOAD_TIMEOUT       : Final[int] = 2
 WAYBACK_USER_AGENT : Final[str] = "Mozilla/5.0 (Windows NT 5.1; rv:40.0) Gecko/20100101 Firefox/40.0"
 
-class OnlineDownloader(BlockMiddleware):
+class OnlineDownloader(FieldMatcher_m, BlockMiddleware):
     """
       if the entry is 'online', and it doesn't have a file associated with it,
       download it as a pdf and add it to the entry
     """
+    _entry_whitelit = ["online", "blog"]
 
     @staticmethod
     def metadata_key():
         return "BM-online-handler"
 
-    def __init__(self, target:pl.Path):
-        super().__init__()
-        self._target = target
+    def __init__(self, target:pl.Path, *e_types:str, **kwargs):
+        super().__init__(**kwargs)
+        self._target_dir         : pl.Path   = target
+        self._target_entry_types : list[str] = list(e_types or ["online", "blog"])
 
     def transform_entry(self, entry, library):
-        if entry.entry_type != "online":
-            logging.info("Entry %s : Skipping non-online entry", entry.key)
+        if self.should_skip_entry(entry, library):
             return entry
 
-        fields = entry.fields_dict
-        if "url" not in fields:
-            logging.warning("Entry %s : no url found", entry.key)
-            return entry
-
-        if "file" in fields:
-            logging.info("Entry %s : Already has file", entry.key)
-            return entry
-
-        # save the url
-        url      = fields['url'].value
-        safe_key = entry.key.replace(":","_")
-        dest     = (self._target / safe_key).with_suffix(".pdf")
-        self.save_pdf(url, dest)
-        # add it to the entry
-        entry.set_field(model.Field("file", value=dest))
+        match entry.get("url"), entry.get("file"):
+            case _, has_file:
+                logging.info("Entry %s : Already has file", entry.key)
+                return entry
+            case None, _:
+                logging.warning("Entry %s : no url found", entry.key)
+                return entry
+            case model.Field(value=url), None:
+                safe_key = entry.key.replace(":","_")
+                dest     = (self._target_dir / safe_key).with_suffix(".pdf")
+                self.save_pdf(url, dest)
+                # add it to the entry
+                entry.set_field(model.Field("file", value=dest))
 
         return entry
 
