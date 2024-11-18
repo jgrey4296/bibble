@@ -42,22 +42,46 @@ from bibtexparser.middlewares.names import parse_single_name_into_parts, NamePar
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-KEY_CLEAN_RE = re.compile(r"[/:{}]")
-KEY_SUB_CHAR = "_"
+KEY_CLEAN_RE  : Final[re.Pattern] = re.compile(r"[/:{}]")
+KEY_SUFFIX_RE : Final[re.Pattern] = re.compile("_+$")
+KEY_SUB_CHAR  : Final[str]        = "_"
+LOCK_CHAR     : Final[str]        = "_"
 
 class LockCrossrefKeys(BlockMiddleware):
-    """ ensure crossref consistency by appending _ to keys and removing chars i don't like"""
+    """ Ensure key/crossref consistency by:
+    removing unwanted chars in the key,
+    'locking' the key by forcing the key suffix to be a single underscore
+    doing the same process to crossref fields.
+
+    locked keys are ignored
+    """
 
     @staticmethod
     def metadata_key():
         return "BM-lock-crossrefs"
 
+    def __init__(self, regex:str|re.Pattern, sub:str, **kwargs):
+        super().__init__(**kwargs)
+        self._regex     : re.Pattern = re.compile(regex or KEY_CLEAN_RE)
+        self._sub       : str        = sub or KEY_SUB_CHAR
+        self._lock_char : str        = LOCK_CHAR
+        self._bad_lock  : str        = f"{LOCK_CHAR}{LOCK_CHAR}"
+
     def transform_entry(self, entry, library):
-        clean_key = KEY_CLEAN_RE.sub(KEY_SUB_CHAR, entry.key)
-        entry.key = f"{clean_key}_"
-        if "crossref" in entry.fields_dict:
-            orig = entry.fields_dict['crossref'].value
-            clean_ref = KEY_CLEAN_RE.sub(KEY_SUB_CHAR, orig)
-            entry.set_field(model.Field("crossref", f"{clean_ref}_"))
+        entry.key = self.clean_key(entry.key)
+
+        match entry.get("crossref"):
+            case None:
+                pass
+            case model.Field(value=value):
+                entry.set_field(model.Field("crossref", self.clean_key(value)))
 
         return entry
+
+    def clean_key(self, key:str) -> str:
+        if key.endswith(self._lock_char) and not key.endswith(self._bad_lock):
+            return key
+
+        clean_key = self._regex.sub(self._sub, key)
+        clean_key = KEY_SUFFIX_RE.sub("", key)
+        return f"{clean_key}{self._lock_char}"
