@@ -39,7 +39,7 @@ class BibMiddlewareLibrary(Library):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._kv_store    = defaultdict(list)
+        self._kv_store    = defaultdict(set)
         self.source_files = set()
 
     def add_sublibrary(self, lib:Library, source=None) -> Self:
@@ -70,12 +70,12 @@ class BibMiddlewareLibrary(Library):
                 key = key.metadata_key()
 
         match value:
-            case list():
-                self._kv_store[key] += value
+            case list() | set:
+                self._kv_store[key].update(value)
             case _:
-                self._kv_store[key].append(value)
+                self._kv_store[key] = value
 
-    def get_meta_value(self, key) -> list:
+    def get_meta_value(self, key) -> set|Any:
         match key:
             case str():
                 return self._kv_store[key]
