@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
 
+
+
 """
 
 # Imports:
@@ -42,6 +44,7 @@ from jgdv.files.tags import SubstitutionFile
 from bib_middleware.util.base_writer import BaseWriter
 from bib_middleware.util.error_raiser import ErrorRaiser_m
 from bib_middleware.util.field_matcher import FieldMatcher_m
+from bib_middleware.fields.field_substitutor import FieldSubstitutor
 
 # ##-- end 1st party imports
 
@@ -49,55 +52,36 @@ from bib_middleware.util.field_matcher import FieldMatcher_m
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-
-class FieldSubstitutor(ErrorRaiser_m, FieldMatcher_m, BaseWriter):
-    """
-      For a given field(s), and a given jgdv.SubstitutionFile,
-    replace the field value as necessary in each entry.
-
-    If force_single_value is True, only the first replacement will be used,
-    others will be discarded
-
-    """
+class NameSubstitutor(FieldSubstitutor):
+    """ replaces names in author and editor fields as necessary """
 
     @staticmethod
     def metadata_key():
-        return "BM-field-sub"
+        return "BM-name-sub"
 
-    def __init__(self, fields:str|list[str], subs:None|SubstitutionFile, force_single_value:bool=False, **kwargs):
-        super().__init__(**kwargs)
-        match fields:
-            case str() as x:
-                self._target_fields = [x]
-            case list():
-                self._target_fields = fields
-
-        self._subs               = subs
-        self._force_single_value = force_single_value
-        self.set_field_matchers(white=self._target_fields)
-
-    def transform_entry(self, entry, library):
-        if self._subs is None or not bool(self._subs):
-            return entry
-
-        entry, errors = self.match_on_fields(entry, library)
-        match self.maybe_error_block(entry, errors):
-            case None:
-                return entry
-            case errblock:
-                return errblock
+    def __init__(self, subs:None|SubstitutionFile, **kwargs):
+        super().__init__(["author", "editor"], subs, **kwargs)
 
     def field_handler(self, field, entry):
         match field.value:
-            case str() as value if self._force_single_value:
-                head, *_ = list(self._subs.sub(value))
-                return model.Field(field.key, head), []
-            case str() as value:
-                subs = list(self._subs.sub(value))
-                return model.Field(field.key, subs), []
-            case list() | set() as value:
-                result = self._subs.sub_many(*value)
-                return model.Field(field.key, result), []
+            case str():
+                logging.warning("Name parts should already be combined, but authors shouldn't be merged yet")
+                return field, []
+            case [*xs] if any(isinstance(x, NameParts) for x in xs):
+                logging.warning("Name parts should already be combined, but authors shouldn't be merged yet")
+                return field, []
+            case []:
+                return field, []
+            case [*xs]:
+                clean_names = []
+                for name in xs:
+                    match self._subs.sub(name):
+                        case None:
+                            clean_names.append(name)
+                        case set() as val:
+                            head, *_ = val
+                            clean_names.append(head)
+                return model.Field(field.key, clean_names), []
             case value:
                 logging.warning("Unsupported replacement field value type(%s): %s", entry.key, type(value))
                 return field, []
