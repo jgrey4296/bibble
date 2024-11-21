@@ -67,17 +67,17 @@ class FieldAccumulator(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
         self.set_field_matchers(white=self._target_fields)
         self._collection = set()
 
-    def transform(self, library:Library):
-        transformed = super().transform(library)
+    def transform(self, library:BibMiddlewareLibrary|Library):
+        transformed : Library = super().transform(library)
+        newlib = BibMiddlewareLibrary()
+        newlib.add_sublibrary(transformed)
         match library:
-            case BibMiddlewareLibrary():
-                transformed.store_meta_value(self._attr_target, self._collection)
-                return transformed
-            case Library():
-                newlib = BibMiddlewareLibrary()
-                newlib.add_sublibrary(transformed)
-                newlib.store_meta_value(self._attr_target, self._collection)
-                return newlib
+            case BibMiddlewareLibrary() as newlib:
+                pass
+            case Library() as transformed:
+
+        newlib.store_meta_value(self._attr_target, self._collection)
+        return newlib
 
     def transform_entry(self, entry, library):
         entry, errors = self.match_on_fields(entry, library)

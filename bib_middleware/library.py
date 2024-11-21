@@ -70,7 +70,7 @@ class BibMiddlewareLibrary(Library):
                 key = key.metadata_key()
 
         match value:
-            case list() | set:
+            case list() | set():
                 self._kv_store[key].update(value)
             case _:
                 self._kv_store[key] = value
