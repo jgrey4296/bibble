@@ -40,6 +40,7 @@ from bib_middleware.util.base_writer import BaseWriter
 from bib_middleware.util.error_raiser import ErrorRaiser_m
 from bib_middleware.util.field_matcher import FieldMatcher_m
 from bib_middleware.library import BibMiddlewareLibrary
+from bib_middleware.model import MetaBlock
 # ##-- end 1st party imports
 
 ##-- logging
@@ -49,6 +50,13 @@ logging = logmod.getLogger(__name__)
 
 class FieldAccumulator(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
     """ Create a set of all the values in a library of a field """
+
+    class AccumulationBlock(MetaBlock):
+
+        def __init__(self, name, data):
+            super().__init__()
+            self._name = name
+            self._data = data
 
 
     @staticmethod
@@ -67,17 +75,11 @@ class FieldAccumulator(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
         self.set_field_matchers(white=self._target_fields)
         self._collection = set()
 
-    def transform(self, library:BibMiddlewareLibrary|Library):
+    def transform(self, library:Library):
         transformed : Library = super().transform(library)
-        newlib = BibMiddlewareLibrary()
-        newlib.add_sublibrary(transformed)
-        match library:
-            case BibMiddlewareLibrary() as newlib:
-                pass
-            case Library() as transformed:
 
-        newlib.store_meta_value(self._attr_target, self._collection)
-        return newlib
+        transformed.add(AccumulationBlock(self._attr_target, self._collection))
+        return transformed
 
     def transform_entry(self, entry, library):
         entry, errors = self.match_on_fields(entry, library)
