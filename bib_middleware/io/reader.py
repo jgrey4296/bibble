@@ -26,8 +26,8 @@ from uuid import UUID, uuid1
 
 # ##-- end stdlib imports
 
-from bibtexparser.model import Library
-from bibtexparser.middlewares import Middleware
+from bibtexparser.library import Library
+from bibtexparser.middlewares.middleware import Middleware
 from bibtexparser.splitter import Splitter
 
 ##-- logging

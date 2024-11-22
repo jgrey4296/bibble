@@ -56,20 +56,20 @@ class RstWriter(BibMiddlewareWriter):
             case "tweet" | "thread":
                 return []
             case _:
-                self._title_add()
+                self._title_add(block)
                 self._must_add("tags")
                 self._can_add("author", "editor", "year", "series")
                 self._can_add("journal", "booktitle", "doi", "url", "isbn", "publisher")
                 self._can_add("incollection", "institution")
                 # TODO volume, number, pages, chapter
 
-            result += ["", "", "..",
-                       f"{self._indent} Fields:",
-                       "{} {}".format(self._indent, ", ".join(self._fields.keys())), "",
-                       f"{self._indent} Object Keys:",
-                       "{} {}".format(self._indent,
-                                      ", ".join([x for x in dir(block) if "__" not in x]))
-                       ]
+        result += ["", "", "..",
+                    f"{self._indent} Fields:",
+                    "{} {}".format(self._indent, ", ".join(self._fields.keys())), "",
+                    f"{self._indent} Object Keys:",
+                    "{} {}".format(self._indent,
+                                    ", ".join([x for x in dir(block) if "__" not in x]))
+                    ]
 
         return result
 
@@ -109,7 +109,7 @@ class RstWriter(BibMiddlewareWriter):
             case None:
                 title = "A Bibtex File"
             case pl.Path():
-                title = file.name
+                title = file.stem
 
         lines = [".. -*- mode: ReST -*-",
                  f".. _{title}:", "",

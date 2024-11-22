@@ -29,8 +29,8 @@ from uuid import UUID, uuid1
 
 # ##-- 3rd party imports
 from bibtexparser import model
-from bibtexparser.middlewares import Middleware
-from bibtexparser.model import Library
+from bibtexparser.middlewares.middleware import Middleware
+from bibtexparser.library import Library
 from bibtexparser.writer import BibtexFormat
 
 # ##-- end 3rd party imports
