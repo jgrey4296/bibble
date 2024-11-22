@@ -27,7 +27,7 @@ from uuid import UUID, uuid1
 # ##-- end stdlib imports
 
 from bibtexparser import model
-from bib_middleware.writer import BibMiddlewareWriter
+from bib_middleware.io.writer import BibMiddlewareWriter
 
 ##-- logging
 logging = logmod.getLogger(__name__)
