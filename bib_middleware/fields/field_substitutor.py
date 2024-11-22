@@ -39,7 +39,6 @@ from jgdv.files.tags import SubstitutionFile
 # ##-- end 3rd party imports
 
 # ##-- 1st party imports
-from bib_middleware.util.base_writer import BaseWriter
 from bib_middleware.util.error_raiser import ErrorRaiser_m
 from bib_middleware.util.field_matcher import FieldMatcher_m
 
@@ -50,7 +49,7 @@ logging = logmod.getLogger(__name__)
 ##-- end logging
 
 
-class FieldSubstitutor(ErrorRaiser_m, FieldMatcher_m, BaseWriter):
+class FieldSubstitutor(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
     """
       For a given field(s), and a given jgdv.SubstitutionFile,
     replace the field value as necessary in each entry.

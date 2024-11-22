@@ -41,7 +41,6 @@ from jgdv.files.tags import SubstitutionFile
 # ##-- end 3rd party imports
 
 # ##-- 1st party imports
-from bib_middleware.util.base_writer import BaseWriter
 from bib_middleware.util.error_raiser import ErrorRaiser_m
 from bib_middleware.util.field_matcher import FieldMatcher_m
 from bib_middleware.fields.field_substitutor import FieldSubstitutor

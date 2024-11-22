@@ -39,13 +39,12 @@ from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddlewa
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
 from jgdv.files.tags import SubstitutionFile
-from bib_middleware.util.base_writer import BaseWriter
 
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-class TagsWriter(BaseWriter):
+class TagsWriter(BlockMiddleware):
     """
       Reduce tag set to a string.
       Pass in to_keywords=True to convert tags -> keywords for bibtex2html
