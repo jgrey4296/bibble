@@ -1,7 +1,7 @@
 bib\_middleware.util package
 ============================
 
-.. automodule:: bib_middleware.util
+.. automodule:: bibble.util
    :members:
    :undoc-members:
    :show-inheritance:
@@ -13,7 +13,7 @@ Submodules
 bib\_middleware.util.base\_writer module
 ----------------------------------------
 
-.. automodule:: bib_middleware.util.base_writer
+.. automodule:: bibble.util.base_writer
    :members:
    :undoc-members:
    :show-inheritance:
@@ -22,7 +22,7 @@ bib\_middleware.util.base\_writer module
 bib\_middleware.util.failure\_handler module
 --------------------------------------------
 
-.. automodule:: bib_middleware.util.failure_handler
+.. automodule:: bibble.util.failure_handler
    :members:
    :undoc-members:
    :show-inheritance:
@@ -31,7 +31,7 @@ bib\_middleware.util.failure\_handler module
 bib\_middleware.util.formatter module
 -------------------------------------
 
-.. automodule:: bib_middleware.util.formatter
+.. automodule:: bibble.util.formatter
    :members:
    :undoc-members:
    :show-inheritance:
@@ -40,7 +40,7 @@ bib\_middleware.util.formatter module
 bib\_middleware.util.selectors module
 -------------------------------------
 
-.. automodule:: bib_middleware.util.selectors
+.. automodule:: bibble.util.selectors
    :members:
    :undoc-members:
    :show-inheritance:

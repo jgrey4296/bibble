@@ -1,7 +1,7 @@
 bib\_middleware.latex package
 =============================
 
-.. automodule:: bib_middleware.latex
+.. automodule:: bibble.latex
    :members:
    :undoc-members:
    :show-inheritance:
@@ -13,7 +13,7 @@ Submodules
 bib\_middleware.latex.latex\_reader module
 ------------------------------------------
 
-.. automodule:: bib_middleware.latex.latex_reader
+.. automodule:: bibble.latex.latex_reader
    :members:
    :undoc-members:
    :show-inheritance:
@@ -22,7 +22,7 @@ bib\_middleware.latex.latex\_reader module
 bib\_middleware.latex.latex\_writer module
 ------------------------------------------
 
-.. automodule:: bib_middleware.latex.latex_writer
+.. automodule:: bibble.latex.latex_writer
    :members:
    :undoc-members:
    :show-inheritance:

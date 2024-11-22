@@ -1,7 +1,7 @@
 bib\_middleware.\_\_tests package
 =================================
 
-.. automodule:: bib_middleware.__tests
+.. automodule:: bibble.__tests
    :members:
    :undoc-members:
    :show-inheritance:

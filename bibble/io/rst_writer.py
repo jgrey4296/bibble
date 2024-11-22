@@ -27,13 +27,13 @@ from uuid import UUID, uuid1
 # ##-- end stdlib imports
 
 from bibtexparser import model
-from bib_middleware.io.writer import BibMiddlewareWriter
+from bibble.io.writer import BibbleWriter
 
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-class RstWriter(BibMiddlewareWriter):
+class RstWriter(BibbleWriter):
     """ Write bibtex entries as Rst """
 
     # These need to match the BibEntryDirective of the sphinx domain

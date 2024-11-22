@@ -48,5 +48,5 @@ class MetaBlock(Block):
 class CustomWriterBlock(Block):
     """ A Block that controls how it is written """
 
-    def visit(self, writer:BibMiddlewareWriter) -> list[str]:
+    def visit(self, writer:BibbleWriter) -> list[str]:
         raise NotImplementedError()

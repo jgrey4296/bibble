@@ -42,9 +42,9 @@ from bibtexparser.middlewares.names import parse_single_name_into_parts, NamePar
 
 from pylatexenc.latex2text import LatexNodes2Text, MacroTextSpec, get_default_latex_context_db
 
-from bib_middleware.util.str_transform import StringTransform_m
-from bib_middleware.util.field_matcher import FieldMatcher_m
-from bib_middleware.util.error_raiser import ErrorRaiser_m
+from bibble.util.str_transform import StringTransform_m
+from bibble.util.field_matcher import FieldMatcher_m
+from bibble.util.error_raiser import ErrorRaiser_m
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging

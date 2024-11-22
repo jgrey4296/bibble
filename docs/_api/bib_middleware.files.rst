@@ -1,7 +1,7 @@
 bib\_middleware.files package
 =============================
 
-.. automodule:: bib_middleware.files
+.. automodule:: bibble.files
    :members:
    :undoc-members:
    :show-inheritance:
@@ -13,7 +13,7 @@ Submodules
 bib\_middleware.files.online\_downloader module
 -----------------------------------------------
 
-.. automodule:: bib_middleware.files.online_downloader
+.. automodule:: bibble.files.online_downloader
    :members:
    :undoc-members:
    :show-inheritance:
@@ -22,7 +22,7 @@ bib\_middleware.files.online\_downloader module
 bib\_middleware.files.path\_reader module
 -----------------------------------------
 
-.. automodule:: bib_middleware.files.path_reader
+.. automodule:: bibble.files.path_reader
    :members:
    :undoc-members:
    :show-inheritance:
@@ -31,7 +31,7 @@ bib\_middleware.files.path\_reader module
 bib\_middleware.files.path\_writer module
 -----------------------------------------
 
-.. automodule:: bib_middleware.files.path_writer
+.. automodule:: bibble.files.path_writer
    :members:
    :undoc-members:
    :show-inheritance:

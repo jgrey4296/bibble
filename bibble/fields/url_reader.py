@@ -37,43 +37,43 @@ import bibtexparser.model as model
 from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
-from bib_middleware.util.field_matcher import FieldMatcher_m
-from bib_middleware.util.error_raiser import ErrorRaiser_m
+
+from bibble.util.error_raiser import ErrorRaiser_m
+from bibble.util.field_matcher import FieldMatcher_m
 
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-class PathReader(FieldMatcher_m, BlockMiddleware):
-    """
-      Convert file paths in bibliography to pl.Path's, expanding relative paths according to lib_root
-    """
+class CleanUrls(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
+    """ Strip unnecessary doi and dblp prefixes from urls  """
 
-    _field_whitelist = ["file"]
+    _field_whiteist = ["doi", "url", "ee"]
 
     @staticmethod
     def metadata_key():
-        return "BM-path-reader"
-
-    def __init__(self, lib_root:pl.Path=None, **kwargs):
-        super().__init__(**kwargs)
-        self._lib_root                   = lib_root
+        return "BM-clean-urls"
 
     def transform_entry(self, entry, library):
         entry, errors = self.match_on_fields(entry, library)
-        return entry
+        match self.maybe_error_block(entry, errors):
+            case None:
+                return entry
+            case errblock:
+                return errblock
 
     def field_handler(self, field, entry):
-        base = pl.Path(field.value)
-        match base.parts[0]:
-            case "/":
-                field.value = base
-            case "~":
-                field.value = base.expanduser().absolute()
-            case _:
-                field.value = self._lib_root / base
+        fields = []
+        match field.value:
+            case str() as value if value.startswith("https://doi.org") and (name == "doi" or "doi" not in entry):
+                clean = value.removeprefix("https://doi.org/")
+                fields.append(model.Field("doi", clean))
+            case str() as value if value.startswith("db/") and "bibsource" not in entry:
+                url = "".join(["https://dblp.org/", url])
+                fields.append(model.Field("biburl", url))
+                fields.append(model.Field("bibsource", "dblp computer science bibliography, https://dblp.org"))
+            case str() as value if field.key == "ee" and "url" not in entry:
+                fields.append(model.Field("url", value))
+                fields.append(model.Field("ee", ""))
 
-        if not field.value.exists():
-            logging.warning("On Import file does not exist: %s", field.value)
-
-        return field, []
+        return entry

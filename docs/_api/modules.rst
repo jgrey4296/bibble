@@ -1,7 +1,7 @@
-bib_middleware
+bibble
 ==============
 
 .. toctree::
    :maxdepth: 6
 
-   bib_middleware
+   bibble

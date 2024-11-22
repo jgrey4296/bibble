@@ -42,9 +42,9 @@ from bibtexparser.middlewares.names import parse_single_name_into_parts, NamePar
 
 from pylatexenc.latexencode import UnicodeToLatexConversionRule, RULE_REGEX, UnicodeToLatexEncoder
 
-from bib_middleware.util.str_transform import StringTransform_m
-from bib_middleware.util.field_matcher import FieldMatcher_m
-from bib_middleware.util.error_raiser import ErrorRaiser_m
+from bibble.util.str_transform import StringTransform_m
+from bibble.util.field_matcher import FieldMatcher_m
+from bibble.util.error_raiser import ErrorRaiser_m
 
 ##-- logging
 logging = logmod.getLogger(__name__)

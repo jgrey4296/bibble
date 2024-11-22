@@ -44,8 +44,8 @@ from bibtexparser.middlewares.names import (NameParts,
 # ##-- end 3rd party imports
 
 # ##-- 1st party imports
-from bib_middleware.util.error_raiser import ErrorRaiser_m
-from bib_middleware.util.field_matcher import FieldMatcher_m
+from bibble.util.error_raiser import ErrorRaiser_m
+from bibble.util.field_matcher import FieldMatcher_m
 
 # ##-- end 1st party imports
 

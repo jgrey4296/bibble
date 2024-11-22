@@ -39,4 +39,4 @@ temp    = {loc=".temp",          cleanable=true}
 logs    = "{temp}/logs"
 build   = "{temp}/build"
 data    = "data"
-src     = "bib_middleware"
+src     = "bibble"

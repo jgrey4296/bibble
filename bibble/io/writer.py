@@ -36,7 +36,7 @@ from bibtexparser.writer import BibtexFormat
 # ##-- end 3rd party imports
 
 # ##-- 1st party imports
-from bib_middleware.model import MetaBlock
+from bibble.model import MetaBlock
 
 # ##-- end 1st party imports
 
@@ -45,7 +45,7 @@ logging = logmod.getLogger(__name__)
 ##-- end logging
 
 
-class BibMiddlewareWriter:
+class BibbleWriter:
     """ A Refactored bibtexparser writer
     Uses visitor pattern
     """

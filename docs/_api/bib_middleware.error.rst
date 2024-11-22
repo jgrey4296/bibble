@@ -1,7 +1,7 @@
 bib\_middleware.error package
 =============================
 
-.. automodule:: bib_middleware.error
+.. automodule:: bibble.error
    :members:
    :undoc-members:
    :show-inheritance:

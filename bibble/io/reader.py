@@ -34,7 +34,7 @@ from bibtexparser.splitter import Splitter
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-class BibMiddlewareReader:
+class BibbleReader:
     """ A Refactored bibtexparser reader"""
 
     def __init__(self, stack:list[Middleware], lib_base:None|type=None):

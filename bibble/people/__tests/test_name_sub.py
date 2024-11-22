@@ -13,7 +13,7 @@ import warnings
 
 import pytest
 
-from bib_middleware.people.name_sub import NameSubstitutor
+from bibble.people.name_sub import NameSubstitutor
 from bibtexparser import model
 from bibtexparser.middlewares.names import NameParts
 from jgdv.files.tags import SubstitutionFile

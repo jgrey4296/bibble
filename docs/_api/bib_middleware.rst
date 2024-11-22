@@ -1,7 +1,7 @@
 bib\_middleware package
 =======================
 
-.. automodule:: bib_middleware
+.. automodule:: bibble
    :members:
    :undoc-members:
    :show-inheritance:
@@ -13,11 +13,11 @@ Subpackages
 .. toctree::
    :maxdepth: 6
 
-   bib_middleware.__tests
-   bib_middleware.error
-   bib_middleware.fields
-   bib_middleware.files
-   bib_middleware.latex
-   bib_middleware.metadata
-   bib_middleware.people
-   bib_middleware.util
+   bibble.__tests
+   bibble.error
+   bibble.fields
+   bibble.files
+   bibble.latex
+   bibble.metadata
+   bibble.people
+   bibble.util

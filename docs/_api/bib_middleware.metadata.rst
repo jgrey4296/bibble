@@ -1,7 +1,7 @@
 bib\_middleware.metadata package
 ================================
 
-.. automodule:: bib_middleware.metadata
+.. automodule:: bibble.metadata
    :members:
    :undoc-members:
    :show-inheritance:
@@ -13,7 +13,7 @@ Submodules
 bib\_middleware.metadata.duplicate\_handler module
 --------------------------------------------------
 
-.. automodule:: bib_middleware.metadata.duplicate_handler
+.. automodule:: bibble.metadata.duplicate_handler
    :members:
    :undoc-members:
    :show-inheritance:
@@ -22,7 +22,7 @@ bib\_middleware.metadata.duplicate\_handler module
 bib\_middleware.metadata.isbn\_validator module
 -----------------------------------------------
 
-.. automodule:: bib_middleware.metadata.isbn_validator
+.. automodule:: bibble.metadata.isbn_validator
    :members:
    :undoc-members:
    :show-inheritance:
@@ -31,7 +31,7 @@ bib\_middleware.metadata.isbn\_validator module
 bib\_middleware.metadata.isbn\_writer module
 --------------------------------------------
 
-.. automodule:: bib_middleware.metadata.isbn_writer
+.. automodule:: bibble.metadata.isbn_writer
    :members:
    :undoc-members:
    :show-inheritance:
@@ -40,7 +40,7 @@ bib\_middleware.metadata.isbn\_writer module
 bib\_middleware.metadata.key\_locker module
 -------------------------------------------
 
-.. automodule:: bib_middleware.metadata.key_locker
+.. automodule:: bibble.metadata.key_locker
    :members:
    :undoc-members:
    :show-inheritance:
@@ -49,7 +49,7 @@ bib\_middleware.metadata.key\_locker module
 bib\_middleware.metadata.metadata\_writer module
 ------------------------------------------------
 
-.. automodule:: bib_middleware.metadata.metadata_writer
+.. automodule:: bibble.metadata.metadata_writer
    :members:
    :undoc-members:
    :show-inheritance:
@@ -58,7 +58,7 @@ bib\_middleware.metadata.metadata\_writer module
 bib\_middleware.metadata.tags\_reader module
 --------------------------------------------
 
-.. automodule:: bib_middleware.metadata.tags_reader
+.. automodule:: bibble.metadata.tags_reader
    :members:
    :undoc-members:
    :show-inheritance:
@@ -67,7 +67,7 @@ bib\_middleware.metadata.tags\_reader module
 bib\_middleware.metadata.tags\_writer module
 --------------------------------------------
 
-.. automodule:: bib_middleware.metadata.tags_writer
+.. automodule:: bibble.metadata.tags_writer
    :members:
    :undoc-members:
    :show-inheritance:

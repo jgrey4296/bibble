@@ -1,5 +1,5 @@
 [project]
-name            = "bib-middleware"
+name            = "bibble"
 version         = "0.1.0"
 description     = ""
 readme          = "README.md"
@@ -28,7 +28,6 @@ docs = [
     "Sphinx >=7.4.0",
     "sphinx-rtd-theme",
     "myst_parser >= 4.0.0",
-    # "sphinx-tomlconf@git+https://github.com/jgrey4296/sphinx-tomlconf",
 
 ]
 # dev  = [ "pipreqs"]
@@ -36,16 +35,16 @@ test = [ "pytest > 7.0.0" ]
 
 ##-- urls
 [project.urls]
-homepage      = "https://github.com/jgrey4296/bib-middleware"
-documentation = "https://bib-middleware.readthedocs.io/en/latest"
-repository    = "https://github.com/jgrey4296/bib-middleware"
-changelog     = "https://github.com//bib-middleware/blob/master/CHANGELOG.md"
+homepage      = "https://jgrey4296.github.io/bibble"
+documentation = "https://bibble.readthedocs.io/en/latest"
+repository    = "https://github.com/jgrey4296/bibble"
+changelog     = "https://github.com/bibble/blob/master/CHANGELOG.md"
 
 ##-- end urls
 
 ##-- scripts
 [project.scripts]
-# bib-middleware = "bib-middleware.__main__:main"
+# bibble = "bibble.__main__:main"
 
 [project.gui-scripts]
 # spam-gui      = "spam:main_gui"
@@ -70,11 +69,11 @@ include-package-data = true
 [tool.setuptools.packages.find]
 namespaces = true
 where      = ["."]
-include    = ["bib_middleware*"]
+include    = ["bibble"]
 
 [tool.setuptools.package-data]
 "*" = ["*"]
-"bib_middleware.__data"    = ["*.so"]
+"bibble.__data"    = ["*.so"]
 
 [tool.setuptools.exclude-package-data]
 
@@ -84,7 +83,7 @@ include    = ["bib_middleware*"]
 
 ##-- pyright
 [tool.pyright]
-# strict = bib-middleware.*
+# strict = bibble.*
 verboseOutput               = true
 typeCheckingMode            = "strict"
 pythonVersion               = "3.10"
@@ -172,7 +171,7 @@ tag_scope          = "default"
                    '^version\s+=\s+"{version}"',
                    '^current_version\s+=\s+"{version}"'
 ]
-"bib-middleware/__init__.py" = ['^__version__\s+=\s+"{version}"']
+"bibble/__init__.py" = ['^__version__\s+=\s+"{version}"']
 
 ##-- end bumpver
 

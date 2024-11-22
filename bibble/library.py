@@ -5,8 +5,10 @@
 
 """
 
+# Imports:
 from __future__ import annotations
 
+# ##-- stdlib imports
 import datetime
 import enum
 import functools as ftz
@@ -19,20 +21,25 @@ import types
 import weakref
 from collections import defaultdict
 from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generator,
-                    Generic, Iterable, Iterator, Mapping, Match, Self,
-                    MutableMapping, Protocol, Sequence, Tuple, TypeAlias,
+                    Generic, Iterable, Iterator, Mapping, Match,
+                    MutableMapping, Protocol, Self, Sequence, Tuple, TypeAlias,
                     TypeGuard, TypeVar, cast, final, overload,
                     runtime_checkable)
 from uuid import UUID, uuid1
 
+# ##-- end stdlib imports
+
+# ##-- 3rd party imports
 from bibtexparser.library import Library
 from bibtexparser.middlewares import BlockMiddleware
+
+# ##-- end 3rd party imports
 
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-class BibMiddlewareLibrary(Library):
+class BibbleLib(Library):
     """ A library with a key value store for extra info
     Also tracks the individual files used as source
     """
@@ -50,7 +57,7 @@ class BibMiddlewareLibrary(Library):
             self.source_files.add(source)
 
         match lib:
-            case BibMiddlewareLibrary():
+            case BibbleLib():
                 self.add(lib.entries)
                 self.source_files.update(lib.source_files)
                 for k,v in lib._kv_store.items():

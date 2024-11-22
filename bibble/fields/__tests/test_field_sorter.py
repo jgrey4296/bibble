@@ -13,7 +13,7 @@ import warnings
 
 import pytest
 from bibtexparser import model
-from bib_middleware.fields import FieldSorter
+from bibble.fields import FieldSorter
 
 logging = logmod.root
 
