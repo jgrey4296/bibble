@@ -37,30 +37,54 @@ logging = logmod.getLogger(__name__)
 class BibMiddlewareReader:
     """ A Refactored bibtexparser reader"""
 
-    def __init__(self, stack:list[Middleware], lib_base:type=Library):
+    def __init__(self, stack:list[Middleware], lib_base:None|type=None):
         self._middlewares     = stack
-        self._lib_class : type = lib_base
+        self._lib_class : type = lib_base or Library
+        if not all([isinstance(x, Middleware) for x in self._middlewares]):
+            raise TypeError("Bad middleware passed to Reader", stack)
+        if not issubclass(self._lib_class, Library):
+            raise TypeError("Bad library base pased to reader", lib_base)
 
-    def read(self, source:str|pl.Path) -> Library:
-        """ read source into a library """
+
+    def read(self, source:str|pl.Path, *, into:None|Library=None, append:None|list[Middleware]=None) -> None|Library:
+        """ read source and make a new library.
+        if given 'into' lib, add the newly read entries into that libray as well
+        """
         match source:
             case str():
                 pass
             case pl.Path():
-                source = source.read_text()
+                try:
+                    source = source.read_text()
+                except UnicodeDecodeError as err:
+                    printer.error("Unicode Error in File: %s, Start: %s", loc, err.start)
+                    return None
 
-        return self.read_into(self._lib_class(), source)
+        basic       : Library   = self._read_into(self._lib_class(), source)
+        transformed : Library   = self._run_middlewares(library, )
+        match into:
+            case Library():
+                into.add(transformed)
+                return result
+            case _:
+                return result
 
-    def read_into(self, lib:Library, source:str) -> Library:
+    def _read_into(self, lib:Library, source:str) -> Library:
         assert(isinstance(source, str))
         splitter       = Splitter(bibstr=source)
         library        = splitter.split(library=lib)
-        transformed    = self._run_middlewares(library)
         return transformed
 
 
-    def _run_middlewares(self, library) -> Library:
+    def _run_middlewares(self, library, *, append:None|list[Middleware]=None) -> Library:
         for middlware in self._middlewares:
             library = middleware.transform(library=library)
 
-        return library
+        match append:
+            case None | []:
+                return library
+            case [*xs]:
+                for middleware in xs:
+                    library = middleware.transform(library=library)
+                else:
+                    return library

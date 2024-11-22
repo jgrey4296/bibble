@@ -8,7 +8,6 @@ from __future__ import annotations
 
 # ##-- stdlib imports
 import datetime
-from copy import deepcopy
 import enum
 import functools as ftz
 import itertools as itz
@@ -18,6 +17,7 @@ import re
 import time
 import types
 import weakref
+from copy import deepcopy
 from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generator,
                     Generic, Iterable, Iterator, Mapping, Match,
                     MutableMapping, Protocol, Sequence, Tuple, TypeAlias,
@@ -27,11 +27,18 @@ from uuid import UUID, uuid1
 
 # ##-- end stdlib imports
 
+# ##-- 3rd party imports
 from bibtexparser import model
-from bibtexparser.model import Library
 from bibtexparser.middlewares import Middleware
+from bibtexparser.model import Library
 from bibtexparser.writer import BibtexFormat
+
+# ##-- end 3rd party imports
+
+# ##-- 1st party imports
 from bib_middleware.model import MetaBlock
+
+# ##-- end 1st party imports
 
 ##-- logging
 logging = logmod.getLogger(__name__)
@@ -43,19 +50,32 @@ class BibMiddlewareWriter:
     Uses visitor pattern
     """
 
-    def __init__(self, stack:list[Middleware], format:BibtexFormat):
+    def __init__(self, stack:list[Middleware], format:None|BibtexFormat=None):
         self._middlewares            = stack
-        self._format                 = deepcopy(format)
         self._val_sep                = " = "
         self._parsing_failed_comment = "% WARNING Parsing failed for the following {n} lines."
+        match format:
+            case None:
+                self._format = BibtexFormat()
+                bib_format.value_column                 = 15
+                bib_format.indent                       = " "
+                bib_format.block_separator              = "\n"
+                bib_format.trailing_comma               = True
+            case BibtexFormat():
+                self._format                 = deepcopy(format)
+            case _:
+                raise TypeError("Bad BibtexFormat passed to writer", format)
 
-    def write(self, library, *, file:None|pl.Path=None) -> str:
+        if not all([isinstance(x, Middleware) for x in self._middlewares]):
+            raise TypeError("Bad middleware passed to Reader", stack)
+
+    def write(self, library, *, file:None|pl.Path=None, append:None|list[Middleware]=None) -> str:
         """ Write the library to a string, and possbly a file """
 
         if self._format.value_column == "auto":
             self._format.value_column = _calculate_auto_value_align(library)
 
-        transformed = self._run_middlewares(library)
+        transformed = self._run_middlewares(library, append=append)
         string_pieces = []
 
         string_pieces.extend(self.visit_header(transformed, file))
@@ -92,11 +112,18 @@ class BibMiddlewareWriter:
         length = self._format.value_column - len(key) - len(self._val_sep)
         return "" if length <= 0 else " " * length
 
-    def _run_middlewares(self, library) -> Library:
+    def _run_middlewares(self, library, append:None|list[Middleware]) -> Library:
         for middlware in self._middlewares:
             library = middleware.transform(library=library)
 
-        return library
+        match append:
+            case [*xs]:
+                for middlware in xs:
+                    library = middleware.transform(library=library)
+                else:
+                    return library
+            case _:
+                return library
 
     def visit_header(self, library, file:None|pl.Path=None) -> list[str]:
         return []
