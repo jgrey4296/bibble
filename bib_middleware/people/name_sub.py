@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
 
-See EOF for license/metadata/notes as applicable
+
+
 """
 
 # Imports:
 from __future__ import annotations
 
 # ##-- stdlib imports
-# import abc
 import datetime
 import enum
 import functools as ftz
@@ -19,8 +19,6 @@ import re
 import time
 import types
 import weakref
-# from copy import deepcopy
-# from dataclasses import InitVar, dataclass, field
 from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generator,
                     Generic, Iterable, Iterator, Mapping, Match,
                     MutableMapping, Protocol, Sequence, Tuple, TypeAlias,
@@ -33,63 +31,56 @@ from uuid import UUID, uuid1
 # ##-- 3rd party imports
 import bibtexparser
 import bibtexparser.model as model
-##-- lib imports
-import more_itertools as mitz
 from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import (BlockMiddleware,
                                                  LibraryMiddleware)
 from bibtexparser.middlewares.names import (NameParts,
                                             parse_single_name_into_parts)
+from jgdv.files.tags import SubstitutionFile
 
 # ##-- end 3rd party imports
 
 # ##-- 1st party imports
 from bib_middleware.util.error_raiser import ErrorRaiser_m
 from bib_middleware.util.field_matcher import FieldMatcher_m
+from bib_middleware.fields.field_substitutor import FieldSubstitutor
 
 # ##-- end 1st party imports
-
 
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-class PathWriter(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
-    """
-      Relativize library paths back to strings
-    """
-
-    _field_whitelist = ["file"]
+class NameSubstitutor(FieldSubstitutor):
+    """ replaces names in author and editor fields as necessary """
 
     @staticmethod
     def metadata_key():
-        return "BM-path-writer"
+        return "BM-name-sub"
 
-    def __init__(self, lib_root:pl.Path=None, **kwargs):
-        super().__init__(**kwargs)
-        self._lib_root = lib_root
-
-    def transform_entry(self, entry, library):
-        entry, errors = self.match_on_fields(entry, library)
-        match self.maybe_error_block(entry, errors):
-            case None:
-                return entry
-            case errblock:
-                return errblock
+    def __init__(self, subs:None|SubstitutionFile, **kwargs):
+        super().__init__(["author", "editor"], subs, **kwargs)
 
     def field_handler(self, field, entry):
-        errors = []
         match field.value:
             case str():
-                pass
-            case pl.Path() as val if not val.exists():
-                logging.warning("On Export file does not exist: %s", val)
-            case pl.Path() as val:
-                try:
-                    as_str = val.relative_to(self._lib_root)
-                    field.value = as_str
-                except ValueError:
-                    field.value = str(val)
-                    errors.append(f"Failed to Relativize path (%s): %s ", entry.key, val)
-
-        return field, errors
+                logging.warning("Name parts should already be combined, but authors shouldn't be merged yet")
+                return field, []
+            case [*xs] if any(isinstance(x, NameParts) for x in xs):
+                logging.warning("Name parts should already be combined, but authors shouldn't be merged yet")
+                return field, []
+            case []:
+                return field, []
+            case [*xs]:
+                clean_names = []
+                for name in xs:
+                    match self._subs.sub(name):
+                        case None:
+                            clean_names.append(name)
+                        case set() as val:
+                            head, *_ = val
+                            clean_names.append(head)
+                return model.Field(field.key, clean_names), []
+            case value:
+                logging.warning("Unsupported replacement field value type(%s): %s", entry.key, type(value))
+                return field, []

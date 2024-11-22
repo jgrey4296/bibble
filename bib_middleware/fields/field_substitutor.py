@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 """
 
-See EOF for license/metadata/notes as applicable
 """
 
 # Imports:
 from __future__ import annotations
 
 # ##-- stdlib imports
-# import abc
 import datetime
 import enum
 import functools as ftz
@@ -19,8 +17,6 @@ import re
 import time
 import types
 import weakref
-# from copy import deepcopy
-# from dataclasses import InitVar, dataclass, field
 from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generator,
                     Generic, Iterable, Iterator, Mapping, Match,
                     MutableMapping, Protocol, Sequence, Tuple, TypeAlias,
@@ -33,13 +29,12 @@ from uuid import UUID, uuid1
 # ##-- 3rd party imports
 import bibtexparser
 import bibtexparser.model as model
-##-- lib imports
-import more_itertools as mitz
 from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import (BlockMiddleware,
                                                  LibraryMiddleware)
 from bibtexparser.middlewares.names import (NameParts,
                                             parse_single_name_into_parts)
+from jgdv.files.tags import SubstitutionFile
 
 # ##-- end 3rd party imports
 
@@ -49,27 +44,41 @@ from bib_middleware.util.field_matcher import FieldMatcher_m
 
 # ##-- end 1st party imports
 
-
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-class PathWriter(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
-    """
-      Relativize library paths back to strings
-    """
 
-    _field_whitelist = ["file"]
+class FieldSubstitutor(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
+    """
+      For a given field(s), and a given jgdv.SubstitutionFile,
+    replace the field value as necessary in each entry.
+
+    If force_single_value is True, only the first replacement will be used,
+    others will be discarded
+
+    """
 
     @staticmethod
     def metadata_key():
-        return "BM-path-writer"
+        return "BM-field-sub"
 
-    def __init__(self, lib_root:pl.Path=None, **kwargs):
+    def __init__(self, fields:str|list[str], subs:None|SubstitutionFile, force_single_value:bool=False, **kwargs):
         super().__init__(**kwargs)
-        self._lib_root = lib_root
+        match fields:
+            case str() as x:
+                self._target_fields = [x]
+            case list():
+                self._target_fields = fields
+
+        self._subs               = subs
+        self._force_single_value = force_single_value
+        self.set_field_matchers(white=self._target_fields)
 
     def transform_entry(self, entry, library):
+        if self._subs is None or not bool(self._subs):
+            return entry
+
         entry, errors = self.match_on_fields(entry, library)
         match self.maybe_error_block(entry, errors):
             case None:
@@ -78,18 +87,16 @@ class PathWriter(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
                 return errblock
 
     def field_handler(self, field, entry):
-        errors = []
         match field.value:
-            case str():
-                pass
-            case pl.Path() as val if not val.exists():
-                logging.warning("On Export file does not exist: %s", val)
-            case pl.Path() as val:
-                try:
-                    as_str = val.relative_to(self._lib_root)
-                    field.value = as_str
-                except ValueError:
-                    field.value = str(val)
-                    errors.append(f"Failed to Relativize path (%s): %s ", entry.key, val)
-
-        return field, errors
+            case str() as value if self._force_single_value:
+                head, *_ = list(self._subs.sub(value))
+                return model.Field(field.key, head), []
+            case str() as value:
+                subs = list(self._subs.sub(value))
+                return model.Field(field.key, subs), []
+            case list() | set() as value:
+                result = self._subs.sub_many(*value)
+                return model.Field(field.key, result), []
+            case value:
+                logging.warning("Unsupported replacement field value type(%s): %s", entry.key, type(value))
+                return field, []

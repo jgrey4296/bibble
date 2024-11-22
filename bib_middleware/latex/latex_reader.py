@@ -21,7 +21,7 @@ import weakref
 # from copy import deepcopy
 # from dataclasses import InitVar, dataclass, field
 from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generic,
-                    Iterable, Iterator, Mapping, Match, MutableMapping,
+                    Iterable, Iterator, Mapping, Match, MutableMapping, Self,
                     Protocol, Sequence, Tuple, TypeAlias, TypeGuard, TypeVar,
                     cast, final, overload, runtime_checkable, Generator)
 from uuid import UUID, uuid1
@@ -42,8 +42,9 @@ from bibtexparser.middlewares.names import parse_single_name_into_parts, NamePar
 
 from pylatexenc.latex2text import LatexNodes2Text, MacroTextSpec, get_default_latex_context_db
 
-from bib_middleware.latex._str_transform import _PyStringTransformerMiddleware
-
+from bib_middleware.util.str_transform import StringTransform_m
+from bib_middleware.util.field_matcher import FieldMatcher_m
+from bib_middleware.util.error_raiser import ErrorRaiser_m
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
@@ -52,12 +53,12 @@ DEFAULT_DECODE_RULES : Final[dict] = {
     "BM-reader-simplify-urls" : MacroTextSpec("url", simplify_repl="%s"),
 }
 
-class LatexReader(_PyStringTransformerMiddleware):
+class LatexReader(ErrorRaiser_m, FieldMatcher_m, StringTransform_m, BlockMiddleware):
     """ Latex->unicode transform.
     all strings in the library, except urls, files, doi's and crossrefs
     """
 
-    _skip_fields = ["url", "file", "doi", "crossref"]
+    _field_blacklist = ["url", "file", "doi", "crossref"]
 
     @staticmethod
     def metadata_key() -> str:
@@ -88,41 +89,28 @@ class LatexReader(_PyStringTransformerMiddleware):
         }
         self.rebuild_decoder()
 
+
     def rebuild_decoder(self, *, rules:dict=None, **kwargs):
         self._total_rules.update(rules or {})
         self._total_options.update(kwargs)
-        self._decoder                = LatexReader.build_decoder(rules=self._total_rules, **self._total_options)
+        self._decoder = LatexReader.build_decoder(rules=self._total_rules, **self._total_options)
 
     def transform_entry(self, entry: Entry, library: Library) -> Block:
-        errors = []
-        for field in entry.fields:
-            if any(x in field.key for x in self._skip_fields):
-                continue
-            if isinstance(field.value, str):
-                field.value, e = self._transform_python_value_string(field.value)
-                errors.append(e)
-            elif isinstance(field.value, ms.NameParts):
-                field.value.first = self._transform_all_strings(
-                    field.value.first, errors
-                )
-                field.value.last = self._transform_all_strings(field.value.last, errors)
-                field.value.von = self._transform_all_strings(field.value.von, errors)
-                field.value.jr = self._transform_all_strings(field.value.jr, errors)
-            else:
-                logging.info(
-                    f"[{self.metadata_key()}] Cannot python-str transform field {field.key}"
-                    f" with value type {type(field.value)}"
-                )
+        entry, errors = self.match_on_fields(entry, library)
+        match self.maybe_error_block(entry, errors):
+            case None:
+                return entry
+            case errblock:
+                return errblock
 
-        errors = [e for e in errors if e != ""]
-        if len(errors) > 0:
-            errors = bexp.PartialMiddlewareException(errors)
-            return MiddlewareErrorBlock(block=entry, error=errors)
-        else:
-            return entry
+    def field_handler(self, field:model.Field, entry) -> tuple[model.Field, list[str]]:
+        cleaned, errs = self.transform_string_like(field.value)
+        new_field = model.Field(key=field.key, value=cleaned)
+        return new_field, errs
 
 
     def _test_string(self, text) -> str:
+        """ utility to test decoding """
         return self._decoder.latex_to_text(text)
 
     def _transform_python_value_string(self, python_string: str) -> Tuple[str, str]:

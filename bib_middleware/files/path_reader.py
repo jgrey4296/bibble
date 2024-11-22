@@ -37,39 +37,43 @@ import bibtexparser.model as model
 from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
+from bib_middleware.util.field_matcher import FieldMatcher_m
+from bib_middleware.util.error_raiser import ErrorRaiser_m
 
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-class PathReader(BlockMiddleware):
+class PathReader(FieldMatcher_m, BlockMiddleware):
     """
       Convert file paths in bibliography to pl.Path's, expanding relative paths according to lib_root
     """
+
+    _field_whitelist = ["file"]
 
     @staticmethod
     def metadata_key():
         return "BM-path-reader"
 
-    def __init__(self, lib_root:pl.Path=None):
-        super().__init__(True, True)
-        self._lib_root = lib_root
+    def __init__(self, lib_root:pl.Path=None, **kwargs):
+        super().__init__(**kwargs)
+        self._lib_root                   = lib_root
 
     def transform_entry(self, entry, library):
-        for field in entry.fields:
-            if not ("file" in field.key or "look_in" in field.key):
-                continue
-
-            base = pl.Path(field.value)
-            match base.parts[0]:
-                case "/":
-                    field.value = base
-                case "~":
-                    field.value = base.expanduser().absolute()
-                case _:
-                    field.value = self._lib_root / base
-
-            if not field.value.exists():
-                logging.warning("On Import file does not exist: %s", field.value)
-
+        entry, errors = self.match_on_fields(entry, library)
         return entry
+
+    def field_handler(self, field, entry):
+        base = pl.Path(field.value)
+        match base.parts[0]:
+            case "/":
+                field.value = base
+            case "~":
+                field.value = base.expanduser().absolute()
+            case _:
+                field.value = self._lib_root / base
+
+        if not field.value.exists():
+            logging.warning("On Import file does not exist: %s", field.value)
+
+        return field, []

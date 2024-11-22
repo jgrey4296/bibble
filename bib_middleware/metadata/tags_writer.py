@@ -38,14 +38,13 @@ from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
-from jgdv.files.tags import TagFile
-from bib_middleware.util.base_writer import BaseWriter
+from jgdv.files.tags import SubstitutionFile
 
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-class TagsWriter(BaseWriter):
+class TagsWriter(BlockMiddleware):
     """
       Reduce tag set to a string.
       Pass in to_keywords=True to convert tags -> keywords for bibtex2html
@@ -60,10 +59,19 @@ class TagsWriter(BaseWriter):
         self._to_keywords = to_keywords
 
     def transform_entry(self, entry, library):
-        for field in entry.fields:
-            if field.key == "tags":
-                field.value = ",".join(sorted(field.value))
-            if field.key == "tags" and self._to_keywords:
-                field.key = "keywords"
+        match entry.get("tags"):
+            case None:
+                logging.warning("Entry has No Tags on write: %s", entry.key)
+                entry.set_field(model.Field("tags", ""))
+            case model.Field(value=val) if not bool(val):
+                logging.warning("Entry has No Tags on write: %s", entry.key)
+                entry.set_field(model.Field("tags", ""))
+            case model.Field(value=set() as vals):
+                entry.set_field(model.Field("tags", ",".join(sorted(vals))))
+
+
+        if self._to_keywords:
+            entry.set_field(model.Field("keywords", entry.get("tags").value))
 
         return entry
+

@@ -45,7 +45,9 @@ logging = logmod.getLogger(__name__)
 # from jgdv.files.tags import NameFile
 
 class NameReader(ms.SplitNameParts):
-    """ For use after stock "separatecoauthors", """
+    """ For use after stock "separatecoauthors",
+    splits authors into nameparts
+   """
 
     @staticmethod
     def metadata_key() -> str:

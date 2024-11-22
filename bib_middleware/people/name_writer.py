@@ -38,28 +38,16 @@ from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
-# from jgdv.files.tags import NameFile
-
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
 class NameWriter(ms.MergeNameParts):
-    """Middleware to merge a persons name parts (first, von, last, jr) into a single string.
-      for use before stock MergeCoAuthors
-    Name fields (e.g. author, editor, translator) are expected to be lists of NameParts.
-    """
-    # _all_names = NameFile()
-
-    # docstr-coverage: inherited
+    """ Converts NameParts -> str's """
 
     @staticmethod
     def metadata_key() -> str:
         return "BM-name-witer"
-
-    @staticmethod
-    def names_to_str():
-        return str(NameWriter._all_names)
 
     def __init__(self):
         super().__init__(allow_inplace_modification=False)
@@ -86,6 +74,5 @@ class NameWriter(ms.MergeNameParts):
 
         result.append(" ".join(name.first))
 
-        full_name = "".join(result).removesuffix(", ")
-        # NameWriter._all_names.update(full_name)
+        full_name = "".join(result).removesuffix(", ").strip()
         return full_name

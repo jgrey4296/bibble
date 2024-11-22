@@ -42,7 +42,6 @@ from bibtexparser.middlewares.names import (NameParts,
 # ##-- end 3rd party imports
 
 # ##-- 1st party imports
-from bib_middleware.util.base_writer import BaseWriter
 
 # ##-- end 1st party imports
 
