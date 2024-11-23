@@ -61,23 +61,23 @@ class BibbleReader:
                     return None
 
         basic       : Library   = self._read_into(self._lib_class(), source)
-        transformed : Library   = self._run_middlewares(library, )
+        transformed : Library   = self._run_middlewares(basic, append=append)
         match into:
             case Library():
-                into.add(transformed)
-                return result
+                into.add(transformed.blocks)
+                return transformed
             case _:
-                return result
+                return transformed
 
     def _read_into(self, lib:Library, source:str) -> Library:
         assert(isinstance(source, str))
         splitter       = Splitter(bibstr=source)
         library        = splitter.split(library=lib)
-        return transformed
+        return library
 
 
     def _run_middlewares(self, library, *, append:None|list[Middleware]=None) -> Library:
-        for middlware in self._middlewares:
+        for middleware in self._middlewares:
             library = middleware.transform(library=library)
 
         match append:

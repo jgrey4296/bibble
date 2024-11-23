@@ -56,11 +56,11 @@ class BibbleWriter:
         self._parsing_failed_comment = "% WARNING Parsing failed for the following {n} lines."
         match format:
             case None:
-                self._format = BibtexFormat()
-                bib_format.value_column                 = 15
-                bib_format.indent                       = " "
-                bib_format.block_separator              = "\n"
-                bib_format.trailing_comma               = True
+                self._format                 = BibtexFormat()
+                self._format.value_column    = 15
+                self._format.indent          = " "
+                self._format.block_separator = "\n"
+                self._format.trailing_comma  = True
             case BibtexFormat():
                 self._format                 = deepcopy(format)
             case _:
@@ -113,7 +113,7 @@ class BibbleWriter:
         return "" if length <= 0 else " " * length
 
     def _run_middlewares(self, library, append:None|list[Middleware]) -> Library:
-        for middlware in self._middlewares:
+        for middleware in self._middlewares:
             library = middleware.transform(library=library)
 
         match append:
@@ -138,7 +138,7 @@ class BibbleWriter:
             case MetaBlock():
                 pass
             case model.Entry():
-                return self.treat_entry(block)
+                return self.visit_entry(block)
             case model.String():
                 return self.visit_string(block)
             case model.Preamble():
@@ -158,7 +158,7 @@ class BibbleWriter:
         for i, field in enumerate(block.fields):
             res.append(self._format.indent)
             res.append(field.key)
-            res.append(_align_string(self._format, field.key))
+            res.append(self._align_string(field.key))
             res.append(self._val_sep)
             res.append(field.value)
             if self._format.trailing_comma or i < len(block.fields) - 1:
