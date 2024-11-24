@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """
 
-
-
 """
 
 # Imports:
@@ -34,16 +32,13 @@ from bibtexparser.model import Block
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-
 class MetaBlock(Block):
     """ A Metadata Block baseclass that does not get written out (typically),
     But can hold information about the library
     """
 
-
     def __init__(self, start_line:None|int=None, raw:None|str=None, parser_metadata:None|dict[str,Any]=None):
         super().__init__(start_line, raw, parser_metadata)
-
 
 class CustomWriterBlock(Block):
     """ A Block that controls how it is written """
