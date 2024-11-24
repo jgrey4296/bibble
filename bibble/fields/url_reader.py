@@ -38,8 +38,8 @@ from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
-from bibble.util.error_raiser import ErrorRaiser_m
-from bibble.util.field_matcher import FieldMatcher_m
+from bibble.util.error_raiser_m import ErrorRaiser_m
+from bibble.util.field_matcher_m import FieldMatcher_m
 
 ##-- logging
 logging = logmod.getLogger(__name__)

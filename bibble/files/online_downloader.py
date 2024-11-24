@@ -42,7 +42,7 @@ from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddlewa
 import base64
 from jgdv.files.tags import TagFile
 from jgdv.files.bookmarks import BookmarkCollection
-from bibble.util.field_matcher import FieldMatcher_m
+from bibble.util.field_matcher_m import FieldMatcher_m
 
 ##-- logging
 logging = logmod.getLogger(__name__)

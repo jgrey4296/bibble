@@ -5,8 +5,10 @@
 
 """
 
+# Imports:
 from __future__ import annotations
 
+# ##-- stdlib imports
 import datetime
 import enum
 import functools as ftz
@@ -18,19 +20,26 @@ import time
 import types
 import weakref
 from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generator,
-                    Generic, Iterable, Iterator, Mapping, Match, Self,
-                    MutableMapping, Protocol, Sequence, Tuple, TypeAlias,
+                    Generic, Iterable, Iterator, Mapping, Match,
+                    MutableMapping, Protocol, Self, Sequence, Tuple, TypeAlias,
                     TypeGuard, TypeVar, cast, final, overload,
                     runtime_checkable)
 from uuid import UUID, uuid1
 
+# ##-- end stdlib imports
+
+# ##-- 3rd party imports
 import bibtexparser
 import bibtexparser.model as model
 from bibtexparser import exceptions as bexp
 from bibtexparser import middlewares as ms
+from bibtexparser.middlewares.middleware import (BlockMiddleware,
+                                                 LibraryMiddleware)
+from bibtexparser.middlewares.names import (NameParts,
+                                            parse_single_name_into_parts)
 from bibtexparser.model import MiddlewareErrorBlock
-from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
-from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
+
+# ##-- end 3rd party imports
 
 ##-- logging
 logging = logmod.getLogger(__name__)

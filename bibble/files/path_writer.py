@@ -44,11 +44,10 @@ from bibtexparser.middlewares.names import (NameParts,
 # ##-- end 3rd party imports
 
 # ##-- 1st party imports
-from bibble.util.error_raiser import ErrorRaiser_m
-from bibble.util.field_matcher import FieldMatcher_m
+from bibble.util.error_raiser_m import ErrorRaiser_m
+from bibble.util.field_matcher_m import FieldMatcher_m
 
 # ##-- end 1st party imports
-
 
 ##-- logging
 logging = logmod.getLogger(__name__)
