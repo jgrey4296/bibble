@@ -3,8 +3,10 @@
 
 """
 
+# Imports:
 from __future__ import annotations
 
+# ##-- stdlib imports
 import datetime
 import enum
 import functools as ftz
@@ -22,13 +24,15 @@ from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generator,
                     runtime_checkable)
 from uuid import UUID, uuid1
 
+# ##-- end stdlib imports
+
 # ##-- 3rd party imports
 import bibtexparser
 import bibtexparser.model as model
 from bibtexparser import middlewares as ms
+from bibtexparser.library import Library
 from bibtexparser.middlewares.middleware import (BlockMiddleware,
                                                  LibraryMiddleware)
-from bibtexparser.library import Library
 from bibtexparser.middlewares.names import (NameParts,
                                             parse_single_name_into_parts)
 from jgdv.files.tags import SubstitutionFile
@@ -36,9 +40,10 @@ from jgdv.files.tags import SubstitutionFile
 # ##-- end 3rd party imports
 
 # ##-- 1st party imports
+from bibble.model import MetaBlock
 from bibble.util.error_raiser import ErrorRaiser_m
 from bibble.util.field_matcher import FieldMatcher_m
-from bibble.model import MetaBlock
+
 # ##-- end 1st party imports
 
 ##-- logging
@@ -76,7 +81,7 @@ class FieldAccumulator(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
     def transform(self, library:Library):
         transformed : Library = super().transform(library)
 
-        transformed.add(AccumulationBlock(self._attr_target, self._collection))
+        transformed.add(FieldAccumulator.AccumulationBlock(self._attr_target, self._collection))
         return transformed
 
     def transform_entry(self, entry, library):
