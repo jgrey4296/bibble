@@ -1,0 +1,3 @@
+[submodule "related_/sphinx_bib_domain"]
+	path = related_/sphinx_bib_domain
+	url = git@github.com:jgrey4296/sphinx_bib_domain.git
