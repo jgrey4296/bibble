@@ -14,9 +14,10 @@ classifiers     = [
 ]
 
 dependencies   = [
-    "jgdv>=0.2",
-    "tomlguard",
+    "jgdv>=0.3",
     "pyisbn",
+    "selenium",
+    "jsonlines",
     "isbn_hyphenate",
     "waybackpy",
     "bibtexparser>=2.0.0b4",
