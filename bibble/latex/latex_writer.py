@@ -28,10 +28,6 @@ from uuid import UUID, uuid1
 
 ##-- end builtin imports
 
-##-- lib imports
-import more_itertools as mitz
-##-- end lib imports
-
 import bibtexparser
 import bibtexparser.model as model
 from bibtexparser import exceptions as bexp
@@ -105,7 +101,6 @@ class LatexWriter(FieldMatcher_m, StringTransform_m, BlockMiddleware):
             self._total_rules.append(URL_RULE)
         self._total_options = {}
         self.rebuild_encoder()
-
 
     def rebuild_encoder(self, *, rules:list[UnicodeToLatexConversionRule]=None, **kwargs):
         """ Accumulates rules and rebuilds the encoder """

@@ -29,9 +29,8 @@ from uuid import UUID, uuid1
 # ##-- end stdlib imports
 
 # ##-- 3rd party imports
-import jsonlines
 import bibtexparser as BTP
-import more_itertools as mitz
+import jsonlines
 import sh
 from bibtexparser import model
 from bibtexparser.middlewares.middleware import (BlockMiddleware,
@@ -40,10 +39,6 @@ from bibtexparser.middlewares.names import (NameParts,
                                             parse_single_name_into_parts)
 
 # ##-- end 3rd party imports
-
-# ##-- 1st party imports
-
-# ##-- end 1st party imports
 
 ##-- logging
 logging = logmod.getLogger(__name__)

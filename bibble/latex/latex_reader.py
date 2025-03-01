@@ -28,10 +28,6 @@ from uuid import UUID, uuid1
 
 ##-- end builtin imports
 
-##-- lib imports
-import more_itertools as mitz
-##-- end lib imports
-
 import bibtexparser
 import bibtexparser.model as model
 from bibtexparser import exceptions as bexp
@@ -89,7 +85,6 @@ class LatexReader(ErrorRaiser_m, FieldMatcher_m, StringTransform_m, BlockMiddlew
         }
         self.rebuild_decoder()
 
-
     def rebuild_decoder(self, *, rules:dict=None, **kwargs):
         self._total_rules.update(rules or {})
         self._total_options.update(kwargs)
@@ -107,7 +102,6 @@ class LatexReader(ErrorRaiser_m, FieldMatcher_m, StringTransform_m, BlockMiddlew
         cleaned, errs = self.transform_string_like(field.value)
         new_field = model.Field(key=field.key, value=cleaned)
         return new_field, errs
-
 
     def _test_string(self, text) -> str:
         """ utility to test decoding """

@@ -28,10 +28,6 @@ from uuid import UUID, uuid1
 
 ##-- end builtin imports
 
-##-- lib imports
-import more_itertools as mitz
-##-- end lib imports
-
 import bibtexparser
 import bibtexparser.model as model
 from bibtexparser import middlewares as ms

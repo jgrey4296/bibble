@@ -28,11 +28,6 @@ from uuid import UUID, uuid1
 
 ##-- end builtin imports
 
-##-- lib imports
-# import more_itertools as mitz
-# from boltons import
-##-- end lib imports
-
 from selenium.webdriver import FirefoxOptions, FirefoxService, Firefox
 from selenium.webdriver.common.print_page_options import PrintOptions
 from waybackpy import WaybackMachineSaveAPI
@@ -147,5 +142,5 @@ class OnlineDownloader(FieldMatcher_m, BlockMiddleware):
             return
 
         logging.info("Saving to: %s", dest)
-        with open(dest, "wb") as f:
+        with dest.open("wb") as f:
             f.write(pdf_bytes)
