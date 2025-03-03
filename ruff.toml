@@ -1,4 +1,4 @@
-## ruff.toml -*- mode: Conf[TOML] -*-
+## ruff.toml -*- mode: toml -*-
 # https://docs.astral.sh/ruff/configuration/
 
 # Extend the project settings, if theres a ruff section
@@ -10,31 +10,24 @@ exclude = [
     ".hg", ".mypy_cache", ".nox", ".pants.d", ".pytype",
     ".ruff_cache", ".svn", ".tox", ".venv", "__pypackages__",
     "_build", "buck-out", "build", "dist", "node_modules",
-    "venv", ".temp"
+    "venv", ".temp",
 ]
 line-length    = 100
 indent-width   = 4
-target-version = "py311"
-
-cache-dir = ".temp/ruff_cache"
+target-version = "py312"
+cache-dir      = ".temp/ruff_cache"
 
 [lint]
-select = [
-       "E", "F", "W", "B", "N", "UP",
-       "YTT", "ANN", "BLE", "FBT", "A",
-       "COM", "CPY", "C4", "DTZ", "EM",
-       "FA", "ISC", "ICN", "TCH", "ARG",
-       "PTH", "ERA", "PL", "TRY", "FLY",
-       "RUF"
-
-]
+# Enable pycodestyle (Symbol’s value as variable is void: E) and Pyflakes (Symbol’s value as variable is void: F) codes by default.
+select = ["E", "F", "W", "B"]
 
 ignore = [
-       "F401", "E402", "E501", "F841", "N801", "ANN204", "ANN101", "UP035", "TRY003", "EM101", "PLW0120",
-       "C419",
+       "F401", "E501", "F841", "N801", "ANN204", "UP035", "TRY003",
+       "EM101", "PLW0120", "C419", "C401", "N817", "C408", "ANN401",
+       "C409"
 ]
 
-# Allow autofix for all enabled rules (when `--fix`) is provided.
+# Allow autofix for all enabled rules (when Symbol’s value as variable is void: --fix) is provided.
 fixable = [
         "A", "B", "C", "D", "E", "F", "G", "I", "N", "Q", "S", "T", "W",
         "ANN", "ARG", "BLE", "COM", "DJ", "DTZ", "EM", "ERA", "EXE", "FBT",
@@ -44,10 +37,14 @@ fixable = [
 unfixable = []
 
 # Allow unused variables when underscore-prefixed.
-dummy-variable-rgx        = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
-logger-objects            = ["logging", "printer"]
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+logger-objects     = ["logging", "printer"]
 
-# [lint.per-file-ignore]
+[lint.pep8-naming]
+# Silences N805
+extend-ignore-names = ["cls", "mcls"]
+
+[lint.per-file-ignore]
 # "__init__.py" = ["E402"]
 # "**/{test,docs,tools}/*" = ["E402"]
 
@@ -57,3 +54,4 @@ quote-style               = "double"
 indent-style              = "space"
 skip-magic-trailing-comma = false
 line-ending               = "auto"
+
