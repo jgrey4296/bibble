@@ -30,6 +30,7 @@ from uuid import UUID, uuid1
 # ##-- 3rd party imports
 from bibtexparser import model
 from bibtexparser.middlewares.middleware import Middleware
+from bibtexparser.model import MiddlewareErrorBlock
 from bibtexparser.library import Library
 from bibtexparser.writer import BibtexFormat
 
@@ -149,6 +150,8 @@ class BibbleWriter:
                 return self.visit_impl_comment(block)
             case model.ParsingFailedBlock():
                 return self.visit_failed_block(block)
+            case MiddlewareErrorBlock():
+                pass
             case _:
                 raise ValueError(f"Unknown block type: {type(block)}")
 

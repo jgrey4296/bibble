@@ -104,6 +104,6 @@ class PathWriter(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
                     field.value = as_str
                 except ValueError:
                     field.value = str(val)
-                    errors.append(f"Failed to Relativize path (%s): %s ", entry.key, val)
+                    errors.append(f"Failed to Relativize path (entry.key): val")
 
         return field, errors

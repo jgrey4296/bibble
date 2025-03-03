@@ -14,13 +14,13 @@ classifiers     = [
 ]
 
 dependencies   = [
-    "jgdv>=0.3",
+    "jgdv>=1.0",
     "pyisbn",
     "selenium",
     "jsonlines",
     "isbn_hyphenate",
     "waybackpy",
-    "bibtexparser>=2.0.0b4",
+    "bibtexparser>=1.0.0b4",
     "internetarchive",
 ]
 

@@ -53,7 +53,7 @@ class OnlineDownloader(FieldMatcher_m, BlockMiddleware):
       if the entry is 'online', and it doesn't have a file associated with it,
       download it as a pdf and add it to the entry
     """
-    _entry_whitelit = ["online", "blog"]
+    _entry_whitelist = ["online", "blog"]
 
     @staticmethod
     def metadata_key():
@@ -69,7 +69,7 @@ class OnlineDownloader(FieldMatcher_m, BlockMiddleware):
             return entry
 
         match entry.get("url"), entry.get("file"):
-            case _, has_file:
+            case _, has_file if has_file is not None:
                 logging.info("Entry %s : Already has file", entry.key)
                 return entry
             case None, _:
