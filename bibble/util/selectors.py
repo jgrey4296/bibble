@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """
 
-See EOF for license/metadata/notes as applicable
 """
 
-##-- builtin imports
+# Imports:
 from __future__ import annotations
 
-# import abc
+# ##-- stdlib imports
 import datetime
 import enum
 import functools as ftz
@@ -18,28 +17,25 @@ import re
 import time
 import types
 import weakref
-# from copy import deepcopy
-# from dataclasses import InitVar, dataclass, field
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generic,
-                    Iterable, Iterator, Mapping, Match, MutableMapping,
-                    Protocol, Sequence, Tuple, TypeAlias, TypeGuard, TypeVar,
-                    cast, final, overload, runtime_checkable, Generator)
+from random import choices
 from uuid import UUID, uuid1
 
-##-- end builtin imports
+# ##-- end stdlib imports
 
-from random import choices
+# ##-- 3rd party imports
 import bibtexparser
 import bibtexparser.model as model
 from bibtexparser import middlewares as ms
-from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
-from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
+from bibtexparser.middlewares.middleware import (BlockMiddleware,
+                                                 LibraryMiddleware)
+from bibtexparser.middlewares.names import (NameParts,
+                                            parse_single_name_into_parts)
+
+# ##-- end 3rd party imports
 
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
-
-# TODO Selectors to filter by tag, author
 
 class SelectN(LibraryMiddleware):
     """ Select N random entries """
@@ -72,7 +68,6 @@ class SelectEntries(LibraryMiddleware):
 
     def transform(self, library):
         chosen = [x for x in library.entries if x.entry_type.lower() == self._entry_target]
-
         library.entries = chosen
         return library
 

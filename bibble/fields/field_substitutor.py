@@ -17,16 +17,12 @@ import re
 import time
 import types
 import weakref
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generator,
-                    Generic, Iterable, Iterator, Mapping, Match,
-                    MutableMapping, Protocol, Sequence, Tuple, TypeAlias,
-                    TypeGuard, TypeVar, cast, final, overload,
-                    runtime_checkable)
 from uuid import UUID, uuid1
 
 # ##-- end stdlib imports
 
 # ##-- 3rd party imports
+from jgdv import Mixin
 import bibtexparser
 import bibtexparser.model as model
 from bibtexparser import middlewares as ms
@@ -44,12 +40,37 @@ from bibble.util.field_matcher_m import FieldMatcher_m
 
 # ##-- end 1st party imports
 
+# ##-- types
+# isort: off
+import abc
+import collections.abc
+from typing import TYPE_CHECKING, cast, assert_type, assert_never
+from typing import Generic, NewType
+# Protocols:
+from typing import Protocol, runtime_checkable
+# Typing Decorators:
+from typing import no_type_check, final, override, overload
+
+if TYPE_CHECKING:
+    from jgdv import Maybe
+    from typing import Final
+    from typing import ClassVar, Any, LiteralString
+    from typing import Never, Self, Literal
+    from typing import TypeGuard
+    from collections.abc import Iterable, Iterator, Callable, Generator
+    from collections.abc import Sequence, Mapping, MutableMapping, Hashable
+
+##--|
+
+# isort: on
+# ##-- end types
+
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-
-class FieldSubstitutor(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
+@Mixin(ErrorRaiser_m, FieldMatcher_m)
+class FieldSubstitutor(BlockMiddleware):
     """
       For a given field(s), and a given jgdv.SubstitutionFile,
     replace the field value as necessary in each entry.
@@ -63,7 +84,7 @@ class FieldSubstitutor(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
     def metadata_key():
         return "BM-field-sub"
 
-    def __init__(self, fields:str|list[str], subs:None|SubstitutionFile, force_single_value:bool=False, **kwargs):
+    def __init__(self, fields:str|list[str], subs:Maybe[SubstitutionFile], force_single_value:bool=False, **kwargs):
         super().__init__(**kwargs)
         match fields:
             case str() as x:
@@ -79,14 +100,15 @@ class FieldSubstitutor(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
         if self._subs is None or not bool(self._subs):
             return entry
 
-        entry, errors = self.match_on_fields(entry, library)
-        match self.maybe_error_block(entry, errors):
-            case None:
-                return entry
-            case errblock:
-                return errblock
+        match self.match_on_fields(entry, library):
+            case model.Entry() as x:
+                return x
+            case list() as errs:
+                return [entry, self.make_error_block(entry, errs)]
+            case x:
+                raise TypeError(type(x))
 
-    def field_handler(self, field, entry):
+    def field_h(self, field, entry):
         match field.value:
             case str() as value if self._force_single_value:
                 head, *_ = list(self._subs.sub(value))

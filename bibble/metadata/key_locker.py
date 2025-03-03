@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """
 
-See EOF for license/metadata/notes as applicable
 """
 
-##-- builtin imports
+# Imports:
 from __future__ import annotations
 
-# import abc
+# ##-- stdlib imports
 import datetime
 import enum
 import functools as ftz
@@ -18,21 +17,51 @@ import re
 import time
 import types
 import weakref
-# from copy import deepcopy
-# from dataclasses import InitVar, dataclass, field
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generic,
-                    Iterable, Iterator, Mapping, Match, MutableMapping,
-                    Protocol, Sequence, Tuple, TypeAlias, TypeGuard, TypeVar,
-                    cast, final, overload, runtime_checkable, Generator)
 from uuid import UUID, uuid1
 
-##-- end builtin imports
+# ##-- end stdlib imports
 
+# ##-- 3rd party imports
 import bibtexparser
 import bibtexparser.model as model
 from bibtexparser import middlewares as ms
-from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
-from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
+from bibtexparser.middlewares.middleware import (BlockMiddleware,
+                                                 LibraryMiddleware)
+from bibtexparser.middlewares.names import (NameParts,
+                                            parse_single_name_into_parts)
+from jgdv import Mixin, Proto
+
+# ##-- end 3rd party imports
+
+# ##-- 1st party imports
+import bibble._interface as API
+
+# ##-- end 1st party imports
+
+# ##-- types
+# isort: off
+import abc
+import collections.abc
+from typing import TYPE_CHECKING, cast, assert_type, assert_never
+from typing import Generic, NewType
+# Protocols:
+from typing import Protocol, runtime_checkable
+# Typing Decorators:
+from typing import no_type_check, final, override, overload
+
+if TYPE_CHECKING:
+    from jgdv import Maybe
+    from typing import Final
+    from typing import ClassVar, Any, LiteralString
+    from typing import Never, Self, Literal
+    from typing import TypeGuard
+    from collections.abc import Iterable, Iterator, Callable, Generator
+    from collections.abc import Sequence, Mapping, MutableMapping, Hashable
+
+##--|
+
+# isort: on
+# ##-- end types
 
 ##-- logging
 logging = logmod.getLogger(__name__)
@@ -43,6 +72,10 @@ KEY_SUFFIX_RE : Final[re.Pattern] = re.compile("_+$")
 KEY_SUB_CHAR  : Final[str]        = "_"
 LOCK_CHAR     : Final[str]        = "_"
 
+CROSSREF_K : Final[str] = "crossref"
+##--|
+
+@Proto(API.ReadTime_p)
 class LockCrossrefKeys(BlockMiddleware):
     """ Ensure key/crossref consistency by:
     removing unwanted chars in the key,
@@ -63,18 +96,21 @@ class LockCrossrefKeys(BlockMiddleware):
         self._lock_char : str        = LOCK_CHAR
         self._bad_lock  : str        = f"{LOCK_CHAR}{LOCK_CHAR}"
 
+    def on_read(self):
+        return True
+
     def transform_entry(self, entry, library):
         entry.key = self.clean_key(entry.key)
-
-        match entry.get("crossref"):
+        match entry.get(CROSSREF_K):
             case None:
                 pass
             case model.Field(value=value):
-                entry.set_field(model.Field("crossref", self.clean_key(value)))
+                entry.set_field(model.Field(CROSSREF_K, self.clean_key(value)))
 
         return entry
 
     def clean_key(self, key:str) -> str:
+        """ Convert the entry key to a canonical form """
         if key.endswith(self._lock_char) and not key.endswith(self._bad_lock):
             return key
 

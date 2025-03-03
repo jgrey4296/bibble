@@ -19,11 +19,6 @@ import re
 import time
 import types
 import weakref
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generator,
-                    Generic, Iterable, Iterator, Mapping, Match,
-                    MutableMapping, Protocol, Sequence, Tuple, TypeAlias,
-                    TypeGuard, TypeVar, cast, final, overload,
-                    runtime_checkable)
 from uuid import UUID, uuid1
 
 # ##-- end stdlib imports
@@ -37,8 +32,34 @@ from bibtexparser.middlewares.middleware import (BlockMiddleware,
                                                  LibraryMiddleware)
 from bibtexparser.middlewares.names import (NameParts,
                                             parse_single_name_into_parts)
+from jgdv import Proto, Mixin
 
 # ##-- end 3rd party imports
+
+# ##-- types
+# isort: off
+import abc
+import collections.abc
+from typing import TYPE_CHECKING, cast, assert_type, assert_never
+from typing import Generic, NewType
+# Protocols:
+from typing import Protocol, runtime_checkable
+# Typing Decorators:
+from typing import no_type_check, final, override, overload
+
+if TYPE_CHECKING:
+    from jgdv import Maybe
+    from typing import Final
+    from typing import ClassVar, Any, LiteralString
+    from typing import Never, Self, Literal
+    from typing import TypeGuard
+    from collections.abc import Iterable, Iterator, Callable, Generator
+    from collections.abc import Sequence, Mapping, MutableMapping, Hashable
+
+##--|
+
+# isort: on
+# ##-- end types
 
 ##-- logging
 logging = logmod.getLogger(__name__)
@@ -49,7 +70,7 @@ exiftool = sh.exiftool
 calibre  = sh.ebook_meta
 qpdf     = sh.qpdf
 pdfinfo  = sh.pdfinfo
-
+##--|
 class _EntryFileGetter_m:
 
     def _get_file(self, entry) -> None|pl.Path:
@@ -264,7 +285,9 @@ class _Epub_Update_m:
 
         return args
 
-class MetadataApplicator(_Pdf_Update_m, _Epub_Update_m, _EntryFileGetter_m, _Metadata_Check_m, LibraryMiddleware):
+##--|
+@Mixin(_Pdf_Update_m, _Epub_Update_m, _EntryFileGetter_m, _Metadata_Check_m)
+class MetadataApplicator(LibraryMiddleware):
     """ Apply metadata to files mentioned in bibtex entries
       uses xmp-prism tags and some custom ones for pdfs,
       and epub standard.
@@ -282,7 +305,7 @@ class MetadataApplicator(_Pdf_Update_m, _Epub_Update_m, _EntryFileGetter_m, _Met
     def transform(self, library:BTP.Library) -> BTP.Library:
         total = len(library.entries)
         logging.info("Appling Metadata to library")
-        for i, entry in enumerate(library.entries):
+        for _, entry in enumerate(library.entries):
             self.transform_entry(entry, library)
 
         return library
@@ -331,7 +354,9 @@ class MetadataApplicator(_Pdf_Update_m, _Epub_Update_m, _EntryFileGetter_m, _Met
         return entry
 
 
-class FileCheck(_Pdf_Update_m, _EntryFileGetter_m, LibraryMiddleware):
+##--|
+@Mixin(_Pdf_Update_m, _EntryFileGetter_m)
+class FileCheck(LibraryMiddleware):
     """
       Annotate entries with 'pdf_locked' if the pdf can't be modified,
       "orphan_file" if the pdf or epub does not exist
@@ -345,7 +370,7 @@ class FileCheck(_Pdf_Update_m, _EntryFileGetter_m, LibraryMiddleware):
     def transform(self, library:BTP.Library) -> BTP.Library:
         total = len(library.entries)
         logging.info("Checking library files")
-        for i, entry in enumerate(library.entries):
+        for _, entry in enumerate(library.entries):
             self.transform_entry(entry, library)
 
         return library

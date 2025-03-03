@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 """
 
-See EOF for license/metadata/notes as applicable
 """
 
-##-- builtin imports
 from __future__ import annotations
 
-# import abc
 import datetime
 import enum
 import functools as ftz
@@ -18,15 +15,7 @@ import re
 import time
 import types
 import weakref
-# from copy import deepcopy
-# from dataclasses import InitVar, dataclass, field
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generic,
-                    Iterable, Iterator, Mapping, Match, MutableMapping,
-                    Protocol, Sequence, Tuple, TypeAlias, TypeGuard, TypeVar,
-                    cast, final, overload, runtime_checkable, Generator)
 from uuid import UUID, uuid1
-
-##-- end builtin imports
 
 import bibtexparser
 import bibtexparser.model as model
@@ -34,12 +23,16 @@ from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
 from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
+from jgdv import Proto, Mixin
 from jgdv.files.tags import TagFile
+
+import bibble._interface as API
 
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
+@Proto(API.ReadTime_p)
 class TagsReader(BlockMiddleware):
     """
       Read Tag strings, split them into a set, and keep track of all mentioned tags
@@ -59,6 +52,9 @@ class TagsReader(BlockMiddleware):
         super().__init__(True, True)
         if clear:
             TagsReader._all_tags = TagFile()
+
+    def on_read(self):
+        return True
 
     def transform_entry(self, entry, library):
         match entry.get("tags"):

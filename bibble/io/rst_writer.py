@@ -17,17 +17,39 @@ import re
 import time
 import types
 import weakref
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generator,
-                    Generic, Iterable, Iterator, Mapping, Match,
-                    MutableMapping, Protocol, Sequence, Tuple, TypeAlias,
-                    TypeGuard, TypeVar, cast, final, overload,
-                    runtime_checkable)
 from uuid import UUID, uuid1
 
 # ##-- end stdlib imports
 
 from bibtexparser import model
+from bibtexparser.library import Library
 from bibble.io.writer import BibbleWriter
+
+# ##-- types
+# isort: off
+import abc
+import collections.abc
+from typing import TYPE_CHECKING, cast, assert_type, assert_never
+from typing import Generic, NewType
+# Protocols:
+from typing import Protocol, runtime_checkable
+# Typing Decorators:
+from typing import no_type_check, final, override, overload
+
+if TYPE_CHECKING:
+    from jgdv import Maybe
+    from typing import Final
+    from typing import ClassVar, Any, LiteralString
+    from typing import Never, Self, Literal
+    from typing import TypeGuard
+    from collections.abc import Iterable, Iterator, Callable, Generator
+    from collections.abc import Sequence, Mapping, MutableMapping, Hashable
+
+    type Block = model.Block
+##--|
+
+# isort: on
+# ##-- end types
 
 ##-- logging
 logging = logmod.getLogger(__name__)
@@ -46,8 +68,39 @@ class RstWriter(BibbleWriter):
                                          ]
     _indent     : ClassVar[str]       = " "*3
 
-    def visit_entry(self, block) -> list[str]:
-        result = [self._entry.format(entry.key)]
+    def _title_add(self, block:Block) -> list[str]:
+        match block.get('title', None):
+            case model.Field(value=str() as title):
+                pass
+            case _:
+                raise KeyError("no title", block.key)
+
+        match block.get("subtitle", None):
+            case model.Field(value=str() as subtitle):
+                return [f"{self._indent}:title: {title}: {subtitle}"]
+            case _:
+                return [f"{self._indent}:title: {title}"]
+
+    def _must_add(self, block:Block, field:str) -> list[str]:
+        match block.get(field, None):
+            case model.Field(value=val):
+                return [f"{self._indent}:{block.key}: {val}"]
+            case _:
+                raise KeyError('Entry missing required field', block.key, field)
+
+    def _can_add(self, block:Block, *keys:str) -> list[str]:
+        result = []
+        for key in keys:
+            match block.get(key, None):
+                case None:
+                    continue
+                case model.Field(value=val):
+                    result.append(f"{self._indent}:{key}: {val}")
+        else:
+            return result
+
+    def visit_entry(self, block:Block) -> list[str]:
+        result = [self._entry.format(block.key)]
         match block.entry_type:
             case "case" | "legal" | "judicial" | "law":
                 return []
@@ -73,38 +126,7 @@ class RstWriter(BibbleWriter):
 
         return result
 
-    def _title_add(self, block) -> list[str]:
-        match block.get('title', None):
-            case model.Field(value=str() as title):
-                pass
-            case _:
-                raise KeyError("no title", block.key)
-
-        match block.get("subtitle", None):
-            case model.Field(value=str() as subtitle):
-                return [f"{self._indent}:title: {title}: {subtitle}"]
-            case _:
-                return [f"{self._indent}:title: {title}"]
-
-    def _must_add(self, block, field:str) -> list[str]:
-        match block.get(field, None):
-            case model.Field(value=val):
-                return [f"{self._indent}:{key}: {val}"]
-            case _:
-                raise KeyError('Entry missing required field', block.key, field)
-
-    def _can_add(self, block, *keys) -> list[str]:
-        result = []
-        for key in keys:
-            match block.get(key, None):
-                case None:
-                    continue
-                case model.Field(value=val):
-                    result.append(f"{self._indent}:{key}: {val}")
-        else:
-            return result
-
-    def visit_header(self, library, file=None):
+    def visit_header(self, library:Library, file:Maybe[pl.Path]=None) -> list[str]:
         match file:
             case None:
                 title = "A Bibtex File"

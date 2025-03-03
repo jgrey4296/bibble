@@ -27,6 +27,7 @@ from uuid import UUID, uuid1
 # ##-- end stdlib imports
 
 # ##-- 3rd party imports
+from jgdv import Proto, Mixin
 import bibtexparser
 import bibtexparser.model as model
 from bibtexparser import middlewares as ms
@@ -48,15 +49,14 @@ from bibble.util.field_matcher_m import FieldMatcher_m
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-
-class FieldSorter(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
+class FieldSorter(BlockMiddleware):
     """ Sort the entries of a field
     firsts are exact matches that go at the front.
     lasts are a list of patterns to match on
     """
 
-    _first_defaults = []
-    _last_defaults  = []
+    _first_defaults : ClassVar[list[str]] = []
+    _last_defaults  : ClassVar[list[str]] = []
 
     @staticmethod
     def metadata_key():
@@ -68,13 +68,12 @@ class FieldSorter(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
         self._lasts    = last or self._last_defaults
         self._stem_re  = re.compile("^[a-zA-Z_]+")
 
-    def field_sort_key(self, field:model.Field):
+    def field_sort_key(self, field:model.Field) -> str:
         match self._stem_re.match(field.key):
             case None:
                 key = field.key
             case x:
                 key = x[0]
-
         try:
             return (self._lasts.index(key), field.key)
         except ValueError:

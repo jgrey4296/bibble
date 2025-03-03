@@ -4,10 +4,10 @@
 See EOF for license/metadata/notes as applicable
 """
 
-##-- builtin imports
+# Imports:
 from __future__ import annotations
 
-# import abc
+# ##-- stdlib imports
 import datetime
 import enum
 import functools as ftz
@@ -18,29 +18,59 @@ import re
 import time
 import types
 import weakref
-# from copy import deepcopy
-# from dataclasses import InitVar, dataclass, field
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generic,
-                    Iterable, Iterator, Mapping, Match, MutableMapping, Self,
-                    Protocol, Sequence, Tuple, TypeAlias, TypeGuard, TypeVar,
-                    cast, final, overload, runtime_checkable, Generator)
 from uuid import UUID, uuid1
 
-##-- end builtin imports
+# ##-- end stdlib imports
 
+# ##-- 3rd party imports
+from jgdv import Proto, Mixin
 import bibtexparser
 import bibtexparser.model as model
+from bibtexparser.library import Library
 from bibtexparser import exceptions as bexp
 from bibtexparser import middlewares as ms
+from bibtexparser.middlewares.middleware import (BlockMiddleware, LibraryMiddleware)
 from bibtexparser.model import MiddlewareErrorBlock
-from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
-from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
+from pylatexenc.latex2text import (LatexNodes2Text, MacroTextSpec,
+                                   get_default_latex_context_db)
 
-from pylatexenc.latex2text import LatexNodes2Text, MacroTextSpec, get_default_latex_context_db
+# ##-- end 3rd party imports
 
+# ##-- 1st party imports
+import bibble._interface as API
+from bibble.util.mixins import ErrorRaiser_m, FieldMatcher_m
 from bibble.util.str_transform_m import StringTransform_m
-from bibble.util.field_matcher_m import FieldMatcher_m
-from bibble.util.error_raiser_m import ErrorRaiser_m
+
+# ##-- end 1st party imports
+
+# ##-- types
+# isort: off
+import abc
+import collections.abc
+from typing import TYPE_CHECKING, cast, assert_type, assert_never
+from typing import Generic, NewType
+# Protocols:
+from typing import Protocol, runtime_checkable
+# Typing Decorators:
+from typing import no_type_check, final, override, overload
+
+if TYPE_CHECKING:
+    from jgdv import Maybe
+    from typing import Final
+    from typing import ClassVar, Any, LiteralString
+    from typing import Never, Self, Literal
+    from typing import TypeGuard
+    from collections.abc import Iterable, Iterator, Callable, Generator
+    from collections.abc import Sequence, Mapping, MutableMapping, Hashable
+
+    type Entry = model.Entry
+    type Block = model.Block
+    type Field = model.Field
+##--|
+
+# isort: on
+# ##-- end types
+
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
@@ -49,12 +79,16 @@ DEFAULT_DECODE_RULES : Final[dict] = {
     "BM-reader-simplify-urls" : MacroTextSpec("url", simplify_repl="%s"),
 }
 
-class LatexReader(ErrorRaiser_m, FieldMatcher_m, StringTransform_m, BlockMiddleware):
+##--|
+
+@Proto(API.ReadTime_p)
+@Mixin(ErrorRaiser_m, FieldMatcher_m, StringTransform_m)
+class LatexReader(BlockMiddleware):
     """ Latex->unicode transform.
     all strings in the library, except urls, files, doi's and crossrefs
     """
 
-    _field_blacklist = ["url", "file", "doi", "crossref"]
+    _field_blacklist : ClassVar[list[str]] = ["url", "file", "doi", "crossref"]
 
     @staticmethod
     def metadata_key() -> str:
@@ -85,29 +119,31 @@ class LatexReader(ErrorRaiser_m, FieldMatcher_m, StringTransform_m, BlockMiddlew
         }
         self.rebuild_decoder()
 
-    def rebuild_decoder(self, *, rules:dict=None, **kwargs):
+    def on_read(self):
+        return True
+
+    def rebuild_decoder(self, *, rules:dict=None, **kwargs) -> None:
         self._total_rules.update(rules or {})
         self._total_options.update(kwargs)
         self._decoder = LatexReader.build_decoder(rules=self._total_rules, **self._total_options)
 
     def transform_entry(self, entry: Entry, library: Library) -> Block:
-        entry, errors = self.match_on_fields(entry, library)
-        match self.maybe_error_block(entry, errors):
-            case None:
-                return entry
-            case errblock:
-                return errblock
+        match self.match_on_fields(entry, library):
+            case model.Entry() as x:
+                return x
+            case list() as errs:
+                return [entry, self.make_error_block(entry, errs)]
 
-    def field_handler(self, field:model.Field, entry) -> tuple[model.Field, list[str]]:
+    def field_handler(self, field:Field, entry) -> tuple[Field, list[str]]:
         cleaned, errs = self.transform_string_like(field.value)
         new_field = model.Field(key=field.key, value=cleaned)
         return new_field, errs
 
-    def _test_string(self, text) -> str:
+    def _test_string(self, text:str) -> str:
         """ utility to test decoding """
         return self._decoder.latex_to_text(text)
 
-    def _transform_python_value_string(self, python_string: str) -> Tuple[str, str]:
+    def _transform_python_value_string(self, python_string: str) -> tuple[str, str]:
         """Transforms a python string to a latex string
 
         Returns:

@@ -23,19 +23,18 @@ from uuid import UUID, uuid1
 # ##-- end stdlib imports
 
 # ##-- 3rd party imports
+from jgdv import Proto, Mixin
 import bibtexparser
 import bibtexparser.model as model
+from bibtexparser.library import Library
 from bibtexparser import middlewares as ms
-from bibtexparser.middlewares.middleware import (BlockMiddleware,
-                                                 LibraryMiddleware)
-from bibtexparser.middlewares.names import (NameParts,
-                                            parse_single_name_into_parts)
+from bibtexparser.middlewares.middleware import (BlockMiddleware, LibraryMiddleware)
 
 # ##-- end 3rd party imports
 
 # ##-- 1st party imports
-from bibble.util.error_raiser_m import ErrorRaiser_m
-from bibble.util.field_matcher_m import FieldMatcher_m
+import bibble._interface as API
+from bibble.util.mixins import ErrorRaiser_m, FieldMatcher_m
 
 # ##-- end 1st party imports
 
@@ -59,6 +58,8 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Callable, Generator
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
 
+    type Entry = model.Entry
+    type Field = model.Field
 ##--|
 
 # isort: on
@@ -68,12 +69,14 @@ if TYPE_CHECKING:
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-class PathWriter(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
+@Proto(API.WriteTime_p)
+@Mixin(ErrorRaiser_m, FieldMatcher_m)
+class PathWriter(BlockMiddleware):
     """
       Relativize library paths back to strings
     """
 
-    _field_whitelist = ["file"]
+    _field_whitelist : ClassVar[list[str]] = ["file"]
 
     @staticmethod
     def metadata_key():
@@ -83,15 +86,17 @@ class PathWriter(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
         super().__init__(**kwargs)
         self._lib_root = lib_root
 
-    def transform_entry(self, entry, library):
-        entry, errors = self.match_on_fields(entry, library)
-        match self.maybe_error_block(entry, errors):
-            case None:
-                return entry
-            case errblock:
-                return errblock
+    def on_write(self):
+        return True
 
-    def field_handler(self, field, entry):
+    def transform_entry(self, entry:Entry, library:Library):
+        match self.match_on_fields(entry, library):
+            case model.Entry() as x:
+                return x
+            case list() as errs:
+                return [entry, self.make_error_block(entry, errs)]
+
+    def field_handler(self, field:Field, entry:Entry):
         errors = []
         match field.value:
             case str():
@@ -104,6 +109,6 @@ class PathWriter(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
                     field.value = as_str
                 except ValueError:
                     field.value = str(val)
-                    errors.append(f"Failed to Relativize path (entry.key): val")
+                    errors.append(f"Failed to Relativize path {entry.key}: {val}")
 
         return field, errors

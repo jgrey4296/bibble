@@ -4,10 +4,11 @@
 See EOF for license/metadata/notes as applicable
 """
 
-##-- builtin imports
+# Imports:
 from __future__ import annotations
 
-# import abc
+# ##-- stdlib imports
+import base64
 import datetime
 import enum
 import functools as ftz
@@ -18,26 +19,54 @@ import re
 import time
 import types
 import weakref
-# from copy import deepcopy
-# from dataclasses import InitVar, dataclass, field
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generic,
-                    Iterable, Iterator, Mapping, Match, MutableMapping,
-                    Protocol, Sequence, Tuple, TypeAlias, TypeGuard, TypeVar,
-                    cast, final, overload, runtime_checkable, Generator)
 from uuid import UUID, uuid1
 
-##-- end builtin imports
+# ##-- end stdlib imports
 
-from selenium.webdriver import FirefoxOptions, FirefoxService, Firefox
-from selenium.webdriver.common.print_page_options import PrintOptions
-from waybackpy import WaybackMachineSaveAPI
+# ##-- 3rd party imports
 import bibtexparser
 import bibtexparser.model as model
-from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
-import base64
-from jgdv.files.tags import TagFile
+from bibtexparser.middlewares.middleware import (BlockMiddleware,
+                                                 LibraryMiddleware)
+from jgdv import Proto, Mixin
 from jgdv.files.bookmarks import BookmarkCollection
+from jgdv.files.tags import TagFile
+from selenium.webdriver import Firefox, FirefoxOptions, FirefoxService
+from selenium.webdriver.common.print_page_options import PrintOptions
+from waybackpy import WaybackMachineSaveAPI
+
+# ##-- end 3rd party imports
+
+# ##-- 1st party imports
+import bibble._interface as API
 from bibble.util.field_matcher_m import FieldMatcher_m
+
+# ##-- end 1st party imports
+
+# ##-- types
+# isort: off
+import abc
+import collections.abc
+from typing import TYPE_CHECKING, cast, assert_type, assert_never
+from typing import Generic, NewType
+# Protocols:
+from typing import Protocol, runtime_checkable
+# Typing Decorators:
+from typing import no_type_check, final, override, overload
+
+if TYPE_CHECKING:
+    from jgdv import Maybe
+    from typing import Final
+    from typing import ClassVar, Any, LiteralString
+    from typing import Never, Self, Literal
+    from typing import TypeGuard
+    from collections.abc import Iterable, Iterator, Callable, Generator
+    from collections.abc import Sequence, Mapping, MutableMapping, Hashable
+
+##--|
+
+# isort: on
+# ##-- end types
 
 ##-- logging
 logging = logmod.getLogger(__name__)
@@ -48,44 +77,12 @@ READER_PREFIX      : Final[str] = "about:reader?url="
 LOAD_TIMEOUT       : Final[int] = 2
 WAYBACK_USER_AGENT : Final[str] = "Mozilla/5.0 (Windows NT 5.1; rv:40.0) Gecko/20100101 Firefox/40.0"
 
-class OnlineDownloader(FieldMatcher_m, BlockMiddleware):
-    """
-      if the entry is 'online', and it doesn't have a file associated with it,
-      download it as a pdf and add it to the entry
-    """
-    _entry_whitelist = ["online", "blog"]
+##--|
+
+class FirefoxController:
 
     @staticmethod
-    def metadata_key():
-        return "BM-online-handler"
-
-    def __init__(self, target:pl.Path, *e_types:str, **kwargs):
-        super().__init__(**kwargs)
-        self._target_dir         : pl.Path   = target
-        self._target_entry_types : list[str] = list(e_types or ["online", "blog"])
-
-    def transform_entry(self, entry, library):
-        if self.should_skip_entry(entry, library):
-            return entry
-
-        match entry.get("url"), entry.get("file"):
-            case _, has_file if has_file is not None:
-                logging.info("Entry %s : Already has file", entry.key)
-                return entry
-            case None, _:
-                logging.warning("Entry %s : no url found", entry.key)
-                return entry
-            case model.Field(value=url), None:
-                safe_key = entry.key.replace(":","_")
-                dest     = (self._target_dir / safe_key).with_suffix(".pdf")
-                self.save_pdf(url, dest)
-                # add it to the entry
-                entry.set_field(model.Field("file", value=dest))
-
-        return entry
-
-    @staticmethod
-    def setup_firefox() -> None:
+    def setup() -> None:
         """ Setups a selenium driven, headless firefox to print to pdf """
         if hasattr(OnlineDownloader, FF_DRIVER):
             return getattr(OnlineDownloader, FF_DRIVER)
@@ -108,12 +105,54 @@ class OnlineDownloader(FieldMatcher_m, BlockMiddleware):
         return driver
 
     @staticmethod
-    def close_firefox():
+    def close():
         if not hasattr(OnlineDownloader, FF_DRIVER):
             return
 
         logging.info("Closing Firefox")
         getattr(OnlineDownloader, FF_DRIVER).quit()
+
+##--|
+
+@Mixin(FieldMatcher_m)
+class OnlineDownloader(BlockMiddleware):
+    """
+      if the entry is 'online', and it doesn't have a file associated with it,
+      download it as a pdf and add it to the entry
+    """
+    _entry_whitelist    : ClassVar[list[str]] = ["online", "blog"]
+    _target_dir         : pl.Path
+    _target_entry_types : list[str]
+
+    @staticmethod
+    def metadata_key():
+        return "BM-online-handler"
+
+    def __init__(self, target:pl.Path, *e_types:str, logger:Maybe[logmod.Logger]=None, **kwargs):
+        super().__init__(**kwargs)
+        self._target_dir         = target
+        self._target_entry_types = list(e_types or OnlineDownloader._entry_whitelist)
+        self._logger             = logger or logging
+
+    def transform_entry(self, entry, library):
+        if self.should_skip_entry(entry, library):
+            return entry
+
+        match entry.get("url"), entry.get("file"):
+            case _, pl.Path()|str():
+                self._logger.info("Entry %s : Already has file", entry.key)
+                return entry
+            case None, _:
+                self._logger.warning("Entry %s : no url found", entry.key)
+                return entry
+            case model.Field(value=url), None:
+                safe_key = entry.key.replace(":","_")
+                dest     = (self._target_dir / safe_key).with_suffix(".pdf")
+                self.save_pdf(url, dest)
+                # add it to the entry
+                entry.set_field(model.Field("file", value=dest))
+
+        return entry
 
     def save_pdf(self, url, dest):
         """ prints a url to a pdf file using selenium """
@@ -124,10 +163,10 @@ class OnlineDownloader(FieldMatcher_m, BlockMiddleware):
             raise FileNotFoundError("Destination isn't a pdf", dest)
 
         if dest.exists():
-            logging.warning("Destination already exists: %s", dest)
+            logging.info("Destination already exists: %s", dest)
             return
 
-        driver = OnlineDownloader.setup_firefox()
+        driver = FirefoxController.setup()
         logging.info("Saving: %s", url)
         print_ops = PrintOptions()
         print_ops.page_range = "all"
@@ -138,7 +177,7 @@ class OnlineDownloader(FieldMatcher_m, BlockMiddleware):
         pdf_bytes = base64.b64decode(pdf)
 
         if not bool(pdf_bytes):
-            logging.warning("No Bytes were downloaded")
+            self._logger.warning("No Bytes were downloaded")
             return
 
         logging.info("Saving to: %s", dest)

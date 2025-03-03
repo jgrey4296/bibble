@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """
 
-
-See EOF for license/metadata/notes as applicable
 """
 
 from __future__ import annotations
@@ -50,6 +48,7 @@ class StringTransform_m:
         raise NotImplementedError("called abstract method")
 
     # docstr-coverage: inherited
+
     def _transform_all_strings(self, list_of_strings: List[str], errors: List[str]) -> List[str]:
         """Called for every python (value, not key) string found on Entry and String blocks"""
         res = []
@@ -60,6 +59,7 @@ class StringTransform_m:
         return res
 
     # docstr-coverage: inherited
+
     def transform_string_like(self, value:str|NameParts|list|set) -> tuple[Any,list[str]]:
         errors = []
         match val:
@@ -82,6 +82,7 @@ class StringTransform_m:
         return val, errors
 
     # docstr-coverage: inherited
+
     def transform_string(self, string: String, library: "Library") -> Block:
         if isinstance(string.value, str):
             string.value = self._transform_python_value_string(string.value)

@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """
 
-
-
 """
 
 # Imports:
@@ -19,11 +17,6 @@ import re
 import time
 import types
 import weakref
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generator,
-                    Generic, Iterable, Iterator, Mapping, Match,
-                    MutableMapping, Protocol, Sequence, Tuple, TypeAlias,
-                    TypeGuard, TypeVar, cast, final, overload,
-                    runtime_checkable)
 from uuid import UUID, uuid1
 
 # ##-- end stdlib imports
@@ -36,13 +29,14 @@ from bibtexparser.middlewares.middleware import (BlockMiddleware,
                                                  LibraryMiddleware)
 from bibtexparser.middlewares.names import (NameParts,
                                             parse_single_name_into_parts)
+from jgdv import Proto, Mixin
 from jgdv.files.tags import SubstitutionFile
 
 # ##-- end 3rd party imports
 
 # ##-- 1st party imports
-from bibble.util.error_raiser_m import ErrorRaiser_m
-from bibble.util.field_matcher_m import FieldMatcher_m
+import bibble._interface as API
+from bibble.util.error_raiser_m import ErrorRaiser_m, FieldMatcher_m
 from bibble.fields.field_substitutor import FieldSubstitutor
 
 # ##-- end 1st party imports
@@ -51,6 +45,11 @@ from bibble.fields.field_substitutor import FieldSubstitutor
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
+AUTHOR_K : Final[str] = "author"
+EDITOR_K : Final[str] = "editor"
+
+##--|
+@Proto(API.ReadTime_p)
 class NameSubstitutor(FieldSubstitutor):
     """ replaces names in author and editor fields as necessary """
 
@@ -59,7 +58,10 @@ class NameSubstitutor(FieldSubstitutor):
         return "BM-name-sub"
 
     def __init__(self, subs:None|SubstitutionFile, **kwargs):
-        super().__init__(["author", "editor"], subs, **kwargs)
+        super().__init__([AUTHOR_K, EDITOR_K], subs, **kwargs)
+
+    def on_read(self):
+        return True
 
     def field_handler(self, field, entry):
         match field.value:

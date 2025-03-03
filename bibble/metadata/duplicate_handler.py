@@ -4,10 +4,10 @@
 See EOF for license/metadata/notes as applicable
 """
 
-##-- builtin imports
+# Imports:
 from __future__ import annotations
 
-# import abc
+# ##-- stdlib imports
 import datetime
 import enum
 import functools as ftz
@@ -18,21 +18,46 @@ import re
 import time
 import types
 import weakref
-# from copy import deepcopy
-# from dataclasses import InitVar, dataclass, field
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generic,
-                    Iterable, Iterator, Mapping, Match, MutableMapping,
-                    Protocol, Sequence, Tuple, TypeAlias, TypeGuard, TypeVar,
-                    cast, final, overload, runtime_checkable, Generator)
 from uuid import UUID, uuid1
 
-##-- end builtin imports
+# ##-- end stdlib imports
 
+# ##-- 3rd party imports
+from jgdv import Proto, Mixin
 import bibtexparser
 import bibtexparser.model as model
+from bibtexparser.library import Library
 from bibtexparser import middlewares as ms
-from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
-from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
+from bibtexparser.middlewares.middleware import (BlockMiddleware, LibraryMiddleware)
+
+# ##-- end 3rd party imports
+
+import bibble._interface as API
+
+# ##-- types
+# isort: off
+import abc
+import collections.abc
+from typing import TYPE_CHECKING, cast, assert_type, assert_never
+from typing import Generic, NewType
+# Protocols:
+from typing import Protocol, runtime_checkable
+# Typing Decorators:
+from typing import no_type_check, final, override, overload
+
+if TYPE_CHECKING:
+    from jgdv import Maybe
+    from typing import Final
+    from typing import ClassVar, Any, LiteralString
+    from typing import Never, Self, Literal
+    from typing import TypeGuard
+    from collections.abc import Iterable, Iterator, Callable, Generator
+    from collections.abc import Sequence, Mapping, MutableMapping, Hashable
+
+##--|
+
+# isort: on
+# ##-- end types
 
 ##-- logging
 logging = logmod.getLogger(__name__)
@@ -41,14 +66,19 @@ logging = logmod.getLogger(__name__)
 KEY_CLEAN_RE = re.compile(r"[/:{}]")
 KEY_SUB_CHAR = "_"
 
+##--|
+@Proto(API.ReadTime_p)
 class DuplicateHandler(LibraryMiddleware):
-    """ take duplciate entries and mark them as such """
+    """ take duplicate entries and mark them as such """
 
     @staticmethod
     def metadata_key():
         return "BM-duplicate-handler"
 
-    def transform(self, library):
+    def on_read(self):
+        return True
+
+    def transform(self, library:Library):
         for block in library.failed_blocks:
             match block:
                 case model.DuplicateBlockKeyBlock():
@@ -64,5 +94,5 @@ class DuplicateHandler(LibraryMiddleware):
                     if block._raw:
                         raw = block._raw[:20]
                     logging.warning("Bad Block: : %s : %s", block.start_line, raw)
-
-        return library
+        else:
+            return library

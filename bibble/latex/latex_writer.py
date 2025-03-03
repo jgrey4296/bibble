@@ -4,10 +4,10 @@
 See EOF for license/metadata/notes as applicable
 """
 
-##-- builtin imports
+# Imports:
 from __future__ import annotations
 
-# import abc
+# ##-- stdlib imports
 import datetime
 import enum
 import functools as ftz
@@ -18,29 +18,55 @@ import re
 import time
 import types
 import weakref
-# from copy import deepcopy
-# from dataclasses import InitVar, dataclass, field
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generic,
-                    Iterable, Iterator, Mapping, Match, MutableMapping, Self,
-                    Protocol, Sequence, Tuple, TypeAlias, TypeGuard, TypeVar,
-                    cast, final, overload, runtime_checkable, Generator)
-from uuid import UUID, uuid1
+from uuid import UUID, uuid0
 
-##-- end builtin imports
+# ##-- end stdlib imports
 
+# ##-- 3rd party imports
 import bibtexparser
 import bibtexparser.model as model
 from bibtexparser import exceptions as bexp
 from bibtexparser import middlewares as ms
+from bibtexparser.middlewares.middleware import (BlockMiddleware, LibraryMiddleware)
 from bibtexparser.model import MiddlewareErrorBlock
-from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
-from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
+from pylatexenc.latexencode import (RULE_REGEX, UnicodeToLatexConversionRule,
+                                    UnicodeToLatexEncoder)
 
-from pylatexenc.latexencode import UnicodeToLatexConversionRule, RULE_REGEX, UnicodeToLatexEncoder
+from jgdv import Proto, Mixin
+# ##-- end 3rd party imports
 
+# ##-- 1st party imports
+import bibble._interface as API
+from bibble.util.error_raiser_m import ErrorRaiser_m, FieldMatcher_m
 from bibble.util.str_transform_m import StringTransform_m
-from bibble.util.field_matcher_m import FieldMatcher_m
-from bibble.util.error_raiser_m import ErrorRaiser_m
+
+# ##-- end 1st party imports
+
+# ##-- types
+# isort: off
+import abc
+import collections.abc
+from typing import TYPE_CHECKING, cast, assert_type, assert_never
+from typing import Generic, NewType
+# Protocols:
+from typing import Protocol, runtime_checkable
+# Typing Decorators:
+from typing import no_type_check, final, override, overload
+
+if TYPE_CHECKING:
+    from jgdv import Maybe
+    from typing import Final
+    from typing import ClassVar, Any, LiteralString
+    from typing import Never, Self, Literal
+    from typing import TypeGuard
+    from collections.abc import Iterable, Iterator, Callable, Generator
+    from collections.abc import Sequence, Mapping, MutableMapping, Hashable
+
+    type U2LRule = UnicodeToLatexConversionRule
+##--|
+
+# isort: on
+# ##-- end types
 
 ##-- logging
 logging = logmod.getLogger(__name__)
@@ -64,10 +90,21 @@ DEFAULT_ENCODING_RULES : Final[list[UnicodeToLatexConversionRule]] = [
                                      (re.compile("Ș"), r''),
                                  ])
 ]
-URL_RULE  : Final[UnicodeToLatexConversionRule] = UnicodeToLatexConversionRule(rule_type=RULE_REGEX, rule=[(re.compile(r"(https?://\S*\.\S*)"), r"\\url{\1}"), (re.compile(r"(www.\S*\.\S*)"), r"\\url{\1}")])
-MATH_RULE : Final[UnicodeToLatexConversionRule] = UnicodeToLatexConversionRule(rule_type=RULE_REGEX, rule=[(re.compile(r"(?<!\\)(\$.*[^\\]\$)"), r"\1")])
+_url_rules = [
+    (re.compile(r"(https?://\S*\.\S*)"), r"\\url{\1}"),
+    (re.compile(r"(www.\S*\.\S*)"), r"\\url{\1}"),
+]
+_math_rules = [
+    (re.compile(r"(?<!\\)(\$.*[^\\]\$)"), r"\1"),
+]
+URL_RULE  : Final[U2LRule] = UnicodeToLatexConversionRule(rule_type=RULE_REGEX, rule=_url_rules)
+MATH_RULE : Final[U2LRule] = UnicodeToLatexConversionRule(rule_type=RULE_REGEX, rule=_math_rules)
 
-class LatexWriter(FieldMatcher_m, StringTransform_m, BlockMiddleware):
+##--|
+
+@Proto(API.WriteTime_p)
+@Mixin(FieldMatcher_m, StringTransform_m)
+class LatexWriter(BlockMiddleware):
     """ Unicode->Latex Transform.
     all strings in the library except urls, files, dois and crossrefs
     see https://pylatexenc.readthedocs.io/en/latest/latexencode/
@@ -77,32 +114,35 @@ class LatexWriter(FieldMatcher_m, StringTransform_m, BlockMiddleware):
 
     """
 
-    _field_blacklist = ["url", "file", "doi", "crossref"]
+    _field_blacklist : ClassVar[list[str]] = ["url", "file", "doi", "crossref"]
 
     @staticmethod
     def metadata_key() -> str:
         return "BM-latex-writer"
 
     @staticmethod
-    def build_encoder(*, rules:None|list[UnicodeToLatexConversionRule]=None, **kwargs) -> UnicodeToLatexEncoder:
+    def build_encoder(*, rules:None|list[U2LRule]=None, **kwargs) -> UnicodeToLatexEncoder:
         rules = (rules or DEFAULT_ENCODING_RULES)[:]
         rules.append("defaults")
         logging.debug("Building Latex Encoder: %s", rules)
         return UnicodeToLatexEncoder(conversion_rules=rules, **kwargs)
 
     def __init__(self, **kwargs):
-        kwargs['allow_inplace_modification'] = kwargs.get('allow_inplace_modification', False)
+        kwargs.setdefault(API.ALLOW_INPLACE_MOD_K, False)
         super().__init__(**kwargs)
         self._total_rules = DEFAULT_ENCODING_RULES[:]
-        if kwargs.get('keep_math', True):
+        if kwargs.get(API.KEEP_MATH_K, True):
             self._total_rules.append(MATH_RULE)
 
-        if kwargs.get('enclose_urls', False):
+        if kwargs.get(API.ENCLOSE_URLS_K, False):
             self._total_rules.append(URL_RULE)
         self._total_options = {}
         self.rebuild_encoder()
 
-    def rebuild_encoder(self, *, rules:list[UnicodeToLatexConversionRule]=None, **kwargs):
+    def on_write(self):
+        return True
+
+    def rebuild_encoder(self, *, rules:list[U2LRule]=None, **kwargs) -> None:
         """ Accumulates rules and rebuilds the encoder """
         self._total_rules += (rules or [])
         self._total_options.update(kwargs)
@@ -111,12 +151,11 @@ class LatexWriter(FieldMatcher_m, StringTransform_m, BlockMiddleware):
         self._encoder = LatexWriter.build_encoder(rules=rules, **self._total_options)
 
     def transform_entry(self, entry: Entry, library: Library) -> Block:
-        entry, errors = self.match_on_fields(entry, library)
-        match self.maybe_error_block(entry, errors):
-            case None:
-                return entry
-            case errblock:
-                return errblock
+        match self.match_on_fields(entry, library):
+            case model.Entry() as x:
+                return x
+            case list() as errs:
+                return [entry, self.make_error_block(entry, errors)]
 
     def field_handler(self, field:model.Field, entry) -> tuple[model.Field, list[str]]:
         value, errs = self.transform_string_like(field.value)

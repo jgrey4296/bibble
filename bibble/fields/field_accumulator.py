@@ -27,6 +27,7 @@ from uuid import UUID, uuid1
 # ##-- end stdlib imports
 
 # ##-- 3rd party imports
+from jgdv import Proto, Mixin
 import bibtexparser
 import bibtexparser.model as model
 from bibtexparser import middlewares as ms
@@ -43,6 +44,8 @@ from jgdv.files.tags import SubstitutionFile
 from bibble.model import MetaBlock
 from bibble.util.error_raiser_m import ErrorRaiser_m
 from bibble.util.field_matcher_m import FieldMatcher_m
+from bibble import _interface as API
+from . import _interface as AccumPI
 
 # ##-- end 1st party imports
 
@@ -50,23 +53,23 @@ from bibble.util.field_matcher_m import FieldMatcher_m
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
+@Proto(API.FieldMatcher_p)
+@Mixin(ErrorRaiser_m, FieldMatcher_m)
+class FieldAccumulator(BlockMiddleware):
+    """ Create a set of all the values of a field, of all entries, in a library.
 
-class FieldAccumulator(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
-    """ Create a set of all the values in a library of a field """
+    'name' : the name of the accumulation block to store result in
+    'fields' : the fields to accumulate values of.
 
-    class AccumulationBlock(MetaBlock):
+    Fields can be individual values, or lists/sets of values
 
-        def __init__(self, name, data):
-            super().__init__()
-            self._name = name
-            self._data = data
-
+    """
 
     @staticmethod
     def metadata_key():
         return "BM-field-accum"
 
-    def __init__(self, name, fields:str|list[str], **kwargs):
+    def __init__(self, name:str, fields:str|list[str], **kwargs):
         super().__init__(**kwargs)
         self._attr_target = name
         match fields:
@@ -80,19 +83,19 @@ class FieldAccumulator(ErrorRaiser_m, FieldMatcher_m, BlockMiddleware):
 
     def transform(self, library:Library):
         transformed : Library = super().transform(library)
-
-        transformed.add(FieldAccumulator.AccumulationBlock(self._attr_target, self._collection))
+        transformed.add(AccumPI.AccumulationBlock(self._attr_target, self._collection))
         return transformed
 
     def transform_entry(self, entry, library):
-        entry, errors = self.match_on_fields(entry, library)
-        match self.maybe_error_block(entry, errors):
-            case None:
-                return entry
-            case errblock:
-                return errblock
+        match self.match_on_fields(entry, library):
+            case model.Entry() as x:
+                return x
+            case list() as errs:
+                return [entry, self.make_error_block(entry, errs)]
+            case x:
+                raise TypeError(type(x))
 
-    def field_handler(self, field, entry):
+    def field_h(self, field, entry):
         match field.value:
             case str() as value:
                 self._collection.add(value)

@@ -4,10 +4,10 @@
 See EOF for license/metadata/notes as applicable
 """
 
-##-- builtin imports
+# Imports:
 from __future__ import annotations
 
-# import abc
+# ##-- stdlib imports
 import datetime
 import enum
 import functools as ftz
@@ -18,30 +18,56 @@ import re
 import time
 import types
 import weakref
-# from copy import deepcopy
-# from dataclasses import InitVar, dataclass, field
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generic,
-                    Iterable, Iterator, Mapping, Match, MutableMapping,
-                    Protocol, Sequence, Tuple, TypeAlias, TypeGuard, TypeVar,
-                    cast, final, overload, runtime_checkable, Generator)
 from uuid import UUID, uuid1
 
-##-- end builtin imports
+# ##-- end stdlib imports
 
-import pyisbn
-import isbn_hyphenate
+# ##-- 3rd party imports
 import bibtexparser
 import bibtexparser.model as model
+import isbn_hyphenate
+import pyisbn
 from bibtexparser import middlewares as ms
-from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
-from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
+from bibtexparser.middlewares.middleware import (BlockMiddleware, LibraryMiddleware)
+from jgdv import Mixin, Proto
+
+# ##-- end 3rd party imports
+
+import bibble._interface as API
+
+# ##-- types
+# isort: off
+import abc
+import collections.abc
+from typing import TYPE_CHECKING, cast, assert_type, assert_never
+from typing import Generic, NewType
+# Protocols:
+from typing import Protocol, runtime_checkable
+# Typing Decorators:
+from typing import no_type_check, final, override, overload
+
+if TYPE_CHECKING:
+    from jgdv import Maybe
+    from typing import Final
+    from typing import ClassVar, Any, LiteralString
+    from typing import Never, Self, Literal
+    from typing import TypeGuard
+    from collections.abc import Iterable, Iterator, Callable, Generator
+    from collections.abc import Sequence, Mapping, MutableMapping, Hashable
+
+##--|
+
+# isort: on
+# ##-- end types
 
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
 ISBN_STRIP_RE = re.compile(r"[\s-]")
+##--|
 
+@Proto(API.ReadTime_p)
 class IsbnValidator(BlockMiddleware):
     """
       Try to validate the entry's isbn number
@@ -50,6 +76,9 @@ class IsbnValidator(BlockMiddleware):
     @staticmethod
     def metadata_key():
         return "BM-isbn-validator"
+
+    def on_read(self):
+        return True
 
     def transform_entry(self, entry, library):
         match entry.get("isbn"):

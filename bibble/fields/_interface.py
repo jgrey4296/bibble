@@ -2,6 +2,7 @@
 """
 
 """
+# ruff: noqa:
 
 # Imports:
 from __future__ import annotations
@@ -16,21 +17,17 @@ import pathlib as pl
 import re
 import time
 import types
-import weakref
+import collections
+import contextlib
+import hashlib
+from copy import deepcopy
 from uuid import UUID, uuid1
-
+from weakref import ref
+import atexit # for @atexit.register
+import faulthandler
 # ##-- end stdlib imports
 
-# ##-- 3rd party imports
-import bibtexparser
-import bibtexparser.model as model
-from bibtexparser import middlewares as ms
-from bibtexparser.middlewares.middleware import (BlockMiddleware,
-                                                 LibraryMiddleware)
-from bibtexparser.middlewares.names import (NameParts,
-                                            parse_single_name_into_parts)
-
-# ##-- end 3rd party imports
+from bibble.model import MetaBlock
 
 # ##-- types
 # isort: off
@@ -42,6 +39,8 @@ from typing import Generic, NewType
 from typing import Protocol, runtime_checkable
 # Typing Decorators:
 from typing import no_type_check, final, override, overload
+# from dataclasses import InitVar, dataclass, field
+# from pydantic import BaseModel, Field, model_validator, field_validator, ValidationError
 
 if TYPE_CHECKING:
     from jgdv import Maybe
@@ -61,28 +60,16 @@ if TYPE_CHECKING:
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-class FailureHandler(LibraryMiddleware):
-    """ Middleware to handle failed blocks of a library.
-    Put at end of parse stack
+# Vars:
 
-    Will log out where the failed blocks start by line.
+# Body:
+
+class AccumulationBlock(MetaBlock):
+    """ A Simple Block to store accumulation data in between middlewares
+
     """
 
-    @staticmethod
-    def metadata_key():
-        return "BM-failure-handler"
-
-
-    def __init__(self, logger:logmod.Logger):
+    def __init__(self, name:str, data:set):
         super().__init__()
-        self._logger = logger
-
-    def transform(self, library):
-        for block in library.failed_blocks:
-            match block:
-                case model.Block():
-                    self._logger.info("Bad Block: : %s", block.start_line)
-                case x:
-                    raise TypeError(type(x))
-
-        return library
+        self._name : str = name
+        self._data : set = data

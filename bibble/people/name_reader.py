@@ -4,10 +4,10 @@
 See EOF for license/metadata/notes as applicable
 """
 
-##-- builtin imports
+# Imports:
 from __future__ import annotations
 
-# import abc
+# ##-- stdlib imports
 import datetime
 import enum
 import functools as ftz
@@ -18,28 +18,60 @@ import re
 import time
 import types
 import weakref
-# from copy import deepcopy
-# from dataclasses import InitVar, dataclass, field
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generic,
-                    Iterable, Iterator, Mapping, Match, MutableMapping,
-                    Protocol, Sequence, Tuple, TypeAlias, TypeGuard, TypeVar,
-                    cast, final, overload, runtime_checkable, Generator)
 from uuid import UUID, uuid1
 
-##-- end builtin imports
+# ##-- end stdlib imports
 
+# ##-- 3rd party imports
 import bibtexparser
 import bibtexparser.model as model
 from bibtexparser import middlewares as ms
-from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
-from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
+from bibtexparser.middlewares.middleware import (BlockMiddleware,
+                                                 LibraryMiddleware)
+from bibtexparser.middlewares.names import (NameParts,
+                                            parse_single_name_into_parts)
+from jgdv import Mixin, Proto
+
+# ##-- end 3rd party imports
+
+# ##-- 1st party imports
+import bibble._interface as API
+
+# ##-- end 1st party imports
+
+# ##-- types
+# isort: off
+import abc
+import collections.abc
+from typing import TYPE_CHECKING, cast, assert_type, assert_never
+from typing import Generic, NewType
+# Protocols:
+from typing import Protocol, runtime_checkable
+# Typing Decorators:
+from typing import no_type_check, final, override, overload
+
+if TYPE_CHECKING:
+    from jgdv import Maybe
+    from typing import Final
+    from typing import ClassVar, Any, LiteralString
+    from typing import Never, Self, Literal
+    from typing import TypeGuard
+    from collections.abc import Iterable, Iterator, Callable, Generator
+    from collections.abc import Sequence, Mapping, MutableMapping, Hashable
+
+##--|
+
+# isort: on
+# ##-- end types
 
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-# from jgdv.files.tags import NameFile
-
+OPEN_B  : Final[str] = "{"
+CLOSE_B : Final[str] = "}"
+##--|
+@Proto(API.ReadTime_p)
 class NameReader(ms.SplitNameParts):
     """ For use after stock "separatecoauthors",
     splits authors into nameparts
@@ -58,7 +90,7 @@ class NameReader(ms.SplitNameParts):
             )
         result = []
         for n in name:
-            wrapped = n.startswith("{") and n.endswith("}")
+            wrapped = n.startswith(OPEN_B) and n.endswith(CLOSE_B)
             result.append(parse_single_name_into_parts(n, strict=False))
-
-        return result
+        else:
+            return result
