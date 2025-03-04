@@ -30,11 +30,13 @@ import sh
 from bibtexparser import model
 from bibtexparser.middlewares.middleware import (BlockMiddleware,
                                                  LibraryMiddleware)
-from bibtexparser.middlewares.names import (NameParts,
-                                            parse_single_name_into_parts)
 from jgdv import Proto, Mixin
 
 # ##-- end 3rd party imports
+
+import bibble._interface as API
+from . import _interface as MAPI
+from bibble.util.middlecore import IdenBlockMiddleware
 
 # ##-- types
 # isort: off
@@ -71,10 +73,11 @@ calibre  = sh.ebook_meta
 qpdf     = sh.qpdf
 pdfinfo  = sh.pdfinfo
 ##--|
+
 class _EntryFileGetter_m:
 
-    def _get_file(self, entry) -> None|pl.Path:
-        match entry.fields_dict.get("file", None):
+    def _get_file(self, entry) -> Maybe[pl.Path]:
+        match entry.fields_dict.get(MAPI.FILE_K, None):
             case None:
                 return None
             case pl.Path() as path:
@@ -112,13 +115,13 @@ class _Metadata_Check_m:
             fail_l.warning("Couldn't match metadata", path)
             return False
 
-        if 'Bibtex' not in result and 'Description' not in result:
+        if MAPI.BIBTEX_EXIF not in result and MAPI.DESC_EXIF not in result:
             return False
 
-        if result.get('Bibtex', None) == entry.raw:
+        if result.get(MAPI.BIBTEX_EXIF, None) == entry.raw:
             return True
 
-        if result.get('Description', None) == entry.raw:
+        if result.get(MAPI.DESC_EXIF, None) == entry.raw:
             return True
 
         return False
@@ -132,7 +135,7 @@ class _Pdf_Update_m:
         args   = []
         exiftool_args = self._entry_to_exiftool_args(entry)
 
-        logging.debug("Pdf update args: %s : %s", path, args)
+        self._logger.debug("Pdf update args: %s : %s", path, args)
         # Call
         try:
             exiftool(*args, str(path))
@@ -142,8 +145,8 @@ class _Pdf_Update_m:
     def pdf_is_modifiable(self, path) -> bool:
         """ Test the pdf for encryption or password locking """
         try:
-            cmd1 = qpdf("--is-encrypted", str(path), _ok_code=(2))
-            cmd2 = qpdf("--requires-password", str(path), _ok_code=(2))
+            cmd1 = qpdf(MAPI.QPDF_IS_ENCRPT, str(path), _ok_code=MAPI.QPDF_OK_CODES)
+            cmd2 = qpdf(MAPI.QPDF_REQ_PASS, str(path), _ok_code=MAPI.QPDF_OK_CODES)
         except sh.ErrorReturnCode as err:
             return False
 
@@ -153,7 +156,7 @@ class _Pdf_Update_m:
         # code 0 for fine,
         # writes to stderr for issues
         try:
-            qpdf("--check", str(path))
+            qpdf(MAPI.QPDF_CHECK, str(path))
         except sh.ErrorReturnCode:
             raise ChildProcessError("PDF Failed Validation") from None
 
@@ -161,18 +164,18 @@ class _Pdf_Update_m:
         """ run qpdf --linearize,
           and delete the pdf_original if it exists
         """
-        assert(path.suffix == ".pdf")
-        logging.debug("Finalizing Pdf: %s", path)
+        assert(path.suffix == MAPI.PDF_SUFF)
+        self._logger.debug("Finalizing Pdf: %s", path)
         original = str(path)
-        copied   = path.with_stem(path.stem + "_cp")
-        backup   = path.with_suffix(".pdf_original")
+        copied   = path.with_stem(path.stem + MAPI.PDF_COPY_SUFF)
+        backup   = path.with_suffix(MAPI.PDF_ORIG_SUFF)
         if copied.exists():
             raise FileExistsError("The temp copy for linearization shouldn't already exist", original)
 
         path.rename(copied)
 
         try:
-            qpdf(str(copied), "--linearize", original)
+            qpdf(str(copied), MAPI.QPDF_LINEAR, original)
         except sh.ErrorReturnCode:
             copied.rename(original)
             raise ChildProcessError("Linearization Failed") from None
@@ -234,7 +237,7 @@ class _Epub_Update_m:
     def update_epub_by_calibre(self, path, entry) -> None:
         args = self.entry_to_calibre_args(entry)
 
-        logging.debug("Ebook update args: %s : %s", path, args)
+        self._logger.debug("Ebook update args: %s : %s", path, args)
         try:
             calibre(str(path), *args)
         except sh.ErrorReturnCode:
@@ -286,8 +289,10 @@ class _Epub_Update_m:
         return args
 
 ##--|
+
+@Proto(API.WriteTime_p)
 @Mixin(_Pdf_Update_m, _Epub_Update_m, _EntryFileGetter_m, _Metadata_Check_m)
-class MetadataApplicator(LibraryMiddleware):
+class MetadataApplicator(IdenBlockMiddleware):
     """ Apply metadata to files mentioned in bibtex entries
       uses xmp-prism tags and some custom ones for pdfs,
       and epub standard.
@@ -297,18 +302,14 @@ class MetadataApplicator(LibraryMiddleware):
     def metadata_key():
         return "MetadataApplicator"
 
-    def __init__(self, backup:None|pl.Path=None):
+    def __init__(self, backup:Maybe[pl.Path]=None):
         super().__init__()
+        self._extra.setdefault("tqdm", True)
         self._backup   = backup
         self._failures = []
 
-    def transform(self, library:BTP.Library) -> BTP.Library:
-        total = len(library.entries)
-        logging.info("Appling Metadata to library")
-        for _, entry in enumerate(library.entries):
-            self.transform_entry(entry, library)
-
-        return library
+    def on_write(self):
+        return True
 
     def transform_entry(self, entry,  library) -> Any:
         # TODO add a 'meta_update' status field to the entry for [locked,failed]
@@ -316,16 +317,16 @@ class MetadataApplicator(LibraryMiddleware):
             case None:
                 pass
             case x if not x.exists():
-                update = BTP.model.Field("orphaned", "True")
+                update = BTP.model.Field(MAPI.ORPHANED_K, True)
                 entry.set_field(update)
-            case x if x.suffix == ".pdf" and not self.pdf_is_modifiable(x):
-                update = BTP.model.Field("pdf_locked", "True")
+            case x if x.suffix == MAPI.PDF_SUFF and not self.pdf_is_modifiable(x):
+                update = BTP.model.Field(MAPI.PDF_LOCKED_K , True)
                 entry.set_field(update)
                 self._failures.append(("locked", x, None))
                 fail_l.warning("PDF is locked: %s", x)
             case x if self.metadata_matches_entry(x, entry):
                 fail_l.info("No Metadata Update Necessary: %s", x)
-            case x if x.suffix == ".pdf":
+            case x if x.suffix == MAPI.PDF_SUFF:
                 try:
                     self.backup_original_metadata(x)
                     self.update_pdf_by_exiftool(x, entry)
@@ -337,7 +338,7 @@ class MetadataApplicator(LibraryMiddleware):
                 finally:
                     if not x.exists():
                         raise FileNotFoundError("File has gone missing", x)
-            case x if x.suffix == ".epub":
+            case x if x.suffix == MAPI.EPUB_SUFF:
                 try:
                     self.backup_original_metadata(x)
                     self.update_epub_by_calibre(x, entry)
@@ -353,10 +354,10 @@ class MetadataApplicator(LibraryMiddleware):
 
         return entry
 
-
 ##--|
+
 @Mixin(_Pdf_Update_m, _EntryFileGetter_m)
-class FileCheck(LibraryMiddleware):
+class FileCheck(IdenBlockMiddleware):
     """
       Annotate entries with 'pdf_locked' if the pdf can't be modified,
       "orphan_file" if the pdf or epub does not exist
@@ -366,15 +367,6 @@ class FileCheck(LibraryMiddleware):
     def metadata_key():
         return "PdfLockCheck"
 
-
-    def transform(self, library:BTP.Library) -> BTP.Library:
-        total = len(library.entries)
-        logging.info("Checking library files")
-        for _, entry in enumerate(library.entries):
-            self.transform_entry(entry, library)
-
-        return library
-
     def transform_entry(self, entry, library) -> Any:
         match self._get_file(entry):
             case None:
@@ -382,11 +374,15 @@ class FileCheck(LibraryMiddleware):
             case x if not x.exists():
                 update = BTP.model.Field("orphaned", "True")
                 entry.set_field(update)
-            case x if x.suffix == ".pdf" and "pdf_locked" in entry.fields_dict:
+            case x if x.suffix == MAPI.PDF_SUFF and MAPI.PDF_LOCKED_K in entry.fields_dict:
                 pass
-            case x if x.suffix == ".pdf" and not self.pdf_is_modifiable(x):
-                update = BTP.model.Field("pdf_locked", "True")
+            case x if x.suffix == MAPI.PDF_SUFF and not self.pdf_is_modifiable(x):
+                update = BTP.model.Field(MAPI.PDF_LOCKED_K, True)
                 entry.set_field(update)
-            case x if x.suffix == ".pdf":
-                update = BTP.model.Field("pdf_locked", "False")
+            case x if x.suffix == MAPI.PDF_SUFF:
+                update = BTP.model.Field(MAPI.PDF_LOCKED_K,  False)
                 entry.set_field(update)
+            case _:
+                pass
+
+        return entry

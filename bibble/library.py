@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """
 
-
-
 """
 
 # Imports:
@@ -30,15 +28,19 @@ from uuid import UUID, uuid1
 # ##-- end stdlib imports
 
 # ##-- 3rd party imports
+from jgdv import Proto
 from bibtexparser.library import Library
 from bibtexparser.middlewares import BlockMiddleware
 
 # ##-- end 3rd party imports
 
+import bibble._interface as API
+
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
+@Proto(API.Library_p)
 class BibbleLib(Library):
     """ A library with a key value store for extra info
     Also tracks the individual files used as source
@@ -49,7 +51,7 @@ class BibbleLib(Library):
         self._kv_store    = defaultdict(set)
         self.source_files = set()
 
-    def add_sublibrary(self, lib:Library, source=None) -> Self:
+    def add_sublibrary(self, lib:Library, source:Maybe[str|pl.Path]=None) -> Self:
         """ Merge entries, kv_store and source files into this library
         will *overwrite* existing kv_store keys
         """
@@ -67,24 +69,8 @@ class BibbleLib(Library):
             case _:
                 raise TypeError("Bad update sublibrary")
 
-
-
-    def store_meta_value(self, key:str|BlockMiddleware, value:Any):
-        match key:
-            case str():
-                pass
-            case BlockMiddleware():
-                key = key.metadata_key()
-
-        match value:
-            case list() | set():
-                self._kv_store[key].update(value)
-            case _:
-                self._kv_store[key] = value
+    def store_meta_value(self, key:str|Middleware_p, value:Any):
+        raise DeprecationWarning("Use a MetaBlock")
 
     def get_meta_value(self, key) -> set|Any:
-        match key:
-            case str():
-                return self._kv_store[key]
-            case BlockMiddleware():
-                return self._kv_store[key.metadata_key()]
+        raise DeprecationWarning("Use a MetaBlock")

@@ -17,11 +17,6 @@ import re
 import time
 import types
 import weakref
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generator,
-                    Generic, Iterable, Iterator, Mapping, Match,
-                    MutableMapping, Protocol, Sequence, Tuple, TypeAlias,
-                    TypeGuard, TypeVar, cast, final, overload,
-                    runtime_checkable)
 from uuid import UUID, uuid1
 
 # ##-- end stdlib imports
@@ -34,20 +29,47 @@ from bibtexparser import middlewares as ms
 from bibtexparser.library import Library
 from bibtexparser.middlewares.middleware import (BlockMiddleware,
                                                  LibraryMiddleware)
-from bibtexparser.middlewares.names import (NameParts,
-                                            parse_single_name_into_parts)
 from jgdv.files.tags import SubstitutionFile
 
 # ##-- end 3rd party imports
 
 # ##-- 1st party imports
 from bibble.model import MetaBlock
-from bibble.util.error_raiser_m import ErrorRaiser_m
-from bibble.util.field_matcher_m import FieldMatcher_m
+from bibble.util.mixins import ErrorRaiser_m, FieldMatcher_m
 from bibble import _interface as API
-from . import _interface as AccumPI
+from . import _interface as FieldsAPI
+from bibble.util.middlecore import IdenBlockMiddleware
 
 # ##-- end 1st party imports
+
+# ##-- types
+# isort: off
+import abc
+import collections.abc
+from typing import TYPE_CHECKING, cast, assert_type, assert_never
+from typing import Generic, NewType
+# Protocols:
+from typing import Protocol, runtime_checkable
+# Typing Decorators:
+from typing import no_type_check, final, override, overload
+
+if TYPE_CHECKING:
+    from jgdv import Maybe, Result
+    from typing import Final
+    from typing import ClassVar, Any, LiteralString
+    from typing import Never, Self, Literal
+    from typing import TypeGuard
+    from collections.abc import Iterable, Iterator, Callable, Generator
+    from collections.abc import Sequence, Mapping, MutableMapping, Hashable
+
+    type Entry = model.Entry
+    type Field = model.Field
+    from bibtexparser.library import Library
+
+##--|
+
+# isort: on
+# ##-- end types
 
 ##-- logging
 logging = logmod.getLogger(__name__)
@@ -55,7 +77,7 @@ logging = logmod.getLogger(__name__)
 
 @Proto(API.FieldMatcher_p)
 @Mixin(ErrorRaiser_m, FieldMatcher_m)
-class FieldAccumulator(BlockMiddleware):
+class FieldAccumulator(IdenBlockMiddleware):
     """ Create a set of all the values of a field, of all entries, in a library.
 
     'name' : the name of the accumulation block to store result in
@@ -69,37 +91,35 @@ class FieldAccumulator(BlockMiddleware):
     def metadata_key():
         return "BM-field-accum"
 
-    def __init__(self, name:str, fields:str|list[str], **kwargs):
+    def __init__(self, *, name:str, fields:list[str], **kwargs):
         super().__init__(**kwargs)
         self._attr_target = name
         match fields:
-            case str() as x:
-                self._target_fields = [x]
             case list():
                 self._target_fields = fields
+            case x:
+                raise TypeError(type(x))
 
-        self.set_field_matchers(white=self._target_fields)
+        self.set_field_matchers(white=self._target_fields, black=[])
         self._collection = set()
 
-    def transform(self, library:Library):
-        transformed : Library = super().transform(library)
-        transformed.add(AccumPI.AccumulationBlock(self._attr_target, self._collection))
-        return transformed
+    def transform(self, library:Library) -> Library:
+        super().transform(library)
+        library.add(FieldsAPI.AccumulationBlock(self._attr_target, self._collection))
+        return library
 
     def transform_entry(self, entry, library):
         match self.match_on_fields(entry, library):
             case model.Entry() as x:
                 return x
-            case list() as errs:
-                return [entry, self.make_error_block(entry, errs)]
+            case Exception() as err:
+                return [entry, self.make_error_block(entry, err)]
             case x:
                 raise TypeError(type(x))
 
-    def field_h(self, field, entry):
+    def field_h(self, field, entry) -> Result(list[Field], Exception):
         match field.value:
             case str() as value:
                 self._collection.add(value)
             case list() | set() as value:
                 self._collection.update(value)
-
-        return field, []

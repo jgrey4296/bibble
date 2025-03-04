@@ -33,6 +33,8 @@ from bibtexparser.middlewares.middleware import (BlockMiddleware, LibraryMiddlew
 # ##-- end 3rd party imports
 
 import bibble._interface as API
+from . import _interface as MAPI
+from bibble.util.middlecore import IdenLibraryMiddleware
 
 # ##-- types
 # isort: off
@@ -63,12 +65,10 @@ if TYPE_CHECKING:
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-KEY_CLEAN_RE = re.compile(r"[/:{}]")
-KEY_SUB_CHAR = "_"
-
 ##--|
+
 @Proto(API.ReadTime_p)
-class DuplicateHandler(LibraryMiddleware):
+class DuplicateHandler(IdenLibraryMiddleware):
     """ take duplicate entries and mark them as such """
 
     @staticmethod

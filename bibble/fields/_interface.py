@@ -61,7 +61,9 @@ logging = logmod.getLogger(__name__)
 ##-- end logging
 
 # Vars:
-
+TITLE_K    : Final[str] = "title"
+SUBTITLE_K : Final[str] = "subtitle"
+TITLE_SEP  : Final[str] = ":"
 # Body:
 
 class AccumulationBlock(MetaBlock):

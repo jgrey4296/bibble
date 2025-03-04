@@ -28,15 +28,14 @@ import bibtexparser.model as model
 from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import (BlockMiddleware,
                                                  LibraryMiddleware)
-from bibtexparser.middlewares.names import (NameParts,
-                                            parse_single_name_into_parts)
 from jgdv import Mixin, Proto
 
 # ##-- end 3rd party imports
 
 # ##-- 1st party imports
 import bibble._interface as API
-
+from . import _interface as API_N
+from bibble.util.name_parts import NameParts
 # ##-- end 1st party imports
 
 # ##-- types
@@ -68,9 +67,8 @@ if TYPE_CHECKING:
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-OPEN_B  : Final[str] = "{"
-CLOSE_B : Final[str] = "}"
 ##--|
+
 @Proto(API.ReadTime_p)
 class NameReader(ms.SplitNameParts):
     """ For use after stock "separatecoauthors",
@@ -81,7 +79,10 @@ class NameReader(ms.SplitNameParts):
     def metadata_key() -> str:
         return "BM-name-reader"
 
-    def _transform_field_value(self, name) -> List[NameParts]:
+    def on_read(self):
+        return True
+
+    def _transform_field_value(self, name) -> list[NameParts]:
         if not isinstance(name, list):
             raise ValueError(
                 "Expected a list of strings, got {}. "
@@ -90,7 +91,7 @@ class NameReader(ms.SplitNameParts):
             )
         result = []
         for n in name:
-            wrapped = n.startswith(OPEN_B) and n.endswith(CLOSE_B)
+            wrapped = n.startswith(API_N.OBRACE) and n.endswith(API_N.CBRACE)
             result.append(parse_single_name_into_parts(n, strict=False))
         else:
             return result

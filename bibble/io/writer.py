@@ -68,7 +68,7 @@ if TYPE_CHECKING:
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-class _Visitors_m:
+class _VisitEntry_m:
 
     def visit_header(self, library, file:None|pl.Path=None) -> list[str]:
         return []
@@ -78,7 +78,8 @@ class _Visitors_m:
 
     def visit_block(self, block) -> list[str]:
         match block:
-            case x if hasattr(x, "visit"):
+            case x if isinstance(x, API.CustomWriter_p):
+                assert(hasattr(x, "visit"))
                 return x.visit(self)
             case MetaBlock():
                 pass
@@ -99,6 +100,7 @@ class _Visitors_m:
             case _:
                 raise ValueError(f"Unknown block type: {type(block)}")
 
+class _Visitors_m:
     def visit_entry(self, block:model.Entry) -> list[str]:
         res = ["@", block.entry_type, "{", block.key, ",\n"]
         field: model.Field
@@ -139,7 +141,7 @@ class _Visitors_m:
         return [parsing_failed_comment, "\n", block.raw, "\n"]
 ##--|
 
-@Mixin(_Visitors_m, MiddlewareValidator_m)
+@Mixin(_VisitEntry_m, _Visitors_m, MiddlewareValidator_m)
 class BibbleWriter:
     """ A Refactored bibtexparser writer
     Uses visitor pattern

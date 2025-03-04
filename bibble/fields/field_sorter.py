@@ -17,11 +17,6 @@ import re
 import time
 import types
 import weakref
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generator,
-                    Generic, Iterable, Iterator, Mapping, Match,
-                    MutableMapping, Protocol, Sequence, Tuple, TypeAlias,
-                    TypeGuard, TypeVar, cast, final, overload,
-                    runtime_checkable)
 from uuid import UUID, uuid1
 
 # ##-- end stdlib imports
@@ -33,23 +28,47 @@ import bibtexparser.model as model
 from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import (BlockMiddleware,
                                                  LibraryMiddleware)
-from bibtexparser.middlewares.names import (NameParts,
-                                            parse_single_name_into_parts)
 from jgdv.files.tags import SubstitutionFile
 
 # ##-- end 3rd party imports
 
-# ##-- 1st party imports
-from bibble.util.error_raiser_m import ErrorRaiser_m
-from bibble.util.field_matcher_m import FieldMatcher_m
+import bibble._interface as API
+from bibble.util.middlecore import IdenBlockMiddleware
 
-# ##-- end 1st party imports
+# ##-- types
+# isort: off
+import abc
+import collections.abc
+from typing import TYPE_CHECKING, cast, assert_type, assert_never
+from typing import Generic, NewType
+# Protocols:
+from typing import Protocol, runtime_checkable
+# Typing Decorators:
+from typing import no_type_check, final, override, overload
+
+if TYPE_CHECKING:
+    from jgdv import Maybe
+    from typing import Final
+    from typing import ClassVar, Any, LiteralString
+    from typing import Never, Self, Literal
+    from typing import TypeGuard
+    from collections.abc import Iterable, Iterator, Callable, Generator
+    from collections.abc import Sequence, Mapping, MutableMapping, Hashable
+
+    type Entry = model.Entry
+    type Field = model.Field
+    from bibtexparser.library import Library
+##--|
+
+# isort: on
+# ##-- end types
 
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-class FieldSorter(BlockMiddleware):
+@Proto(API.WriteTime_p)
+class FieldSorter(IdenBlockMiddleware):
     """ Sort the entries of a field
     firsts are exact matches that go at the front.
     lasts are a list of patterns to match on
@@ -68,7 +87,10 @@ class FieldSorter(BlockMiddleware):
         self._lasts    = last or self._last_defaults
         self._stem_re  = re.compile("^[a-zA-Z_]+")
 
-    def field_sort_key(self, field:model.Field) -> str:
+    def on_write(self):
+        return True
+
+    def field_sort_key(self, field:Field) -> str|tuple:
         match self._stem_re.match(field.key):
             case None:
                 key = field.key
@@ -79,7 +101,7 @@ class FieldSorter(BlockMiddleware):
         except ValueError:
             return key
 
-    def transform_entry(self, entry, library):
+    def transform_entry(self, entry:Entry, library:Library) -> Entry:
         # Get the firsts in order if they exist
         firsts = [y for x in self._firsts if (y:=entry.get(x,None)) is not None]
         rest, lasts = [], []

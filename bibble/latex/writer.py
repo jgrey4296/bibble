@@ -18,7 +18,7 @@ import re
 import time
 import types
 import weakref
-from uuid import UUID, uuid0
+from uuid import UUID, uuid1
 
 # ##-- end stdlib imports
 
@@ -37,7 +37,9 @@ from jgdv import Proto, Mixin
 
 # ##-- 1st party imports
 import bibble._interface as API
-from bibble.util.error_raiser_m import ErrorRaiser_m, FieldMatcher_m
+from . import _interface as LAPI
+from ._util import UnicodeHelper_m
+from bibble.util.mixins import ErrorRaiser_m, FieldMatcher_m
 from bibble.util.str_transform_m import StringTransform_m
 
 # ##-- end 1st party imports
@@ -63,6 +65,9 @@ if TYPE_CHECKING:
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
 
     type U2LRule = UnicodeToLatexConversionRule
+    type Entry = model.Field
+    type Block = model.Block
+    from bibtexparser.library import Library
 ##--|
 
 # isort: on
@@ -72,38 +77,12 @@ if TYPE_CHECKING:
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-DEFAULT_ENCODING_RULES : Final[list[UnicodeToLatexConversionRule]] = [
-    UnicodeToLatexConversionRule(rule_type=RULE_REGEX,
-                                 rule=[
-                                     (re.compile("ẹ"), r'\\{d}'),
-                                     (re.compile("é"), r"\\'{e}"),
-
-                                     (re.compile("ǒ"), r'\\v{o}'),
-                                     (re.compile("ọ"), r'\\d{o}'),
-
-                                     (re.compile("ǔ"), r'\\v{u}'),
-                                     (re.compile("ụ"), r'\\d{u}'),
-
-                                     (re.compile("Ẇ"), r'\\.{W}'),
-
-                                     (re.compile("ș"), r''),
-                                     (re.compile("Ș"), r''),
-                                 ])
-]
-_url_rules = [
-    (re.compile(r"(https?://\S*\.\S*)"), r"\\url{\1}"),
-    (re.compile(r"(www.\S*\.\S*)"), r"\\url{\1}"),
-]
-_math_rules = [
-    (re.compile(r"(?<!\\)(\$.*[^\\]\$)"), r"\1"),
-]
-URL_RULE  : Final[U2LRule] = UnicodeToLatexConversionRule(rule_type=RULE_REGEX, rule=_url_rules)
-MATH_RULE : Final[U2LRule] = UnicodeToLatexConversionRule(rule_type=RULE_REGEX, rule=_math_rules)
+##--|
 
 ##--|
 
-@Proto(API.WriteTime_p)
-@Mixin(FieldMatcher_m, StringTransform_m)
+@Proto(API.WriteTime_p, API.StrTransformer_p)
+@Mixin(UnicodeHelper_m, FieldMatcher_m, StringTransform_m)
 class LatexWriter(BlockMiddleware):
     """ Unicode->Latex Transform.
     all strings in the library except urls, files, dois and crossrefs
@@ -114,59 +93,44 @@ class LatexWriter(BlockMiddleware):
 
     """
 
-    _field_blacklist : ClassVar[list[str]] = ["url", "file", "doi", "crossref"]
+    _blacklist = ("url", "file", "doi", "crossref")
 
     @staticmethod
     def metadata_key() -> str:
         return "BM-latex-writer"
 
-    @staticmethod
-    def build_encoder(*, rules:None|list[U2LRule]=None, **kwargs) -> UnicodeToLatexEncoder:
-        rules = (rules or DEFAULT_ENCODING_RULES)[:]
-        rules.append("defaults")
-        logging.debug("Building Latex Encoder: %s", rules)
-        return UnicodeToLatexEncoder(conversion_rules=rules, **kwargs)
-
-    def __init__(self, **kwargs):
+    def __init__(self, *, extra:list[tuple], **kwargs):
         kwargs.setdefault(API.ALLOW_INPLACE_MOD_K, False)
         super().__init__(**kwargs)
-        self._total_rules = DEFAULT_ENCODING_RULES[:]
+        self.set_field_matchers(black=self._blacklist, white=[])
+        self._total_options               = {}
+        self._total_rules : list[U2LRule] = [
+            self.build_encode_rule()
+        ]
         if kwargs.get(API.KEEP_MATH_K, True):
-            self._total_rules.append(MATH_RULE)
+            self._total_rules.append(self.build_encode_rule(LAPI.MATH_RULES))
 
         if kwargs.get(API.ENCLOSE_URLS_K, False):
-            self._total_rules.append(URL_RULE)
-        self._total_options = {}
+            self._total_rules.append(self.build_encode_rule(LAPI.URL_RULES))
+
         self.rebuild_encoder()
 
     def on_write(self):
         return True
-
-    def rebuild_encoder(self, *, rules:list[U2LRule]=None, **kwargs) -> None:
-        """ Accumulates rules and rebuilds the encoder """
-        self._total_rules += (rules or [])
-        self._total_options.update(kwargs)
-        rules = self._total_rules[:]
-
-        self._encoder = LatexWriter.build_encoder(rules=rules, **self._total_options)
 
     def transform_entry(self, entry: Entry, library: Library) -> Block:
         match self.match_on_fields(entry, library):
             case model.Entry() as x:
                 return x
             case list() as errs:
-                return [entry, self.make_error_block(entry, errors)]
+                return [entry, self.make_error_block(entry, errs)]
 
-    def field_handler(self, field:model.Field, entry) -> tuple[model.Field, list[str]]:
+    def field_h(self, field:model.Field, entry) -> tuple[model.Field, list[str]]:
         value, errs = self.transform_string_like(field.value)
         new_field = model.Field(key=field.key, value=value)
         return new_field, errs
 
-    def _test_string(self, text) -> str:
-        """ utility to test latex encoding """
-        return self._encoder.unicode_to_latex(text)
-
-    def _transform_python_value_string(self, python_string: str) -> Tuple[str, str]:
+    def _transform_raw_str(self, python_string: str) -> tuple[str, str]:
         try:
             return self._encoder.unicode_to_latex(python_string), ""
         except Exception as e:

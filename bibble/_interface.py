@@ -42,7 +42,7 @@ from typing import Protocol, runtime_checkable
 from typing import no_type_check, final, override, overload
 
 if TYPE_CHECKING:
-    from jgdv import Maybe, Either
+    from jgdv import Maybe, Either, Result
     from typing import Final
     from typing import ClassVar, Any, LiteralString
     from typing import Never, Self, Literal
@@ -51,11 +51,14 @@ if TYPE_CHECKING:
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
 
 ##--|
-type FieldReturn = tuple[list[model.Field], list[str]]
-type Field       = model.Field
-type Block       = model.Block
-type Entry       = model.Entry
-type FailList    = list[str]
+type StringBlock  = model.String
+type Field        = model.Field
+type Block        = model.Block
+type Entry        = model.Entry
+type FailedBlock  = model.ParsingFailedBlock
+type ErrorBlock   = model.MiddlewareErrorBlock
+type CommentBlock = model.ExplicitComment | model.ImplicitComment
+
 # isort: on
 # ##-- end types
 
@@ -65,10 +68,62 @@ logging = logmod.getLogger(__name__)
 
 # Vars:
 ALLOW_INPLACE_MOD_K : Final[str] = "allow_inplace_modification"
+ALLOW_PARALLEL_K    : Final[str] = "allow_parallel_execution"
+LOGGER_K            : Final[str] = "logger"
 KEEP_MATH_K         : Final[str] = "keep_math"
 ENCLOSE_URLS_K      : Final[str] = "enclose_urls"
 ##--|
+## Enums / Flags
+
+class Capability_f(enum.Flag):
+    """ A Flag for where middlewares can be in the read/write stack """
+
+    insist_front = enum.auto()
+    insist_end   = enum.auto()
+    read_time    = enum.auto()
+    write_time   = enum.auto()
+    validate     = enum.auto()
+    transform    = enum.auto()
+    report       = enum.auto()
+
+##--|
 ## Bibtexparser protcols
+
+@runtime_checkable
+class Library_p(Protocol):
+
+    def add(self, blocks:list[Block], fail_on_duplicate_key: bool = False) -> None:
+        pass
+
+    def remove(self, blocks:list[Block]) -> None:
+        pass
+
+    def replace(self, old_block:Block, new_block:Block, fail_on_duplicate_key:bool=True) -> None:
+        pass
+
+    def blocks(self) -> list[Block]:
+        pass
+
+    def failed_blocks(self) -> list[FailedBlock]:
+        pass
+
+    def strings(self) -> list[StringBlock]:
+        pass
+
+    def strings_dict(self) -> dict[str, StringBlock]:
+        pass
+
+    def entries(self) -> list[Entry]:
+        pass
+
+    def entries_dict(self) -> dict[str, Entry]:
+        pass
+
+    def preambles(self) -> list[Preamble]:
+        pass
+
+    def comments(self) -> list[CommentBlock]:
+        pass
 
 @runtime_checkable
 class BlockMiddleware_p(Protocol):
@@ -76,22 +131,22 @@ class BlockMiddleware_p(Protocol):
     def transform(self, library:Library) -> Library:
         pass
 
-    def transform_block(self, block:Block, library:Library) -> Maybe[Block|list[Block]]:
+    def transform_block(self, block:Block, library:Library) -> list[Block]:
         pass
 
-    def transform_entry(self, entry:Entry, library:Library) -> Maybe[Block|list[Block]]:
+    def transform_entry(self, entry:Entry, library:Library) -> list[Block]:
         pass
 
-    def transform_string(self, string:model.String, library:Library) -> Maybe[Block|list[Block]]:
+    def transform_string(self, string:model.StringBlock, library:Library) -> list[Block]:
         pass
 
-    def transform_preamble(self, preamble:model.Preamble, library:Library) -> Maybe[Block|list[Block]]:
+    def transform_preamble(self, preamble:model.Preamble, library:Library) -> list[Block]:
         pass
 
-    def transform_explicit_comment(self, comment:model.ExplicitComment, library:Library) -> Maybe[Block|list[Block]]:
+    def transform_explicit_comment(self, comment:model.ExplicitComment, library:Library) -> list[Block]:
         pass
 
-    def transform_implicit_comment(self, comment:model.ImplicitComment, library:Library) -> Maybe[Block|list[Block]]:
+    def transform_implicit_comment(self, comment:model.ImplicitComment, library:Library) -> list[Block]:
         pass
 
 @runtime_checkable
@@ -101,6 +156,28 @@ class LibraryMiddleware_p(Protocol):
         pass
 
 ##--|
+
+@runtime_checkable
+class BibbleWriter_p(Protocol):
+
+    def write(self, library:Library, *, file:Maybe[pl.Path]=None, append:Maybe[list[BlockMiddleware_p|LibraryMiddleware_p]]=None) -> str:
+        pass
+
+@runtime_checkable
+class CustomWriter_p(Protocol):
+
+    def visit(self, writer:BibbleWriter_p) -> list[str]:
+        pass
+
+@runtime_checkable
+class MiddlewareDir_p(Protocol):
+    """ For Querying whether a middleware is for using at read or write time. """
+
+    def on_read(self) -> bool:
+        pass
+
+    def on_write(self) -> bool:
+        pass
 
 @runtime_checkable
 class ReadTime_p(Protocol):
@@ -119,7 +196,7 @@ class WriteTime_p(Protocol):
 @runtime_checkable
 class ErrorRaiser_p(Protocol):
 
-    def make_error_block(self, entry:Entry, errs:list[str]) -> MiddlewareErrorBlock:
+    def make_error_block(self, entry:Entry, errs:list[str]) -> ErrorBlock:
         pass
 
 @runtime_checkable
@@ -134,13 +211,24 @@ class EntrySkipper_p(Protocol):
 
 @runtime_checkable
 class FieldMatcher_p(Protocol):
-    """ The protocol util.FieldMatcher_m relies on """
+    """ The protocol util.FieldMatcher_m relies on
 
-    def set_field_matchers(self, white:list[str]=None, black:list[str]=None, keep_default=True) -> Self:
+    A Middleware with the FieldMatcher_m mixin will call the implemented field_h
+    on each field that matches in an entry.
+    """
+
+    def set_field_matchers(self, *, white:list[str], black:list[str]) -> Self:
         pass
 
-    def match_on_fields(self, entry: Entry, library: Library) -> Either[Entry, FailList]:
+    def match_on_fields(self, entry: Entry, library: Library) -> Result[Entry, Exception]:
         pass
 
-    def field_h(self, field:Field, entry:Entry) -> FieldReturn:
+    def field_h(self, field:Field, entry:Entry) -> Result[list[Field], Exception]:
+        pass
+
+@runtime_checkable
+class StrTransformer_p(Protocol):
+    """ Describes the StringTransform_m """
+
+    def _transform_raw_str(self, python_string:str) -> Result[str, Exception]:
         pass

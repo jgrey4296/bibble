@@ -56,7 +56,7 @@ from typing import Protocol, runtime_checkable
 from typing import no_type_check, final, override, overload
 
 if TYPE_CHECKING:
-    from jgdv import Maybe, Either
+    from jgdv import Maybe, Either, Result, Rx
     from typing import Final
     from typing import ClassVar, Any, LiteralString
     from typing import Never, Self, Literal
@@ -74,7 +74,9 @@ logging = logmod.getLogger(__name__)
 ##-- end logging
 
 # Vars:
-
+EMPTY     : Final[Rx]  = re.compile(r"^$")
+OR_REG    : Final[str] = r"|"
+ANY_REG   : Final[Rx]  = re.compile(r".")
 # Body:
 
 class MiddlewareValidator_m:
@@ -99,13 +101,9 @@ class MiddlewareValidator_m:
 class ErrorRaiser_m:
     """ Mixin for easily combining middleware errors into a block"""
 
-    def make_error_block(self, entry:API.Entry, errs:list[str]) -> MiddlewareErrorBlock:
-        errors = [e for e in errs if e != ""]
-        if not bool(errors):
-            raise ValueError("No Errors to wrap")
-
-        errors = bexp.PartialMiddlewareException(errors)
-        return MiddlewareErrorBlock(block=entry, error=errors)
+    def make_error_block(self, entry:API.Entry, errs:Exception) -> MiddlewareErrorBlock:
+        errors = bexp.PartialMiddlewareException(errs)
+        return MiddlewareErrorBlock(block=entry, error=err)
 
 class FieldMatcher_m:
     """ Mixin to process fields if their key matchs a regex
@@ -118,61 +116,72 @@ class FieldMatcher_m:
     match_on_fields calls entry.set_field on the field_handlers result
     """
 
-    def set_field_matchers(self, white:list[str]=None, black:list[str]=None, keep_default=True) -> Self:
+    def set_field_matchers(self, *, white:list[str], black:list[str]) -> Self:
         """ sets the blacklist and whitelist regex's
         returns self to help in building parse stacks
         """
-        match keep_default, getattr(self, "_field_blacklist", []):
-            case _, [] if not bool(black):
-                self._field_black_re = re.compile("^$")
-            case _, []:
-                self._field_black_re = re.compile("|".join(list(black)))
-            case False, _:
-                self._field_black_re = re.compile("|".join(list(black)))
-            case True, [*xs] as defs:
-                self._field_black_re = re.compile("|".join(list(black) + defs))
+        match white:
+            case []:
+                self._field_white_re = ANY_REG
+            case [*xs]:
+                self._field_white_re = re.compile(OR_REG.join(xs))
 
-        match keep_default, getattr(self, "_field_whitelist", []):
-            case _, [] if not bool(white):
-                self._field_white_re = re.compile(".")
-            case _, []:
-                self._field_white_re = re.compile("|".join(list(white)))
-            case False, _:
-                self._field_white_re = re.compile("|".join(list(white)))
-            case True, [*xs] as defs:
-                self._field_white_re = re.compile("|".join(list(white) + defs))
+        match black:
+            case []:
+                self._field_black_re = EMPTY
+            case [*xs]:
+                self._field_black_re = re.compile(OR_REG.join(xs))
 
         return self
 
-    def match_on_fields(self, entry: API.Entry, library: API.Library) -> Either[API.Entry, list[str]]:
+    def match_on_fields(self, entry: API.Entry, library: API.Library) -> Result[API.Entry, Exception]:
         errors = []
         whitelist, blacklist = self._field_white_re, self._field_black_re
         for field in entry.fields:
-            res = None
             match field:
                 case model.Field(key=key) if whitelist.match(key) and not blacklist.match(key):
-                    res, errs = self.field_handler(field, entry)
-                    errors += errs
+                    res = self.field_h(field, entry)
+                case _:
+                    continue
 
             match res:
-                case model.Field():
-                    entry.set_field(res)
                 case [*xs]:
                     for x in xs:
                         entry.set_field(x)
-
+                case Exception() as err:
+                    errors += err.args
+                case x:
+                    raise TypeError(type(x), self)
         else:
             if bool(errors):
-                return errors
+                return ValueError(*errors)
+
             return entry
 
-    def field_handler(self, field:API.Field, entry:API.Entry) -> API.FieldReturn:
+    def field_h(self, field:API.Field, entry:API.Entry) -> Result[list[API.Field], Exception]:
         raise NotImplementedError("Implement the field handler")
 
 class EntrySkipper_m:
+    """
+    Be able to skip entries by their type
+    """
 
-    def set_entry_whitelist(self, whitelist:list[str]) -> None:
-        self._entry_whitelist = whitelist
+    def set_entry_skiplists(self, *, white:list[str]=None, black:list[str]=None) -> None:
+        self._entry_whitelist = [x.lower() for x in whitelist or []]
+        self._entry_blacklist = [x.lower() for x in black or []]
 
     def should_skip_entry(self, entry:API.Entry, library:API.Library) -> bool:
-        return entry.entry_type.lower() not in getattr(self, "_entry_whitelist", [])
+        low_type = entry.entry_type.lower()
+        match self._entry_blacklist:
+            case list() as xs if low_type in xs:
+                return True
+            case _:
+                pass
+
+        match self._entry_whitelist:
+            case []:
+                return False
+            case list() as xs if low_type in xs:
+                return False
+            case _:
+                return True

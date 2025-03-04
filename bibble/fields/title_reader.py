@@ -18,11 +18,6 @@ import re
 import time
 import types
 import weakref
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generator,
-                    Generic, Iterable, Iterator, Mapping, Match,
-                    MutableMapping, Protocol, Sequence, Tuple, TypeAlias,
-                    TypeGuard, TypeVar, cast, final, overload,
-                    runtime_checkable)
 from uuid import UUID, uuid1
 
 # ##-- end stdlib imports
@@ -38,66 +33,102 @@ from bibtexparser.middlewares.middleware import (BlockMiddleware,
 # ##-- end 3rd party imports
 
 from bibble._interface import ReadTime_p
+from bibble.util.middlecore import IdenBlockMiddleware
+from . import _interface as FAPI
+
+# ##-- types
+# isort: off
+import abc
+import collections.abc
+from typing import TYPE_CHECKING, cast, assert_type, assert_never
+from typing import Generic, NewType
+# Protocols:
+from typing import Protocol, runtime_checkable
+# Typing Decorators:
+from typing import no_type_check, final, override, overload
+
+if TYPE_CHECKING:
+    from jgdv import Maybe
+    from typing import Final
+    from typing import ClassVar, Any, LiteralString
+    from typing import Never, Self, Literal
+    from typing import TypeGuard
+    from collections.abc import Iterable, Iterator, Callable, Generator
+    from collections.abc import Sequence, Mapping, MutableMapping, Hashable
+
+    type Entry = model.Entry
+    from bibtexparser.library import Library
+
+##--|
+
+# isort: on
+# ##-- end types
 
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
+##--|
 @Proto(ReadTime_p)
-class TitleReader(BlockMiddleware):
+class TitleCleaner(IdenBlockMiddleware):
     """
-      strip whitespace from the title
+      strip whitespace from the title, and (optional) subtitle
     """
 
     @staticmethod
     def metadata_key():
         return "BM-title-reader"
 
-    def __init__(self):
-        super().__init__(True, True)
-
-    def on_parse(self):
+    def on_read(self):
         return True
 
     def transform_entry(self, entry, library):
-        match entry.get("title"):
+        match entry.get(FAPI.TITLE_K):
             case None:
-                logging.warning("Entry has no title: %s", entry.key)
+                self._logger.warning("Entry has no title: %s", entry.key)
             case model.Field(value=str() as value):
-                entry.set_field(model.Field("title", value.strip()))
+                entry.set_field(model.Field(FAPI.TITLE_K, value.strip()))
             case _:
                 pass
+
+        match entry.get(FAPI.SUBTITLE_K):
+            case None:
+                pass
+            case model.Field(value=str() as value):
+                entry.set_field(model.Field(FAPI.SUBTITLE_K, value.strip()))
+            case _:
+                pass
+
 
         return entry
 
 @Proto(ReadTime_p)
-class SubTitleReader(BlockMiddleware):
+class TitleSplitter(IdenBlockMiddleware):
     """
       Split Title Into Title and Subtitle, If Subtitle Doesn't Exist Yet
+
+    strips whitespace as well
     """
 
     @staticmethod
     def metadata_key():
         return "BM-subtitle-reader"
 
-    def __init__(self):
-        super().__init__(True, True)
-
     def on_read(self):
         return True
 
-    def transform_entry(self, entry, library):
-        match entry.get("title"), entry.get("subtitle"):
+    def transform_entry(self, entry:Entry, library:Library):
+        match entry.get(FAPI.TITLE_K), entry.get(FAPI.SUBTITLE_K):
             case None, _:
-                logging.warning("Entry has no title: %s", entry.key)
+                self._logging.warning("Entry has no title: %s", entry.key)
             case model.Field(value=title), model.Field(value=subtitle):
-                entry.set_field(model.Field("title", title.strip()))
-                entry.set_field(model.Field("subtitle", subtitle.strip()))
+                entry.set_field(model.Field(FAPI.TITLE_K, title.strip()))
+                entry.set_field(model.Field(FAPI.SUBTITLE_K, subtitle.strip()))
                 pass
-            case model.Field(value=value), None if ":" in value:
-                title, *rest = value.split(":")
-                entry.set_field(model.Field("title", title.strip()))
-                entry.set_field(model.Field("subtitle", " ".join(rest).strip()))
+            case model.Field(value=value), None if FAPI.TITLE_SEP in value:
+                title, *rest = value.split(FAPI.TITLE_SEP)
+                entry.set_field(model.Field(FAPI.TITLE_K, title.strip()))
+                entry.set_field(model.Field(FAPI.SUBTITLE_K, " ".join(rest).strip()))
             case _:
                 pass
 

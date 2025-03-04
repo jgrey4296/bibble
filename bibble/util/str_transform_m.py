@@ -3,9 +3,10 @@
 
 """
 
+# Imports:
 from __future__ import annotations
 
-import abc
+# ##-- stdlib imports
 import datetime
 import enum
 import functools as ftz
@@ -16,79 +17,140 @@ import re
 import time
 import types
 import weakref
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generator,
-                    Generic, Iterable, Iterator, Mapping, Match,
-                    MutableMapping, Protocol, Sequence, Tuple, TypeAlias,
-                    TypeGuard, TypeVar, cast, final, overload,
-                    runtime_checkable)
 from uuid import UUID, uuid1
 
-from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
-from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
+# ##-- end stdlib imports
+
+# ##-- 3rd party imports
+from bibtexparser.middlewares.middleware import (BlockMiddleware,
+                                                 LibraryMiddleware)
+from bibtexparser.middlewares.names import NameParts
+from bibtexparser import model
+
+# ##-- end 3rd party imports
+
+# ##-- types
+# isort: off
+import abc
+import collections.abc
+from typing import TYPE_CHECKING, cast, assert_type, assert_never
+from typing import Generic, NewType
+# Protocols:
+from typing import Protocol, runtime_checkable
+# Typing Decorators:
+from typing import no_type_check, final, override, overload
+
+if TYPE_CHECKING:
+    from jgdv import Maybe, Either, Result
+    from typing import Final
+    from typing import ClassVar, Any, LiteralString
+    from typing import Never, Self, Literal
+    from typing import TypeGuard
+    from collections.abc import Iterable, Iterator, Callable, Generator
+    from collections.abc import Sequence, Mapping, MutableMapping, Hashable
+
+    type String  = model.String
+    type StrLike = str|NameParts|list|set|String
+##--|
+
+# isort: on
+# ##-- end types
 
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
+OBRACE : Final[str] = "{"
+CBRACE : Final[str] = "}"
 
+##--|
 class StringTransform_m:
     """ Mixin for handling transform of strings
-    extracted from bibtexparser middlewares.
+    refactored from bibtexparser middlewares.
 
-    Implement _transform_python_value_string,
+    Implement _transform_raw_str,
     and call transform_string_like
     """
 
-    def _transform_python_value_string(self, python_string:str) -> Tuple[str, str]:
-        """Called for every python (value, not key) string found on Entry and String blocks.
-
-        Returns:
-            - The transformed string, if the transformation was successful
-            - An error message, if any, or an empty string
+    def _transform_all_strings(self, vals:list[str]) -> Result[list[str], ValueError]:
+        """Called for every python (value, not key) string found on Entry and String blocks
+        Errors are modified in place.
         """
-        raise NotImplementedError("called abstract method")
+        res  = []
+        errs = []
+        for s in vals:
+            match self._transform_raw_str(s):
+                case ValueError() as x:
+                    errs += x.args
+                case str() as x:
+                    res.append(x)
+        else:
+            if bool(errs):
+                return ValueError(*errs)
 
-    # docstr-coverage: inherited
+            return res
 
-    def _transform_all_strings(self, list_of_strings: List[str], errors: List[str]) -> List[str]:
-        """Called for every python (value, not key) string found on Entry and String blocks"""
-        res = []
-        for s in list_of_strings:
-            r, e = self._transform_python_value_string(s)
-            res.append(r)
-            errors.append(e)
+
+    def _transform_nameparts(self, value:NameParts) -> Result[NameParts, ValueError]:
+
+        val.first = self._transform_all_strings(val.first, errors)
+        val.last  = self._transform_all_strings(val.last,  errors)
+        val.von   = self._transform_all_strings(val.von,   errors)
+        val.jr    = self._transform_all_strings(val.jr,    errors)
+
+    def transform_strlike(self, value:StrLike) -> Result[StrLike,ValueError]:
+        """
+        Transform str likes: str,s
+        """
+        match val:
+            case model.String(value=str() as sval):
+                match self.transform_strlike(sval):
+                    case ValueError() as err:
+                        res = err
+                    case str() as x:
+                        val.value = x
+                        res = val
+            case str() as x if x.startswith(OBRACE) and x.endswith(CBRACE):
+                match self._transform_braced_str(val[1:-1]):
+                    case ValueError() as err:
+                        res = err
+                    case str() as x:
+                        res = "".join([OBRACE, x, CBRACE])
+            case str():
+                res = self._transform_raw_str(field.value)
+            case NameParts() as np:
+                res = self._transform_nameparts(np)
+            case list() as vals:
+                res = []
+                errs = []
+                for x in vals:
+                    match self.transform_strlike(x):
+                        case ValueError() as err:
+                            errs += err.args
+                        case str() as x:
+                            res.append(x)
+                else:
+                    if bool(errs):
+                        res = ValueError(*errs)
+            case set() as vals:
+                res = []
+                errs = []
+                for x in vals:
+                    match self.transform_strlike(x):
+                        case ValueError() as err:
+                            errs += err.args
+                        case str() as x:
+                            res.append(x)
+                else:
+                    if bool(errs):
+                        res = ValueError(*errs)
+                    else:
+                        res = set(res)
+            case x:
+                logging.info(
+                    f" [{self.metadata_key()}] Cannot python-str transform: {val}"
+                    f" with value type {type(x)}"
+                )
+                res = x
+
         return res
 
-    # docstr-coverage: inherited
-
-    def transform_string_like(self, value:str|NameParts|list|set) -> tuple[Any,list[str]]:
-        errors = []
-        match val:
-            case str() if val.startswith("{"):
-                val, e = self._transform_python_value_string(val[1:-1])
-                val = "".join(["{", value,"}"])
-                errors.append(e)
-            case str():
-                val, e = self._transform_python_value_string(field.value)
-                errors.append(e)
-            case NameParts():
-                val.first = self._transform_all_strings(val.first, errors)
-                val.last  = self._transform_all_strings(val.last,  errors)
-                val.von   = self._transform_all_strings(val.von,   errors)
-                val.jr    = self._transform_all_strings(val.jr,    errors)
-            case _:
-                pass
-
-        errors = [e for e in errors if e != ""]
-        return val, errors
-
-    # docstr-coverage: inherited
-
-    def transform_string(self, string: String, library: "Library") -> Block:
-        if isinstance(string.value, str):
-            string.value = self._transform_python_value_string(string.value)
-        else:
-            logging.info(
-                f" [{self.metadata_key()}] Cannot python-str transform string {string.key}"
-                f" with value type {type(string.value)}"
-            )
-        return string

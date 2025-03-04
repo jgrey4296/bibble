@@ -29,15 +29,14 @@ import pyisbn
 from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import (BlockMiddleware,
                                                  LibraryMiddleware)
-from bibtexparser.middlewares.names import (NameParts,
-                                            parse_single_name_into_parts)
 from jgdv import Proto
 
 # ##-- end 3rd party imports
 
 # ##-- 1st party imports
 import bibble._interface as API
-
+from . import _interface as MAPI
+from bibble.util.middlecore import IdenBlockMiddleware
 # ##-- end 1st party imports
 
 # ##-- types
@@ -69,13 +68,10 @@ if TYPE_CHECKING:
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-ISBN_STRIP_RE               = re.compile(r"[\s-]")
-ISBN_K         : Final[str] = "isbn"
-INVALID_ISBN_K : Final[str] = "invalid_isbn"
 ##--|
 
 @Proto(API.WriteTime_p)
-class IsbnWriter(BlockMiddleware):
+class IsbnWriter(IdenBlockMiddleware):
     """
       format the isbn for writing
     """
@@ -89,18 +85,18 @@ class IsbnWriter(BlockMiddleware):
 
     def transform_entry(self, entry, library):
         f_dict = entry.fields_dict
-        if ISBN_K not in f_dict:
+        if MAPI.ISBN_K not in f_dict:
             return entry
-        if INVALID_ISBN_K in f_dict:
+        if MAPI.INVALID_ISBN_K in f_dict:
             return entry
-        if not bool(f_dict[ISBN_K].value):
+        if not bool(f_dict[MAPI.ISBN_K].value):
             return entry
 
         try:
-            isbn = isbn_hyphenate.hyphenate(f_dict[ISBN_K].value)
-            entry.set_field(model.Field(ISBN_K, isbn))
+            isbn = isbn_hyphenate.hyphenate(f_dict[MAPI.ISBN_K].value)
+            entry.set_field(model.Field(MAPI.ISBN_K, isbn))
+            return entry
         except isbn_hyphenate.IsbnError as err:
-            logging.warning("Writing ISBN failed: %s : %s", f_dict[ISBN_K].value, err)
-            pass
-
-        return entry
+            self._logger.warning("Writing ISBN failed: %s : %s", f_dict[MAPI.ISBN_K].value, err)
+            # TODO add fail block
+            return entry

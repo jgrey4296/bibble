@@ -15,7 +15,6 @@ import pytest
 
 from bibble.people.name_sub import NameSubstitutor
 from bibtexparser import model
-from bibtexparser.middlewares.names import NameParts
 from jgdv.files.tags import SubstitutionFile
 
 logging = logmod.root
@@ -27,7 +26,7 @@ class Test:
         subs = SubstitutionFile(norm_replace=" ", sep=" % ")
         subs.update("blah % 1 % bloo")
         subs.update("von braun, Ernst % 1 % von Braun, Ernst")
-        return NameSubstitutor(subs)
+        return NameSubstitutor(subs=subs)
 
     @pytest.fixture(scope="function")
     def entry(self):

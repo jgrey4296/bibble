@@ -27,8 +27,7 @@ import bibtexparser.model as model
 from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import (BlockMiddleware,
                                                  LibraryMiddleware)
-from bibtexparser.middlewares.names import (NameParts,
-                                            parse_single_name_into_parts)
+from bibtexparser.middlewares.names import NameParts
 from jgdv import Proto, Mixin
 from jgdv.files.tags import SubstitutionFile
 
@@ -36,7 +35,8 @@ from jgdv.files.tags import SubstitutionFile
 
 # ##-- 1st party imports
 import bibble._interface as API
-from bibble.util.error_raiser_m import ErrorRaiser_m, FieldMatcher_m
+from . import _interface as API_N
+from bibble.util.mixins import ErrorRaiser_m, FieldMatcher_m
 from bibble.fields.field_substitutor import FieldSubstitutor
 
 # ##-- end 1st party imports
@@ -45,8 +45,6 @@ from bibble.fields.field_substitutor import FieldSubstitutor
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-AUTHOR_K : Final[str] = "author"
-EDITOR_K : Final[str] = "editor"
 
 ##--|
 @Proto(API.ReadTime_p)
@@ -57,22 +55,22 @@ class NameSubstitutor(FieldSubstitutor):
     def metadata_key():
         return "BM-name-sub"
 
-    def __init__(self, subs:None|SubstitutionFile, **kwargs):
-        super().__init__([AUTHOR_K, EDITOR_K], subs, **kwargs)
+    def __init__(self, *, subs:SubstitutionFile, **kwargs):
+        super().__init__(fields=[API_N.AUTHOR_K, API_N.EDITOR_K],
+                         subs=subs,
+                         **kwargs)
 
     def on_read(self):
         return True
 
-    def field_handler(self, field, entry):
+    def field_h(self, field, entry):
         match field.value:
             case str():
-                logging.warning("Name parts should already be combined, but authors shouldn't be merged yet")
-                return field, []
+                return ValueError("Name parts should already be combined, but authors shouldn't be merged yet")
             case [*xs] if any(isinstance(x, NameParts) for x in xs):
-                logging.warning("Name parts should already be combined, but authors shouldn't be merged yet")
-                return field, []
+                return ValueError("Name parts should already be combined, but authors shouldn't be merged yet")
             case []:
-                return field, []
+                return [field]
             case [*xs]:
                 clean_names = []
                 for name in xs:
@@ -82,7 +80,7 @@ class NameSubstitutor(FieldSubstitutor):
                         case set() as val:
                             head, *_ = val
                             clean_names.append(head)
-                return model.Field(field.key, clean_names), []
+                else:
+                    return [model.Field(field.key, clean_names)]
             case value:
-                logging.warning("Unsupported replacement field value type(%s): %s", entry.key, type(value))
-                return field, []
+                return ValueError("Unsupported replacement field value type(%s): %s", entry.key, type(value))

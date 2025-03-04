@@ -15,6 +15,7 @@ classifiers     = [
 
 dependencies   = [
     "jgdv>=1.0",
+    "tqdm",
     "pyisbn",
     "selenium",
     "jsonlines",

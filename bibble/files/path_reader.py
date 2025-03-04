@@ -74,7 +74,7 @@ class PathReader(BlockMiddleware):
       according to lib_root
     """
 
-    _field_whitelist : ClassVar[list[str]] = ["file"]
+    _whitelist = ("file")
 
     @staticmethod
     def metadata_key():
@@ -83,6 +83,7 @@ class PathReader(BlockMiddleware):
     def __init__(self, lib_root:pl.Path=None, **kwargs):
         super().__init__(**kwargs)
         self._lib_root = lib_root or pl.Path.cwd()
+        self.set_field_matchers(white=kwargs.pop("whitelist", self._whitelist), black=[])
 
     def on_read(self):
         return False
@@ -91,22 +92,22 @@ class PathReader(BlockMiddleware):
         match self.match_on_fields(entry, library):
             case model.Entry() as x:
                 return x
-            case list() as errs:
-                return [entry, self.make_error_block(entry, errs)]
+            case Exception() as err:
+                return [entry, self.make_error_block(entry, err)]
             case x:
                 raise TypeError(type(x))
 
-    def field_handler(self, field, entry):
+    def field_h(self, field, entry):
         base = pl.Path(field.value)
         match base.parts[0]:
             case "/":
                 field.value = base
             case "~":
-                field.value = base.expanduser().absolute()
+                field.value = base.expanduser().resolve()
             case _:
                 field.value = self._lib_root / base
 
         if not field.value.exists():
-            logging.warning("On Import file does not exist: %s", field.value)
+            return ValueError(f"File does not exist: {field.value}")
 
-        return field, []
+        return field

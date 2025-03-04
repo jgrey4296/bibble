@@ -35,6 +35,7 @@ from bibtexparser.middlewares.middleware import (BlockMiddleware, LibraryMiddlew
 # ##-- 1st party imports
 import bibble._interface as API
 from bibble.util.mixins import ErrorRaiser_m, FieldMatcher_m
+from bibble.util.middlecore import IdenBlockMiddleware
 
 # ##-- end 1st party imports
 
@@ -71,12 +72,12 @@ logging = logmod.getLogger(__name__)
 
 @Proto(API.WriteTime_p)
 @Mixin(ErrorRaiser_m, FieldMatcher_m)
-class PathWriter(BlockMiddleware):
+class PathWriter(IdenBlockMiddleware):
     """
       Relativize library paths back to strings
     """
 
-    _field_whitelist : ClassVar[list[str]] = ["file"]
+    _whitelist = ("file",)
 
     @staticmethod
     def metadata_key():
@@ -84,6 +85,7 @@ class PathWriter(BlockMiddleware):
 
     def __init__(self, lib_root:pl.Path=None, **kwargs):
         super().__init__(**kwargs)
+        self.set_field_matchers(white=self._whitelist, black=[])
         self._lib_root = lib_root
 
     def on_write(self):
@@ -96,19 +98,19 @@ class PathWriter(BlockMiddleware):
             case list() as errs:
                 return [entry, self.make_error_block(entry, errs)]
 
-    def field_handler(self, field:Field, entry:Entry):
+    def field_h(self, field:Field, entry:Entry):
         errors = []
         match field.value:
             case str():
                 pass
             case pl.Path() as val if not val.exists():
-                logging.warning("On Export file does not exist: %s", val)
+                return ValueError(f"On Export file does not exist: {entry.key} : {val}")
             case pl.Path() as val:
                 try:
                     as_str = val.relative_to(self._lib_root)
                     field.value = as_str
                 except ValueError:
                     field.value = str(val)
-                    errors.append(f"Failed to Relativize path {entry.key}: {val}")
+                    return ValueError(f"Failed to Relativize path {entry.key}: {val}")
 
-        return field, errors
+        return field

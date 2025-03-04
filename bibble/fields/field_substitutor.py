@@ -28,15 +28,13 @@ import bibtexparser.model as model
 from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import (BlockMiddleware,
                                                  LibraryMiddleware)
-from bibtexparser.middlewares.names import (NameParts,
-                                            parse_single_name_into_parts)
 from jgdv.files.tags import SubstitutionFile
 
 # ##-- end 3rd party imports
 
 # ##-- 1st party imports
-from bibble.util.error_raiser_m import ErrorRaiser_m
-from bibble.util.field_matcher_m import FieldMatcher_m
+from bibble.util.mixins import ErrorRaiser_m, FieldMatcher_m
+from bibble.util.middlecore import IdenBlockMiddleware
 
 # ##-- end 1st party imports
 
@@ -70,7 +68,7 @@ logging = logmod.getLogger(__name__)
 ##-- end logging
 
 @Mixin(ErrorRaiser_m, FieldMatcher_m)
-class FieldSubstitutor(BlockMiddleware):
+class FieldSubstitutor(IdenBlockMiddleware):
     """
       For a given field(s), and a given jgdv.SubstitutionFile,
     replace the field value as necessary in each entry.
@@ -84,17 +82,17 @@ class FieldSubstitutor(BlockMiddleware):
     def metadata_key():
         return "BM-field-sub"
 
-    def __init__(self, fields:str|list[str], subs:Maybe[SubstitutionFile], force_single_value:bool=False, **kwargs):
+    def __init__(self, *, fields:list[str], subs:SubstitutionFile, force_single_value:bool=False, **kwargs):
         super().__init__(**kwargs)
         match fields:
-            case str() as x:
-                self._target_fields = [x]
             case list():
                 self._target_fields = fields
+            case x:
+                raise TypeError(type(x))
 
         self._subs               = subs
         self._force_single_value = force_single_value
-        self.set_field_matchers(white=self._target_fields)
+        self.set_field_matchers(white=self._target_fields, black=[])
 
     def transform_entry(self, entry, library):
         if self._subs is None or not bool(self._subs):
@@ -103,8 +101,8 @@ class FieldSubstitutor(BlockMiddleware):
         match self.match_on_fields(entry, library):
             case model.Entry() as x:
                 return x
-            case list() as errs:
-                return [entry, self.make_error_block(entry, errs)]
+            case Exception() as err:
+                return [entry, self.make_error_block(entry, err)]
             case x:
                 raise TypeError(type(x))
 
@@ -112,13 +110,12 @@ class FieldSubstitutor(BlockMiddleware):
         match field.value:
             case str() as value if self._force_single_value:
                 head, *_ = list(self._subs.sub(value))
-                return model.Field(field.key, head), []
+                return model.Field(field.key, head)
             case str() as value:
                 subs = list(self._subs.sub(value))
-                return model.Field(field.key, subs), []
+                return model.Field(field.key, subs)
             case list() | set() as value:
                 result = self._subs.sub_many(*value)
-                return model.Field(field.key, result), []
+                return model.Field(field.key, result)
             case value:
-                logging.warning("Unsupported replacement field value type(%s): %s", entry.key, type(value))
-                return field, []
+                return ValueError("Unsupported replacement field value type", entry.key, type(value))

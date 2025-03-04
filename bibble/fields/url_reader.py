@@ -35,8 +35,8 @@ from bibtexparser.middlewares.middleware import (BlockMiddleware,
 
 # ##-- 1st party imports
 from bibble import _interface as API
-from bibble.util.error_raiser_m import ErrorRaiser_m
-from bibble.util.field_matcher_m import FieldMatcher_m
+from bibble.util.mixins import ErrorRaiser_m, FieldMatcher_m
+from bibble.util.middlecore import IdenBlockMiddleware
 
 # ##-- end 1st party imports
 
@@ -72,14 +72,19 @@ logging = logmod.getLogger(__name__)
 ##-- end logging
 
 @Mixin(ErrorRaiser_m, FieldMatcher_m)
-class CleanUrls(BlockMiddleware):
+class CleanUrls(IdenBlockMiddleware):
     """ Strip unnecessary doi and dblp prefixes from urls  """
 
-    _field_whiteist : ClassVar[list[str]] = ["doi", "url", "ee"]
+    _whitelist = ("doi", "url", "ee")
 
     @staticmethod
     def metadata_key():
         return "BM-clean-urls"
+
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.set_field_matchers(white=self._whitelist, black=[])
 
     def on_read(self):
         return True
@@ -88,8 +93,8 @@ class CleanUrls(BlockMiddleware):
         match self.match_on_fields(entry, library):
             case model.Entry() as x:
                 return x
-            case list() as errs:
-                return [entry, self.make_error_block(entry, errs)]
+            case Exception() as err:
+                return [entry, self.make_error_block(entry, err)]
             case x:
                 raise TypeError(type(x))
 
@@ -106,5 +111,7 @@ class CleanUrls(BlockMiddleware):
             case str() as value if field.key == "ee" and "url" not in entry:
                 fields.append(model.Field("url", value))
                 fields.append(model.Field("ee", ""))
+            case _:
+                pass
 
         return entry

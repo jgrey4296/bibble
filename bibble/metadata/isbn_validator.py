@@ -34,6 +34,8 @@ from jgdv import Mixin, Proto
 # ##-- end 3rd party imports
 
 import bibble._interface as API
+from . import _interface as MAPI
+from bibble.util.middlecore import IdenBlockMiddleware
 
 # ##-- types
 # isort: off
@@ -64,11 +66,10 @@ if TYPE_CHECKING:
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-ISBN_STRIP_RE = re.compile(r"[\s-]")
 ##--|
 
 @Proto(API.ReadTime_p)
-class IsbnValidator(BlockMiddleware):
+class IsbnValidator(IdenBlockMiddleware):
     """
       Try to validate the entry's isbn number
     """
@@ -81,19 +82,20 @@ class IsbnValidator(BlockMiddleware):
         return True
 
     def transform_entry(self, entry, library):
-        match entry.get("isbn"):
+        match entry.get(MAPI.ISBN_K):
             case None:
                 return entry
             case model.Field(value=str() as val) if bool(val):
                 try:
-                    isbn = pyisbn.Isbn(ISBN_STRIP_RE.sub("", val))
+                    isbn = pyisbn.Isbn(MAPI.ISBN_STRIP_RE.sub("", val))
                     if not isbn.validate():
                         raise pyisbn.IsbnError("validation fail")
                 except pyisbn.IsbnError:
-                    logging.warning("ISBN validation fail: %s : %s", entry.key, val)
-                    entry.set_field(model.Field("invalid_isbn", val))
-                    entry.set_field(model.Field("isbn", ""))
+                    # TODO add a fail block
+                    self._logger.warning("ISBN validation fail: %s : %s", entry.key, val)
+                    entry.set_field(model.Field(MAPI.INVALID_ISBN_K, val))
+                    entry.set_field(model.Field(MAPI.ISBN_K, ""))
             case model.Field(value=str() as val):
-                del entry['isbn']
+                del entry[MAPI.ISBN_K]
 
         return entry

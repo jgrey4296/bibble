@@ -28,8 +28,6 @@ import bibtexparser.model as model
 from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import (BlockMiddleware,
                                                  LibraryMiddleware)
-from bibtexparser.middlewares.names import (NameParts,
-                                            parse_single_name_into_parts)
 from jgdv import Mixin, Proto
 from jgdv.files.tags import SubstitutionFile
 
@@ -37,6 +35,8 @@ from jgdv.files.tags import SubstitutionFile
 
 # ##-- 1st party imports
 import bibble._interface as API
+from . import _interface as MAPI
+from bibble.util.middlecore import IdenBlockMiddleware
 
 # ##-- end 1st party imports
 
@@ -69,12 +69,10 @@ if TYPE_CHECKING:
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-TAGS_K     : Final[str] = "tags"
-KEYWORDS_K : Final[str] = "keywords"
 ##--|
 
 @Proto(API.WriteTime_p)
-class TagsWriter(BlockMiddleware):
+class TagsWriter(IdenBlockMiddleware):
     """
       Reduce tag set to a string.
       Pass in to_keywords=True to convert tags -> keywords for bibtex2html
@@ -92,17 +90,17 @@ class TagsWriter(BlockMiddleware):
         return True
 
     def transform_entry(self, entry, library):
-        match entry.get(TAGS_K):
+        match entry.get(MAPI.TAGS_K):
             case None:
                 logging.warning("Entry has No Tags on write: %s", entry.key)
-                entry.set_field(model.Field(TAGS_K, ""))
+                entry.set_field(model.Field(MAPI.TAGS_K, ""))
             case model.Field(value=val) if not bool(val):
                 logging.warning("Entry has No Tags on write: %s", entry.key)
-                entry.set_field(model.Field(TAGS_K, ""))
+                entry.set_field(model.Field(MAPI.TAGS_K, ""))
             case model.Field(value=set() as vals):
-                entry.set_field(model.Field(TAGS_K, ",".join(sorted(vals))))
+                entry.set_field(model.Field(MAPI.TAGS_K, ",".join(sorted(vals))))
 
         if self._to_keywords:
-            entry.set_field(model.Field(KEYWORDS_K, entry.get(TAGS_K).value))
+            entry.set_field(model.Field(MAPI.KEYWORDS_K, entry.get(MAPI.TAGS_K).value))
 
         return entry

@@ -27,15 +27,14 @@ import bibtexparser.model as model
 from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import (BlockMiddleware,
                                                  LibraryMiddleware)
-from bibtexparser.middlewares.names import (NameParts,
-                                            parse_single_name_into_parts)
 from jgdv import Mixin, Proto
 
 # ##-- end 3rd party imports
 
 # ##-- 1st party imports
 import bibble._interface as API
-
+from . import _interface as MAPI
+from bibble.util.middlecore import IdenBlockMiddleware
 # ##-- end 1st party imports
 
 # ##-- types
@@ -66,17 +65,10 @@ if TYPE_CHECKING:
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
-
-KEY_CLEAN_RE  : Final[re.Pattern] = re.compile(r"[/:{}]")
-KEY_SUFFIX_RE : Final[re.Pattern] = re.compile("_+$")
-KEY_SUB_CHAR  : Final[str]        = "_"
-LOCK_CHAR     : Final[str]        = "_"
-
-CROSSREF_K : Final[str] = "crossref"
 ##--|
 
 @Proto(API.ReadTime_p)
-class LockCrossrefKeys(BlockMiddleware):
+class LockCrossrefKeys(IdenBlockMiddleware):
     """ Ensure key/crossref consistency by:
     removing unwanted chars in the key,
     'locking' the key by forcing the key suffix to be a single underscore
@@ -91,21 +83,21 @@ class LockCrossrefKeys(BlockMiddleware):
 
     def __init__(self, regex:str|re.Pattern, sub:str, **kwargs):
         super().__init__(**kwargs)
-        self._regex     : re.Pattern = re.compile(regex or KEY_CLEAN_RE)
-        self._sub       : str        = sub or KEY_SUB_CHAR
-        self._lock_char : str        = LOCK_CHAR
-        self._bad_lock  : str        = f"{LOCK_CHAR}{LOCK_CHAR}"
+        self._regex     : re.Pattern = re.compile(regex or MAPI.KEY_CLEAN_RE)
+        self._sub       : str        = sub or MAPI.KEY_SUB_CHAR
+        self._lock_char : str        = MAPI.LOCK_CHAR
+        self._bad_lock  : str        = f"{MAPI.LOCK_CHAR}{MAPI.LOCK_CHAR}"
 
     def on_read(self):
         return True
 
     def transform_entry(self, entry, library):
         entry.key = self.clean_key(entry.key)
-        match entry.get(CROSSREF_K):
+        match entry.get(MAPI.CROSSREF_K):
             case None:
                 pass
             case model.Field(value=value):
-                entry.set_field(model.Field(CROSSREF_K, self.clean_key(value)))
+                entry.set_field(model.Field(MAPI.CROSSREF_K, self.clean_key(value)))
 
         return entry
 
@@ -115,5 +107,5 @@ class LockCrossrefKeys(BlockMiddleware):
             return key
 
         clean_key = self._regex.sub(self._sub, key)
-        clean_key = KEY_SUFFIX_RE.sub("", key)
+        clean_key = MAPI.KEY_SUFFIX_RE.sub("", key)
         return f"{clean_key}{self._lock_char}"

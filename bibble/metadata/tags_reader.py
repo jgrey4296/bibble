@@ -21,24 +21,25 @@ import bibtexparser
 import bibtexparser.model as model
 from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import BlockMiddleware, LibraryMiddleware
-from bibtexparser.middlewares.names import parse_single_name_into_parts, NameParts
 
 from jgdv import Proto, Mixin
 from jgdv.files.tags import TagFile
 
 import bibble._interface as API
+from bibble.util.middlecore import IdenBlockMiddleware
+from . import _interface as MAPI
 
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
 @Proto(API.ReadTime_p)
-class TagsReader(BlockMiddleware):
+class TagsReader(IdenBlockMiddleware):
     """
       Read Tag strings, split them into a set, and keep track of all mentioned tags
       By default the classvar _all_tags is cleared on init, pass clear=False to not
     """
-    _all_tags : TagFile = TagFile()
+    _all_tags : ClassVar[TagFile] = TagFile()
 
     @staticmethod
     def metadata_key():
@@ -57,16 +58,16 @@ class TagsReader(BlockMiddleware):
         return True
 
     def transform_entry(self, entry, library):
-        match entry.get("tags"):
+        match entry.get(MAPI.TAGS_K):
             case None:
                 logging.warning("Entry has no Tags on parse: %s", entry.key)
-                entry.set_field(model.Field("tags", set()))
+                entry.set_field(model.Field(MAPI.TAGS_K, set()))
             case model.Field(value=val) if not bool(val):
                 logging.warning("Entry has no Tags on parse: %s", entry.key)
-                entry.set_field(model.Field("tags", set()))
+                entry.set_field(model.Field(MAPI.TAGS_K, set()))
             case model.Field(value=str() as val):
                 as_set = set(val.split(","))
-                entry.set_field(model.Field("tags", as_set))
+                entry.set_field(model.Field(MAPI.TAGS_K, as_set))
                 TagsReader._all_tags.update(as_set)
 
         return entry
