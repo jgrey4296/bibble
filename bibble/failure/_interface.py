@@ -1,32 +1,13 @@
 #!/usr/bin/env python3
 """
 
-
 """
 # ruff: noqa:
 
 # Imports:
 from __future__ import annotations
 
-# ##-- stdlib imports
-import datetime
-import enum
-import functools as ftz
-import itertools as itz
-import logging as logmod
-import pathlib as pl
 import re
-import time
-import types
-import collections
-import contextlib
-import hashlib
-from copy import deepcopy
-from uuid import UUID, uuid1
-from weakref import ref
-import atexit # for @atexit.register
-import faulthandler
-# ##-- end stdlib imports
 
 # ##-- types
 # isort: off
@@ -42,7 +23,7 @@ from typing import no_type_check, final, override, overload
 # from pydantic import BaseModel, Field, model_validator, field_validator, ValidationError
 
 if TYPE_CHECKING:
-    from jgdv import Maybe
+    from jgdv import Maybe, Rx
     from typing import Final
     from typing import ClassVar, Any, LiteralString
     from typing import Never, Self, Literal
@@ -55,11 +36,7 @@ if TYPE_CHECKING:
 # isort: on
 # ##-- end types
 
-##-- logging
-logging = logmod.getLogger(__name__)
-##-- end logging
-
 # Vars:
-KEY_CLEAN_RE = re.compile(r"[/:{}]")
-KEY_SUB_CHAR = "_"
+KEY_CLEAN_RE : Final[Rx]   = re.compile(r"[/:{}]")
+KEY_SUB_CHAR : Final[Char] = "_"
 # Body:

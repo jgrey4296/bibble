@@ -68,31 +68,45 @@ logging = logmod.getLogger(__name__)
 ##--|
 
 @Proto(API.ReadTime_p)
-class DuplicateHandler(IdenLibraryMiddleware):
-    """ take duplicate entries and mark them as such """
+class DuplicateFinder(IdenLibraryMiddleware):
 
-    @staticmethod
-    def metadata_key():
-        return "BM-duplicate-handler"
+    def on_read(self):
+        return True
+
+    def transform(self, libary:Library) -> Library:
+        keys = set()
+        for entry in library.entries:
+            if entry.key in keys:
+                # duplicate
+                pass
+            else:
+                keys.add(entry.key)
+        else:
+            return library
+
+
+@Proto(API.ReadTime_p)
+class DuplicateKeyHandler(IdenLibraryMiddleware):
+    """ take duplicate entries and edit their key to be unique """
 
     def on_read(self):
         return True
 
     def transform(self, library:Library):
-        for block in library.failed_blocks:
-            match block:
+        count = 0
+        for failed in library.failed_blocks:
+            match failed:
                 case model.DuplicateBlockKeyBlock():
-                    uuid = uuid1().hex
-                    duplicate = block.ignore_error_block
-                    original = duplicate.key
+                    count        += 1
+                    uuid          = uuid1().hex
+                    duplicate     = failed.ignore_error_block
+                    original      = duplicate.key
                     duplicate.key = f"{duplicate.key}_dup_{uuid}"
-                    logging.warning("Duplicate Key found: %s -> %s", original, duplicate.key)
                     library.add(duplicate)
-                    library.remove(block)
+                    library.remove(failed)
+                    self.logger().warning("Duplicate Key found: %s -> %s", original, duplicate.key)
                 case _:
-                    raw = ""
-                    if block._raw:
-                        raw = block._raw[:20]
-                    logging.warning("Bad Block: : %s : %s", block.start_line, raw)
+                    pass
         else:
+            self.logger().info("Adjusted %s duplicate blocks", count)
             return library

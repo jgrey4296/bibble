@@ -2,11 +2,11 @@
 
 __version__ = "0.1.0"
 
-import bibble.metadata as metadata
-import bibble.files as files
-import bibble.fields as fields
-import bibble.latex as latex
-import bibble.people as people
-import bibble.util as util
-
+from bibble import metadata as metadata
+from bibble import files
+from bibble import fields
+from bibble import latex
+from bibble import people
+from bibble import failure
+from bibble import util
 from bibble.library import BibbleLib

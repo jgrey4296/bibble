@@ -4,7 +4,6 @@
 """
 # ruff: noqa: ANN201, ARG001, ANN001, ARG002, ANN202
 
-
 # Imports
 from __future__ import annotations
 
@@ -18,8 +17,10 @@ import warnings
 import pytest
 # ##-- end 3rd party imports
 
+from bibtexparser import model
 from bibtexparser.library import Library
-from bibble.error import FailureHandler
+from bibble.model import BibbleMidFailureBlock
+from .. import FailureHandler
 
 # ##-- types
 # isort: off
@@ -31,8 +32,6 @@ from typing import Generic, NewType
 from typing import Protocol, runtime_checkable
 # Typing Decorators:
 from typing import no_type_check, final, override, overload
-# from dataclasses import InitVar, dataclass, field
-# from pydantic import BaseModel, Field, model_validator, field_validator, ValidationError
 
 if TYPE_CHECKING:
     from jgdv import Maybe
@@ -55,15 +54,16 @@ logging = logmod.getLogger(__name__)
 # Vars:
 
 # Body:
+
 class TestFailureHandler:
 
     def test_sanity(self):
         assert(True is not False) # noqa: PLR0133
 
     def test_ctor(self):
-        match FailureHandler():
-            case FailureHandler():
-                assert(True)
+        match FailureHandler(file="blah"):
+            case FailureHandler() as fh:
+                assert(fh._file_target == pl.Path("blah"))
             case x:
                  assert(False), x
 
@@ -78,10 +78,11 @@ class TestFailureHandler:
 
         assert("Bad Block" not in caplog.text)
 
-    @pytest.mark.xfail
     def test_bad_library(self, caplog):
         obj = FailureHandler()
         lib = Library()
+        bad_entry = model.Entry("test", "blah", [], 0, "this is some raw text")
+        lib.add(BibbleMidFailureBlock(block=bad_entry, error=ValueError("Couldn't parse"), source="test"))
         match obj.transform(lib):
             case Library():
                 assert(True)
@@ -89,6 +90,29 @@ class TestFailureHandler:
                  assert(False), x
 
         assert("Bad Block" in caplog.text)
+
+    def test_bad_library_write(self, caplog, tmp_path):
+        obj = FailureHandler(file=tmp_path / "failure.log")
+        assert(not obj.file_target.exists())
+        lib = Library()
+        bad_entry = model.Entry("test", "blah", [], 0, "this is some raw text")
+        lib.add(BibbleMidFailureBlock(block=bad_entry, error=ValueError("Couldn't parse"), source="test"))
+        match obj.transform(lib):
+            case Library():
+                assert(True)
+            case x:
+                 assert(False), x
+
+        assert("(1/1) [test] Bad <Entry>: 0" in caplog.text)
+        assert(obj.file_target.exists())
+        log_text = obj.file_target.read_text()
+
+        for x in ["--------------------",
+                  "(1/1) [test] Bad <Entry>: 0",
+                  "Error: Couldn't parse",
+                  "this is some raw text",
+                  ]:
+            assert(x in log_text), x
 
     @pytest.mark.skip
     def test_todo(self):

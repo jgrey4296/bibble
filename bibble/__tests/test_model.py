@@ -17,7 +17,9 @@ import warnings
 import pytest
 # ##-- end 3rd party imports
 
-from bibble.error import DuplicateHandler
+import bibble._interface as API
+from bibble import model
+
 # ##-- types
 # isort: off
 import abc
@@ -53,10 +55,28 @@ logging = logmod.getLogger(__name__)
 
 # Body:
 
-class TestDuplicateHandler:
+class TestBibbleMetaBlock:
 
     def test_sanity(self):
         assert(True is not False) # noqa: PLR0133
+
+    def test_ctor(self):
+        match model.MetaBlock():
+            case model.MetaBlock():
+                assert(True)
+            case x:
+                 assert(False), x
+
+
+    def test_visit(self):
+        obj = model.MetaBlock()
+        match obj.visit():
+            case []:
+                assert(True)
+            case x:
+                 assert(False), x
+
+    ##--|
 
     @pytest.mark.skip
     def test_todo(self):

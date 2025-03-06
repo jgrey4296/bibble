@@ -32,6 +32,7 @@ from jgdv import Proto
 
 import bibble._interface as API
 from bibble.util.middlecore import IdenLibraryMiddleware
+import bibble.model as bmodel
 
 # ##-- types
 # isort: off
@@ -72,47 +73,79 @@ class FailureHandler(IdenLibraryMiddleware):
     Will log out where the failed blocks start by line.
     """
 
-    @staticmethod
-    def metadata_key():
-        return "BM-failure-handler"
-
     def __init__(self, **kwargs):
         file_target = kwargs.pop("file", None)
         super().__init__(**kwargs)
         match file_target:
             case None:
-                self._file_target = None
+                self.file_target = None
             case str() as x:
-                self._file_target = pl.Path(x)
+                self.file_target = pl.Path(x)
             case pl.Path() as x:
-                self._file_target = x
+                self.file_target = x
 
     def on_read(self):
         return True
 
     def transform(self, library):
-        self.write_failures_to_file(library)
-        total = len(library.failed_blocks)
-        for i, block in enumerate(library.failed_blocks):
+        total    = len(library.failed_blocks)
+        reported = []
+        for i, block in enumerate(library.failed_blocks, start=1):
+            source_file = self._find_source_file(block, library)
             match block:
+                case bmodel.BibbleMidFailureBlock():
+                    report = block.visit(i=i, total=total, source_file=source_file)[0]
+                case model.ParsingFailedBlock() if source_file:
+                    report = f"({i}/{total}) Bad Block: : {block.start_line} : {source_file}"
                 case model.ParsingFailedBlock():
-                    self._logger.info(f"({i}/{total}) Bad Block: : %s", block.start_line)
+                    report = f"({i}/{total}) Bad Block: : {block.start_line}"
                 case x:
                     raise TypeError(type(x))
-
+            ##--|
+            reported.append((report, block.error, block.raw))
+            self._logger.info(report)
+        else:
+            self.write_failures_to_file(reported)
         return library
 
-    def write_failures_to_file(self, library) -> None:
-        if self._file_target is None:
-            return
-        if not bool(library.failed_blocks):
-            return
+    def write_failures_to_file(self, reports:list) -> None:
+        match reports:
+            case []:
+                return
+            case _ if self.file_target is None:
+                return
+            case _:
+                pass
 
-        total = len(library.failed_blocks)
-        with self._file_target.open("w") as f:
-            for i, b in enumerate(library.failed_blocks):
-                f.write("\n--------------------\n")
-                f.write(f"- ({i}/{total}) : {b.start_line}\n")
-                f.write(f"{b.error}")
-                f.write("\n--------------------\n")
-                f.write(b.raw)
+        total = len(reports)
+        with self.file_target.open("w") as f:
+            for rep, err, raw in reports:
+                f.writelines(["\n\n--------------------\n",
+                               rep,
+                               f"\nError: {err}",
+                               "\n--------------------\n",
+                               raw,
+                               ])
+
+    def _find_source_file(self, block, library) -> Maybe[str]:
+        match block:
+            case model.Entry():
+                target_key = block.key
+            case _:
+                return None
+
+        match bmodel.MetaBlock.find_in(library):
+            case None:
+                return None
+            case bmodel.MetaBlock() as meta if 'sources' not in meta.data:
+                return None
+            case bmodel.MetaBlock() as meta:
+                data = meta.data
+                sources = meta.data['sources']
+
+        for source in sources:
+            if source in data and target_key in data[source]:
+                return source
+            ##--|
+        else:
+            return None
