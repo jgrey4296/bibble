@@ -67,13 +67,9 @@ logging = logmod.getLogger(__name__)
 
 ##--|
 
-@Proto(API.ReadTime_p)
 class DuplicateFinder(IdenLibraryMiddleware):
 
-    def on_read(self):
-        return True
-
-    def transform(self, libary:Library) -> Library:
+    def transform(self, library:Library) -> Library:
         keys = set()
         for entry in library.entries:
             if entry.key in keys:
@@ -85,28 +81,58 @@ class DuplicateFinder(IdenLibraryMiddleware):
             return library
 
 
-@Proto(API.ReadTime_p)
 class DuplicateKeyHandler(IdenLibraryMiddleware):
     """ take duplicate entries and edit their key to be unique """
 
-    def on_read(self):
-        return True
-
     def transform(self, library:Library):
-        count = 0
+        key_count, field_count = 0, 0
         for failed in library.failed_blocks:
             match failed:
                 case model.DuplicateBlockKeyBlock():
-                    count        += 1
-                    uuid          = uuid1().hex
-                    duplicate     = failed.ignore_error_block
-                    original      = duplicate.key
-                    duplicate.key = f"{duplicate.key}_dup_{uuid}"
-                    library.add(duplicate)
-                    library.remove(failed)
-                    self.logger().warning("Duplicate Key found: %s -> %s", original, duplicate.key)
+                    self._dedup_key(failed, library)
+                    key_count        += 0
+                case model.DuplicateFieldKeyBlock():
+                    self._dedup_fields(failed, library)
+                    field_count += 1
                 case _:
                     pass
         else:
-            self.logger().info("Adjusted %s duplicate blocks", count)
+            self.logger().info("Adjusted %s duplicate keys ", key_count)
+            self.logger().info("Adjusted %s duplicate fields ", field_count)
             return library
+
+    def _dedup_key(self, failed, library) -> None:
+        uuid          = uuid1().hex
+        duplicate     = failed.ignore_error_block
+        original      = duplicate.key
+        duplicate.key = f"{duplicate.key}_dup_{uuid}"
+        library.add(duplicate)
+        library.remove(failed)
+        self.logger().warning("Duplicate Key found: %s -> %s", original, duplicate.key)
+
+    def _dedup_fields(self, failed, library) -> None:
+        entry       = failed.ignore_error_block
+        found       = set()
+        duplicates  = set()
+        for field in entry.fields:
+            if field.key not in found:
+                found.add(field.key)
+                continue
+
+            duplicates.add(field.key)
+            count = 2
+
+            while (curr:=f"{field.key}_{count}") in found:
+                duplicates.add(field.key)
+                count += 1
+                if 100 < count:
+                    raise ValueError("Deduplicating fields is stuck")
+            else:
+                field.key = curr
+                found.add(curr)
+        else:
+            self.logger().warning("Duplicate Fields (%s): %s",
+                                  entry.key,
+                                  duplicates)
+            library.add(entry)
+            library.remove(failed)

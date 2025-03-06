@@ -63,7 +63,7 @@ class TestFailureHandler:
     def test_ctor(self):
         match FailureHandler(file="blah"):
             case FailureHandler() as fh:
-                assert(fh._file_target == pl.Path("blah"))
+                assert(fh.file_target == pl.Path("blah"))
             case x:
                  assert(False), x
 
@@ -89,7 +89,7 @@ class TestFailureHandler:
             case x:
                  assert(False), x
 
-        assert("Bad Block" in caplog.text)
+        assert("Bad <Entry>" in caplog.text)
 
     def test_bad_library_write(self, caplog, tmp_path):
         obj = FailureHandler(file=tmp_path / "failure.log")

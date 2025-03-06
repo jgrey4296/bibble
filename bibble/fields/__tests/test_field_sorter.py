@@ -31,6 +31,7 @@ class TestFieldSorter:
         return [x.key for x in entry.fields]
 
     ##--|
+
     def test_sanity(self):
         assert(True is not False) # noqa: PLR0133
 

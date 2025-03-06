@@ -76,7 +76,7 @@ class TestDuplicateHandler:
 
         assert("Duplicate Key" not in caplog.text)
 
-    def test_bad_library(self, caplog):
+    def test_bad_library_for_keys(self, caplog):
         obj = DuplicateKeyHandler()
         lib = Library()
         orig_entry =  model.Entry("test", "blah", [], 0, "this is some raw text")
@@ -95,6 +95,33 @@ class TestDuplicateHandler:
                  assert(False), x
 
         assert("Duplicate Key" in caplog.text)
+
+
+    def test_bad_library_for_fields(self, caplog):
+        obj = DuplicateKeyHandler()
+        lib = Library()
+        bad_entry = model.Entry("test", "blah",
+                                [
+                                    model.Field("bloo", "aweg"),
+                                    model.Field("bloo", "qqqq")
+                                ],
+                                0, "a duplicate entry key block")
+        assert("bloo_2" not in bad_entry)
+        fail_block = model.DuplicateFieldKeyBlock(["bloo"], bad_entry)
+        lib.add(fail_block)
+        assert(lib.failed_blocks)
+        match obj.transform(lib):
+            case Library() as l2:
+                assert(lib is l2)
+                assert(len(l2.entries) == 1)
+                assert(not l2.failed_blocks)
+                assert(True)
+            case x:
+                 assert(False), x
+
+        assert("duplicate fields" in caplog.text)
+        assert("bloo" in bad_entry)
+        assert("bloo_2" in bad_entry)
 
     @pytest.mark.skip
     def test_todo(self):
