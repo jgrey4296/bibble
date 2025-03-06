@@ -84,10 +84,6 @@ class OnlineDownloader(IdenBlockMiddleware):
     _whitelist = ("online", "blog")
     _target_dir         : pl.Path
 
-    @staticmethod
-    def metadata_key():
-        return "BM-online-handler"
-
     def __init__(self, *, target:pl.Path, **kwargs):
         super().__init__(**kwargs)
         self._extra.setdefault("tqdm", True)

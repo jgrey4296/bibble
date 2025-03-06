@@ -78,10 +78,6 @@ class FieldSubstitutor(IdenBlockMiddleware):
 
     """
 
-    @staticmethod
-    def metadata_key():
-        return "BM-field-sub"
-
     def __init__(self, *, fields:list[str], subs:SubstitutionFile, force_single_value:bool=False, **kwargs):
         super().__init__(**kwargs)
         match fields:

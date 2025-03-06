@@ -87,9 +87,6 @@ class FieldAccumulator(IdenBlockMiddleware):
 
     """
 
-    @staticmethod
-    def metadata_key():
-        return "BM-field-accum"
 
     def __init__(self, *, name:str, fields:list[str], **kwargs):
         super().__init__(**kwargs)

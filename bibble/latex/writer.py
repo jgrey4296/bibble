@@ -95,10 +95,6 @@ class LatexWriter(BlockMiddleware):
 
     _blacklist = ("url", "file", "doi", "crossref")
 
-    @staticmethod
-    def metadata_key() -> str:
-        return "BM-latex-writer"
-
     def __init__(self, *, extra:list[tuple], **kwargs):
         kwargs.setdefault(API.ALLOW_INPLACE_MOD_K, False)
         super().__init__(**kwargs)

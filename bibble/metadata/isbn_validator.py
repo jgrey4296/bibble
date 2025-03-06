@@ -74,10 +74,6 @@ class IsbnValidator(IdenBlockMiddleware):
       Try to validate the entry's isbn number
     """
 
-    @staticmethod
-    def metadata_key():
-        return "BM-isbn-validator"
-
     def on_read(self):
         return True
 

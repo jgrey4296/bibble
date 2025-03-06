@@ -75,10 +75,6 @@ class NameReader(ms.SplitNameParts):
     splits authors into nameparts
    """
 
-    @staticmethod
-    def metadata_key() -> str:
-        return "BM-name-reader"
-
     def on_read(self):
         return True
 

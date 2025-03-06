@@ -79,10 +79,6 @@ class PathWriter(IdenBlockMiddleware):
 
     _whitelist = ("file",)
 
-    @staticmethod
-    def metadata_key():
-        return "BM-path-writer"
-
     def __init__(self, lib_root:pl.Path=None, **kwargs):
         super().__init__(**kwargs)
         self.set_field_matchers(white=self._whitelist, black=[])

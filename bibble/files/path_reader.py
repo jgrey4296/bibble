@@ -74,11 +74,7 @@ class PathReader(BlockMiddleware):
       according to lib_root
     """
 
-    _whitelist = ("file")
-
-    @staticmethod
-    def metadata_key():
-        return "BM-path-reader"
+    _whitelist = ("file",)
 
     def __init__(self, lib_root:pl.Path=None, **kwargs):
         super().__init__(**kwargs)

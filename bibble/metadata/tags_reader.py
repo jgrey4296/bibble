@@ -42,10 +42,6 @@ class TagsReader(IdenBlockMiddleware):
     _all_tags : ClassVar[TagFile] = TagFile()
 
     @staticmethod
-    def metadata_key():
-        return "BM-tags-reader"
-
-    @staticmethod
     def tags_to_str():
         return str(TagsReader._all_tags)
 

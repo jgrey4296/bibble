@@ -75,10 +75,6 @@ class TitleCleaner(IdenBlockMiddleware):
       strip whitespace from the title, and (optional) subtitle
     """
 
-    @staticmethod
-    def metadata_key():
-        return "BM-title-reader"
-
     def on_read(self):
         return True
 
@@ -109,10 +105,6 @@ class TitleSplitter(IdenBlockMiddleware):
 
     strips whitespace as well
     """
-
-    @staticmethod
-    def metadata_key():
-        return "BM-subtitle-reader"
 
     def on_read(self):
         return True

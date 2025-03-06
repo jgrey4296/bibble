@@ -45,15 +45,11 @@ from bibble.fields.field_substitutor import FieldSubstitutor
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-
 ##--|
+
 @Proto(API.ReadTime_p)
 class NameSubstitutor(FieldSubstitutor):
     """ replaces names in author and editor fields as necessary """
-
-    @staticmethod
-    def metadata_key():
-        return "BM-name-sub"
 
     def __init__(self, *, subs:SubstitutionFile, **kwargs):
         super().__init__(fields=[API_N.AUTHOR_K, API_N.EDITOR_K],

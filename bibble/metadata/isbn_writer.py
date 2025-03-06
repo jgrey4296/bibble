@@ -76,10 +76,6 @@ class IsbnWriter(IdenBlockMiddleware):
       format the isbn for writing
     """
 
-    @staticmethod
-    def metadata_key():
-        return "BM-isbn-writer"
-
     def on_write(self):
         return True
 

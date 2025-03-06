@@ -77,10 +77,6 @@ class LockCrossrefKeys(IdenBlockMiddleware):
     locked keys are ignored
     """
 
-    @staticmethod
-    def metadata_key():
-        return "BM-lock-crossrefs"
-
     def __init__(self, regex:str|re.Pattern, sub:str, **kwargs):
         super().__init__(**kwargs)
         self._regex     : re.Pattern = re.compile(regex or MAPI.KEY_CLEAN_RE)

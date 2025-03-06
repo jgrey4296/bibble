@@ -77,11 +77,6 @@ class CleanUrls(IdenBlockMiddleware):
 
     _whitelist = ("doi", "url", "ee")
 
-    @staticmethod
-    def metadata_key():
-        return "BM-clean-urls"
-
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.set_field_matchers(white=self._whitelist, black=[])

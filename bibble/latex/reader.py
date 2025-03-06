@@ -88,10 +88,6 @@ class LatexReader(BlockMiddleware):
     _total_options : dict
 
     @staticmethod
-    def metadata_key() -> str:
-        return "BM-latex-reader"
-
-    @staticmethod
     def __init__(self, *, extra:Maybe[dict]=None, **kwargs):
         super().__init__(**kwargs)
         self.set_field_matchers(black=self._blacklist, white=[])

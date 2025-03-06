@@ -71,10 +71,6 @@ logging = logmod.getLogger(__name__)
 class NameWriter(ms.MergeNameParts):
     """ Converts NameParts -> str's """
 
-    @staticmethod
-    def metadata_key() -> str:
-        return "BM-name-witer"
-
     def __init__(self):
         super().__init__(allow_inplace_modification=False)
 

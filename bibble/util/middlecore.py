@@ -89,7 +89,7 @@ class _BaseMiddleware:
         """Identifier of the middleware.
         This key is used to identify the middleware in a blocks metadata.
         """
-        return cls.__name__
+        return f"bibble-{cls.__name__}"
 
     def __init__(self, **kwargs):
         """

@@ -77,10 +77,6 @@ class FieldSorter(IdenBlockMiddleware):
     _first_defaults : ClassVar[list[str]] = []
     _last_defaults  : ClassVar[list[str]] = []
 
-    @staticmethod
-    def metadata_key():
-        return "BM-field-sorter"
-
     def __init__(self, first:list[str], last:[str], **kwargs):
         super().__init__(**kwargs)
         self._firsts   = first or self._first_defaults
