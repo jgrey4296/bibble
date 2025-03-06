@@ -155,6 +155,16 @@ class LibraryMiddleware_p(Protocol):
     def transform(self, library:Library) -> Library:
         pass
 
+
+@runtime_checkable
+class BidirectionalMiddleware_p(Protocol):
+
+    def read_transform(self, library:Library) -> Library:
+        pass
+
+    def write_transform(self, library:Library) -> Library:
+        pass
+
 ##--|
 
 @runtime_checkable

@@ -26,7 +26,6 @@ from uuid import UUID, uuid1
 import jgdv
 from jgdv import Proto, Mixin
 from bibtexparser import model
-from bibtexparser.middlewares.middleware import Middleware
 from bibtexparser.model import MiddlewareErrorBlock
 from bibtexparser.library import Library
 from bibtexparser.writer import BibtexFormat
@@ -60,6 +59,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Callable, Generator
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
 
+    type Middleware = API.LibraryMiddleware_p | API.BidirectionalMiddleware_p
 ##--|
 
 # isort: on
@@ -102,6 +102,7 @@ class _VisitEntry_m:
                 raise ValueError(f"Unknown block type: {type(block)}")
 
 class _Visitors_m:
+
     def visit_entry(self, block:model.Entry) -> list[str]:
         res = ["@", block.entry_type, "{", block.key, ",\n"]
         field: model.Field
@@ -209,15 +210,32 @@ class BibbleWriter:
         length = self._format.value_column - len(key) - len(self._val_sep)
         return "" if length <= 0 else " " * length
 
-    def _run_middlewares(self, library, append:Maybe[list[Middleware]]) -> Library:
+    def _run_middlewares(self, library:Library, *, append:Maybe[list[Middleware]]=None) -> Library:
+        # TODO time this
         for middleware in self._middlewares:
-            library = middleware.transform(library=library)
+            match middleware:
+                case API.LibraryMiddleware_p():
+                    library = middleware.transform(library=library)
+                case API.BidirectionalMiddleware_p():
+                    library = middleware.read_transform(library=library)
+                case x:
+                    raise TypeError(type(x))
 
         match append:
-            case [*xs]:
-                for middleware in xs:
-                    library = middleware.transform(library=library)
-                else:
-                    return library
-            case _:
+            case None | []:
                 return library
+            case list():
+                pass
+            case x:
+                raise TypeError(type(x))
+
+        for middleware in append:
+            match middleware:
+                case API.LibraryMiddleware_p():
+                    library = middleware.transform(library=library)
+                case API.BidirectionalMiddleware_p():
+                    library = middleware.read_transform(library=library)
+                case x:
+                    raise TypeError(type(x))
+        else:
+            return library
