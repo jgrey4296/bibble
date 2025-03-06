@@ -40,10 +40,6 @@ logging = logmod.getLogger(__name__)
 class SelectN(LibraryMiddleware):
     """ Select N random entries """
 
-    @staticmethod
-    def metadata_key():
-        return "BM-select-n"
-
     def __init__(self, count=1):
         super().__init__()
         self._count = count
@@ -58,10 +54,6 @@ class SelectN(LibraryMiddleware):
 class SelectEntries(LibraryMiddleware):
     """ Select entries of a particular type """
 
-    @staticmethod
-    def metadata_key():
-        return "BM-select-type"
-
     def __init__(self, target="article"):
         super().__init__()
         self._entry_target = target.lower()
@@ -74,10 +66,6 @@ class SelectEntries(LibraryMiddleware):
 class SelectTags(LibraryMiddleware):
     """ Select entries of with a particular tag """
 
-    @staticmethod
-    def metadata_key():
-        return "BM-select-tag"
-
     def __init__(self, targets=None):
         super().__init__()
         self._targets = set(targets or [])
@@ -89,10 +77,6 @@ class SelectTags(LibraryMiddleware):
         return library
 
 class SelectAuthor(LibraryMiddleware):
-
-    @staticmethod
-    def metadata_key():
-        return "BM-select-author"
 
     def __init__(self, targets=None):
         super().__init__()

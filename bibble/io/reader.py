@@ -30,6 +30,7 @@ from bibtexparser.splitter import Splitter
 # ##-- end 3rd party imports
 
 from bibble import _interface as API
+from bibble.model import MetaBlock
 from bibble.util.mixins import MiddlewareValidator_m
 
 # ##-- types
@@ -81,33 +82,56 @@ class BibbleReader:
         """
         match source:
             case str():
-                pass
+                source_text = source
             case pl.Path():
                 try:
-                    source = source.read_text()
+                    source_text = source.read_text()
                 except UnicodeDecodeError as err:
                     logging.exception("Unicode Error in File: %s, Start: %s", source, err.start)
                     return None
             case x:
                 raise TypeError(type(x))
 
-        basic       : Library   = self._read_into(self._lib_class(), source)
+        basic       : Library   = self._read_into(self._lib_class(), source_text)
         transformed : Library   = self._run_middlewares(basic, append=append)
 
+        entry_keys : set = {x.key for x in transformed.entries}
         match into:
             case Library():
-                into.add(transformed.blocks)
-                return transformed
-            case _:
-                return transformed
+                final_lib = into.add(transformed.blocks)
+            case None:
+                final_lib = transformed
+            case x:
+                raise TypeError(type(x))
+
+        match MetaBlock.find_in(final_lib), source:
+            case None, str():
+                final_lib.add(MetaBlock(sources={"raw_text"}, raw_text=entry_keys))
+            case None, pl.Path():
+                final_lib.add(MetaBlock(sources={source}, str(source)=entry_keys))
+            case MetaBlock() as b, str() if 'sources' in b.data:
+                b.data['sources'].add("raw_text")
+                b.data["raw_text"] = entry_keys
+            case MetaBlock() as b, pl.Path() if 'sources' in b.data:
+                b.data['sources'].add(source)
+                b.data[str(source)] = entry_keys
+            case MetaBlock(), str():
+                b.data['sources']  = {"raw_text"}
+                b.data["raw_text"] = entry_keys
+            case x:
+                raise TypeError(type(x))
+
+        return final_lib
 
     def _read_into(self, lib:Library, source:str) -> Library:
+        # TODO add a timer to this
         assert(isinstance(source, str))
         splitter       = Splitter(bibstr=source)
         library        = splitter.split(library=lib)
         return library
 
     def _run_middlewares(self, library:Library, *, append:Maybe[list[Middleware]]=None) -> Library:
+        # TODO time this
         for middleware in self._middlewares:
             library = middleware.transform(library=library)
 

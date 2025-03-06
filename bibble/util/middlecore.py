@@ -30,6 +30,8 @@ import faulthandler
 
 import tqdm
 import bibble._interface as API
+import jgdv
+from jgdv import Proto
 from bibtexparser.library import Library
 from bibtexparser import model
 
@@ -53,6 +55,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Callable, Generator
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
 
+    type Logger          = logmod.Logger
     type Block           = model.Block
     type Entry           = model.Entry
     type String          = model.String
@@ -72,6 +75,7 @@ logging = logmod.getLogger(__name__)
 
 # Body:
 
+@Proto(jgdv.protos.DILogger_p)
 class _BaseMiddleware:
     """
     The base middleware.
@@ -97,8 +101,13 @@ class _BaseMiddleware:
         """
         self.allow_inplace  = kwargs.pop(API.ALLOW_INPLACE_MOD_K, True)
         self.allow_parallel = kwargs.pop(API.ALLOW_PARALLEL_K, False)
-        self._logger        = kwargs.pop(API.LOGGER_K, logging)
+        fallback_name = f"{type(self).__module__}.{type(self).__name__}"
+        self._logger        = kwargs.pop(API.LOGGER_K, logmod.getLogger(fallback_name))
         self._extra         = kwargs
+
+    def logger(self) -> Logger:
+        return self._logger
+
 
 class IdenLibraryMiddleware(_BaseMiddleware):
     """ Identity Library Middleware, does nothing """

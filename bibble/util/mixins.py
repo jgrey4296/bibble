@@ -41,6 +41,7 @@ from bibtexparser.model import MiddlewareErrorBlock
 
 # ##-- 1st party imports
 from bibble import _interface as API
+import bibble.model as bmodel
 
 # ##-- end 1st party imports
 
@@ -101,9 +102,8 @@ class MiddlewareValidator_m:
 class ErrorRaiser_m:
     """ Mixin for easily combining middleware errors into a block"""
 
-    def make_error_block(self, entry:API.Entry, errs:Exception) -> MiddlewareErrorBlock:
-        errors = bexp.PartialMiddlewareException(errs)
-        return MiddlewareErrorBlock(block=entry, error=err)
+    def make_error_block(self, entry:API.Entry, err:Exception) -> MiddlewareErrorBlock:
+        return bmodel.BibbleMidFailBlock(block=entry, error=err, source=self)
 
 class FieldMatcher_m:
     """ Mixin to process fields if their key matchs a regex
@@ -167,7 +167,7 @@ class EntrySkipper_m:
     """
 
     def set_entry_skiplists(self, *, white:list[str]=None, black:list[str]=None) -> None:
-        self._entry_whitelist = [x.lower() for x in whitelist or []]
+        self._entry_whitelist = [x.lower() for x in white or []]
         self._entry_blacklist = [x.lower() for x in black or []]
 
     def should_skip_entry(self, entry:API.Entry, library:API.Library) -> bool:

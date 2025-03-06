@@ -22,14 +22,14 @@ from uuid import UUID, uuid1
 # ##-- end stdlib imports
 
 # ##-- 3rd party imports
-from bibtexparser.model import Block
+from bibtexparser import model
 from jgdv import Maybe, Proto
 
 # ##-- end 3rd party imports
 
 # ##-- 1st party imports
 import bibble._interface as API
-
+from bibble.util import middlecore
 # ##-- end 1st party imports
 
 # ##-- types
@@ -52,6 +52,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Callable, Generator
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
 
+    from bibtexparser.libary import Library
 ##--|
 
 # isort: on
@@ -62,13 +63,53 @@ logging = logmod.getLogger(__name__)
 ##-- end logging
 
 @Proto(API.CustomWriter_p)
-class MetaBlock(Block):
+class MetaBlock(model.Block):
     """ A Metadata Block baseclass that does not get written out (typically),
     But can hold information about the library
     """
 
-    def __init__(self, start_line:Maybe[int]=None, raw:Maybe[str]=None, parser_metadata:Maybe[dict[str,Any]]=None):
-        super().__init__(start_line, raw, parser_metadata)
+    @classmethod
+    def find_in(cls, lib:Library) -> Maybe[Self]:
+        """ Find a block of this cls in a given """
+        for block in cls.blocks:
+            if isinstance(block, cls):
+                return block
+        else:
+            return None
 
-    def visit(self, writer) -> list[str]:
+    def __init__(self, **kwargs):
+        super().__init__(0)
+        self.data = dict(kwargs)
+
+    def visit(self, *args, **kwargs) -> list[str]:
         return []
+
+
+class BibbleMidFailureBlock(model.MiddlewareErrorBlock):
+    """ Records errors encountered by a middleware """
+
+    def __init__(self, *, block:model.Block, error:Exception, source:type|str):
+        super().__init__(block, error)
+        self._block_type = type(block).__name__
+        match source:
+            case type():
+                self.source_middleware = source.__name__
+            case middlecore.IdenLibraryMiddleware():
+                self.source_middleware = type(source).__name__
+            case middlecore.IdenBlockMiddleware():
+                self.source_middleware = type(source).__name__
+            case str():
+                self.source_middleware = source
+            case x:
+                raise TypeError(type(x))
+
+    def visit(self, *, i:int, total:int, source_file:Maybe[str|pl.Path]=None, **kwargs) -> list[str]:
+        match source_file:
+            case None:
+                report = f"({i}/{total}) [{self.source_middleware}] Bad <{self._block_type}>: {self.start_line}"
+            case str() | pl.Path():
+                report = f"({i}/{total}) [{self.source_middleware}] Bad <{self._block_type}>: {source_file}:{self.start_line}"
+            case x:
+                raise TypeError(type(x))
+
+        return [report]

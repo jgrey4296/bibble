@@ -23,6 +23,7 @@ from uuid import UUID, uuid1
 # ##-- end stdlib imports
 
 # ##-- 3rd party imports
+import jgdv
 from jgdv import Proto, Mixin
 from bibtexparser import model
 from bibtexparser.middlewares.middleware import Middleware
@@ -70,13 +71,13 @@ logging = logmod.getLogger(__name__)
 
 class _VisitEntry_m:
 
-    def visit_header(self, library, file:None|pl.Path=None) -> list[str]:
+    def make_header(self, library, file:None|pl.Path=None) -> list[str]:
         return []
 
-    def visit_footer(self, library, file:None|pl.Path=None) -> list[str]:
+    def make_footer(self, library, file:None|pl.Path=None) -> list[str]:
         return []
 
-    def visit_block(self, block) -> list[str]:
+    def visit(self, block) -> list[str]:
         match block:
             case x if isinstance(x, API.CustomWriter_p):
                 assert(hasattr(x, "visit"))
@@ -141,6 +142,7 @@ class _Visitors_m:
         return [parsing_failed_comment, "\n", block.raw, "\n"]
 ##--|
 
+@Proto(jgdv.protos.Visitor_p)
 @Mixin(_VisitEntry_m, _Visitors_m, MiddlewareValidator_m)
 class BibbleWriter:
     """ A Refactored bibtexparser writer
@@ -173,17 +175,17 @@ class BibbleWriter:
         transformed = self._run_middlewares(library, append=append)
         string_pieces = []
 
-        string_pieces.extend(self.visit_header(transformed, file))
+        string_pieces.extend(self.make_header(transformed, file))
 
         for i, block in enumerate(transformed.blocks):
             # Get string representation (as list of strings) of block
-            string_block_pieces = self.visit_block(block)
+            string_block_pieces = self.visit(block)
             string_pieces.extend(string_block_pieces)
             # Separate Blocks
             if i < len(transformed.blocks) - 1:
                 string_pieces.append(self._format.block_separator)
 
-        string_pieces.extend(self.visit_footer(transformed, file))
+        string_pieces.extend(self.make_footer(transformed, file))
 
         result = "".join(string_pieces)
 
