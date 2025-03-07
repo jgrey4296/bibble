@@ -64,6 +64,7 @@ if TYPE_CHECKING:
 
     type Entry = model.Entry
     type Field = model.Field
+    type Block = model.Block
     from bibtexparser.library import Library
 
 ##--|
@@ -102,13 +103,13 @@ class FieldAccumulator(IdenBlockMiddleware):
 
     def transform(self, library:Library) -> Library:
         super().transform(library)
-        library.add(FieldsAPI.AccumulationBlock(self._attr_target, self._collection))
+        library.add(FieldsAPI.AccumulationBlock(name=self._attr_target, data=self._collection, fields=self._target_fields))
         return library
 
-    def transform_entry(self, entry, library):
+    def transform_Entry(self, entry, library) -> list[Block]:
         match self.match_on_fields(entry, library):
             case model.Entry() as x:
-                return x
+                return [x]
             case Exception() as err:
                 return [entry, self.make_error_block(entry, err)]
             case x:
@@ -120,3 +121,7 @@ class FieldAccumulator(IdenBlockMiddleware):
                 self._collection.add(value)
             case list() | set() as value:
                 self._collection.update(value)
+            case x:
+                raise TypeError(type(x))
+
+        return []

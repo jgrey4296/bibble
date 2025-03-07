@@ -61,9 +61,19 @@ logging = logmod.getLogger(__name__)
 ##-- end logging
 
 # Vars:
-TITLE_K    : Final[str] = "title"
-SUBTITLE_K : Final[str] = "subtitle"
-TITLE_SEP  : Final[str] = ":"
+TITLE_K      : Final[str] = "title"
+SUBTITLE_K   : Final[str] = "subtitle"
+TITLE_SEP    : Final[str] = ":"
+
+DOI_PREFIX   : Final[str] = "https://doi.org/"
+DOI_K        : Final[str] = "doi"
+BIBDB_PREFIX : Final[str] = "db/"
+SOURCE_K     : Final[str] = "bibsource"
+DBLP_PREFIX  : Final[str] = "https://dblp.org/"
+BIBURL_K     : Final[str] = "biburl"
+EE_K         : Final[str] = "ee"
+URL_K        : Final[str] = "url"
+
 # Body:
 
 class AccumulationBlock(MetaBlock):
@@ -71,7 +81,8 @@ class AccumulationBlock(MetaBlock):
 
     """
 
-    def __init__(self, name:str, data:set):
+    def __init__(self, *, name:str, data:set, fields:set):
         super().__init__()
-        self._name : str = name
-        self._data : set = data
+        self.name       : str = name
+        self.fields     : set = set(fields)
+        self.collection : set = set(data)

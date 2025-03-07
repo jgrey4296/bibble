@@ -35,6 +35,7 @@ from bibtexparser.middlewares.middleware import (BlockMiddleware,
 
 # ##-- 1st party imports
 from bibble import _interface as API
+from . import _interface as API_F
 from bibble.util.mixins import ErrorRaiser_m, FieldMatcher_m
 from bibble.util.middlecore import IdenBlockMiddleware
 
@@ -75,7 +76,7 @@ logging = logmod.getLogger(__name__)
 class CleanUrls(IdenBlockMiddleware):
     """ Strip unnecessary doi and dblp prefixes from urls  """
 
-    _whitelist = ("doi", "url", "ee")
+    _whitelist = (API_F.DOI_K, API_F.URL_K, API_F.EE_K)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -84,10 +85,10 @@ class CleanUrls(IdenBlockMiddleware):
     def on_read(self):
         return True
 
-    def transform_entry(self, entry:Entry, library:Library):
+    def transform_Entry(self, entry:Entry, library:Library):
         match self.match_on_fields(entry, library):
             case model.Entry() as x:
-                return x
+                return [x]
             case Exception() as err:
                 return [entry, self.make_error_block(entry, err)]
             case x:
@@ -96,17 +97,39 @@ class CleanUrls(IdenBlockMiddleware):
     def field_h(self, field, entry):
         fields = []
         match field.value:
-            case str() as value if value.startswith("https://doi.org") and (field.key  == "doi" or "doi" not in entry):
-                clean = value.removeprefix("https://doi.org/")
-                fields.append(model.Field("doi", clean))
-            case str() as value if value.startswith("db/") and "bibsource" not in entry:
-                url = "".join(["https://dblp.org/", value])
-                fields.append(model.Field("biburl", url))
-                fields.append(model.Field("bibsource", "dblp computer science bibliography, https://dblp.org"))
-            case str() as value if field.key == "ee" and "url" not in entry:
-                fields.append(model.Field("url", value))
-                fields.append(model.Field("ee", ""))
+            case str() as value if value.startswith(API_F.DOI_PREFIX) and (field.key  == API_F.DOI_K or API_F.DOI_K not in entry):
+                # Remove doi prefix
+                clean = value.removeprefix(API_F.DOI_PREFIX)
+                fields.append(model.Field(API_F.DOI_K, clean))
+            case str() as value if value.startswith(API_F.BIBDB_PREFIX) and API_F.SOURCE_K not in entry:
+                # cleanup dblp
+                url = "".join([API_F.DBLP_PREFIX, value])
+                fields.append(model.Field(API_F.BIBURL_K, url))
+                fields.append(model.Field(API_F.SOURCE_K, "dblp computer science bibliography, https://dblp.org"))
+            case str() as value if field.key == API_F.EE_K and API_F.URL_K not in entry:
+                # ee -> url
+                fields.append(model.Field(API_F.URL_K, value))
+                fields.append(model.Field(API_F.EE_K, ""))
             case _:
                 pass
 
-        return entry
+        return fields
+
+@Mixin(ErrorRaiser_m, FieldMatcher_m)
+class ExpandUrls(IdenBlockMiddleware):
+    """ TODO expand shortened urls """
+
+    def on_read(self):
+        return True
+
+    def transform_Entry(self, entry:Entry, library:Library):
+        match self.match_on_fields(entry, library):
+            case model.Entry() as x:
+                return [x]
+            case Exception() as err:
+                return [entry, self.make_error_block(entry, err)]
+            case x:
+                raise TypeError(type(x))
+
+    def field_h(self, field, entry):
+        raise NotImplementedError()

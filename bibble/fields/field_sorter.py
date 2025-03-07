@@ -97,7 +97,7 @@ class FieldSorter(IdenBlockMiddleware):
         except ValueError:
             return key
 
-    def transform_entry(self, entry:Entry, library:Library) -> Entry:
+    def transform_Entry(self, entry:Entry, library:Library) -> list[Entry]:
         # Get the firsts in order if they exist
         firsts = [y for x in self._firsts if (y:=entry.get(x,None)) is not None]
         rest, lasts = [], []
@@ -118,4 +118,4 @@ class FieldSorter(IdenBlockMiddleware):
         rest  = sorted(rest, key=self.field_sort_key)
         lasts = sorted(lasts, key=self.field_sort_key)
         entry.fields = firsts + rest + lasts
-        return entry
+        return [entry]

@@ -76,6 +76,11 @@ class FieldSubstitutor(IdenBlockMiddleware):
     If force_single_value is True, only the first replacement will be used,
     others will be discarded
 
+    eg: for target=['tags'],
+    and subs({'AI': ['artificial_intelligence', 'agents', 'machine_learning'])
+    and entry(fields={'tags': 'ai'})
+    will give: entry(fields={''tags': ['artificial_intelligence', 'agents', 'machine_learning']})
+
     """
 
     def __init__(self, *, fields:list[str], subs:SubstitutionFile, force_single_value:bool=False, **kwargs):
@@ -90,28 +95,31 @@ class FieldSubstitutor(IdenBlockMiddleware):
         self._force_single_value = force_single_value
         self.set_field_matchers(white=self._target_fields, black=[])
 
-    def transform_entry(self, entry, library):
+    def transform_Entry(self, entry, library):
         if self._subs is None or not bool(self._subs):
-            return entry
+            return [entry]
 
         match self.match_on_fields(entry, library):
             case model.Entry() as x:
-                return x
+                return [x]
             case Exception() as err:
                 return [entry, self.make_error_block(entry, err)]
             case x:
                 raise TypeError(type(x))
 
     def field_h(self, field, entry):
+        """  """
         match field.value:
             case str() as value if self._force_single_value:
                 head, *_ = list(self._subs.sub(value))
-                return model.Field(field.key, head)
+                return [model.Field(field.key, head)]
             case str() as value:
                 subs = list(self._subs.sub(value))
-                return model.Field(field.key, subs)
+                return [model.Field(field.key, subs)]
             case list() | set() as value:
                 result = self._subs.sub_many(*value)
-                return model.Field(field.key, result)
+                return [model.Field(field.key, result)]
             case value:
                 return ValueError("Unsupported replacement field value type", entry.key, type(value))
+
+        return []

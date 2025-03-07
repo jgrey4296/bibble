@@ -34,7 +34,7 @@ from bibtexparser.middlewares.middleware import (BlockMiddleware,
 
 from bibble._interface import ReadTime_p
 from bibble.util.middlecore import IdenBlockMiddleware
-from . import _interface as FAPI
+from . import _interface as API_F
 
 # ##-- types
 # isort: off
@@ -69,6 +69,7 @@ logging = logmod.getLogger(__name__)
 ##-- end logging
 
 ##--|
+
 @Proto(ReadTime_p)
 class TitleCleaner(IdenBlockMiddleware):
     """
@@ -78,25 +79,24 @@ class TitleCleaner(IdenBlockMiddleware):
     def on_read(self):
         return True
 
-    def transform_entry(self, entry, library):
-        match entry.get(FAPI.TITLE_K):
+    def transform_Entry(self, entry, library):
+        match entry.get(API_F.TITLE_K):
             case None:
                 self._logger.warning("Entry has no title: %s", entry.key)
             case model.Field(value=str() as value):
-                entry.set_field(model.Field(FAPI.TITLE_K, value.strip()))
+                entry.set_field(model.Field(API_F.TITLE_K, value.strip()))
             case _:
                 pass
 
-        match entry.get(FAPI.SUBTITLE_K):
+        match entry.get(API_F.SUBTITLE_K):
             case None:
                 pass
             case model.Field(value=str() as value):
-                entry.set_field(model.Field(FAPI.SUBTITLE_K, value.strip()))
+                entry.set_field(model.Field(API_F.SUBTITLE_K, value.strip()))
             case _:
                 pass
 
-
-        return entry
+        return [entry]
 
 @Proto(ReadTime_p)
 class TitleSplitter(IdenBlockMiddleware):
@@ -109,19 +109,21 @@ class TitleSplitter(IdenBlockMiddleware):
     def on_read(self):
         return True
 
-    def transform_entry(self, entry:Entry, library:Library):
-        match entry.get(FAPI.TITLE_K), entry.get(FAPI.SUBTITLE_K):
+    def transform_Entry(self, entry:Entry, library:Library):
+        match entry.get(API_F.TITLE_K), entry.get(API_F.SUBTITLE_K):
             case None, _:
                 self._logging.warning("Entry has no title: %s", entry.key)
             case model.Field(value=title), model.Field(value=subtitle):
-                entry.set_field(model.Field(FAPI.TITLE_K, title.strip()))
-                entry.set_field(model.Field(FAPI.SUBTITLE_K, subtitle.strip()))
+                entry.set_field(model.Field(API_F.TITLE_K, title.strip()))
+                entry.set_field(model.Field(API_F.SUBTITLE_K, subtitle.strip()))
                 pass
-            case model.Field(value=value), None if FAPI.TITLE_SEP in value:
-                title, *rest = value.split(FAPI.TITLE_SEP)
-                entry.set_field(model.Field(FAPI.TITLE_K, title.strip()))
-                entry.set_field(model.Field(FAPI.SUBTITLE_K, " ".join(rest).strip()))
-            case _:
+            case model.Field(value=value), None if API_F.TITLE_SEP in value:
+                title, *rest = value.split(API_F.TITLE_SEP)
+                entry.set_field(model.Field(API_F.TITLE_K, title.strip()))
+                entry.set_field(model.Field(API_F.SUBTITLE_K, " ".join(rest).strip()))
+            case model.Field(value=value), None:
+                entry.set_field(model.Field(API_F.TITLE_K, value.strip()))
+            case None, None:
                 pass
 
-        return entry
+        return [entry]
