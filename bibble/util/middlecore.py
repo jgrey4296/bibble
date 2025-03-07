@@ -108,7 +108,6 @@ class _BaseMiddleware:
     def logger(self) -> Logger:
         return self._logger
 
-
 class IdenLibraryMiddleware(_BaseMiddleware):
     """ Identity Library Middleware, does nothing """
 
@@ -123,6 +122,23 @@ class IdenBlockMiddleware(_BaseMiddleware):
     """ Identity Block Middleware, does nothing
     If passed 'tqdm'=True uses tqdm around the block level loop
     """
+    _transform_cache : dict[type, list[Callable]]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._transform_cache = dict()
+
+    def get_transforms_for(self, block:Block) -> list[Callable]:
+        """ Get all transforms of the form transform_{Type},
+        by mro, from most -> least specific
+        """
+        if type(block) not in self._transform_cache:
+            mro = type(block).mro()
+            formatted = [f"transform_{x.__name__}" for x in mro]
+            methods = [getattr(self, x, None) for x in formatted]
+            self._transform_cache[type(block)] = [x for x in methods if x is not None]
+
+        return self._transform_cache[type(block)]
 
     def transform(self, library:Library) -> Library:
         match self._extra:
@@ -132,35 +148,25 @@ class IdenBlockMiddleware(_BaseMiddleware):
                 iterator = enumerate(library.blocks)
 
         blocks = []
-        for i,b in iterator:
-            match self.transform_block(b, library):
+        for i,block in iterator:
+            match self.get_transforms_for(block):
                 case []:
-                     blocks.append(b)
+                    continue
+                case [x, *_]:
+                    transform = x
+                case x:
+                    raise TypeError(type(x))
+
+            match transform(block, library):
+                case [] | None:
+                     blocks.append(block)
                 case [*xs]:
                     blocks += xs
                 case x:
-                    raise TypeError(type(x), i, b)
+                    raise TypeError(type(x), i, block)
         else:
             if self.allow_inplace:
-                library.blocks = blocks
+                library._blocks = blocks
                 return library
             else:
                 return Library(blocks=blocks)
-
-    def transform_block(self, block:Block, library:Library) -> list[Block]:
-        return [block]
-
-    def transform_entry(self, entry:Entry, library:Library) -> list[Block]:
-        return [entry]
-
-    def transform_string(self, string:String, library:Library) -> list[Block]:
-        return [string]
-
-    def transform_preamble(self, preamble:Preamble, library:Library) -> list[Block]:
-        return [preamble]
-
-    def transform_explicit_comment(self, comment:ExplicitComment, library:Library) -> list[Block]:
-        return [comment]
-
-    def transform_implicit_comment(self, comment:ImplicitComment, library:Library) -> list[Block]:
-        return [comment]

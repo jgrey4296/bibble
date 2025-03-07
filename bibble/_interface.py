@@ -155,7 +155,6 @@ class LibraryMiddleware_p(Protocol):
     def transform(self, library:Library) -> Library:
         pass
 
-
 @runtime_checkable
 class BidirectionalMiddleware_p(Protocol):
 
@@ -164,6 +163,19 @@ class BidirectionalMiddleware_p(Protocol):
 
     def write_transform(self, library:Library) -> Library:
         pass
+
+@runtime_checkable
+class AdapatableMiddleware_p(Protocol):
+    """ Middleware that looks up defined transforms using the type name,
+    by mro.
+    """
+
+    def get_transforms_for(self, block:Block) -> list[Callable[[Block, Library], list[Block]]]:
+        pass
+
+    def transform(self, library:Library) -> Library:
+        pass
+    
 
 ##--|
 
