@@ -93,7 +93,7 @@ class FailureHandler(IdenLibraryMiddleware):
         for i, block in enumerate(library.failed_blocks, start=1):
             source_file = self._find_source_file(block, library)
             match block:
-                case bmodel.BibbleMidFailureBlock():
+                case bmodel.FailedBlock():
                     report = block.visit(i=i, total=total, source_file=source_file)[0]
                 case model.ParsingFailedBlock() if source_file:
                     report = f"({i}/{total}) Bad Block: : {block.start_line} : {source_file}"

@@ -19,7 +19,7 @@ import pytest
 
 from bibtexparser import model
 from bibtexparser.library import Library
-from bibble.model import BibbleMidFailureBlock
+from bibble.model import FailedBlock
 from .. import FailureHandler
 
 # ##-- types
@@ -82,7 +82,7 @@ class TestFailureHandler:
         obj = FailureHandler()
         lib = Library()
         bad_entry = model.Entry("test", "blah", [], 0, "this is some raw text")
-        lib.add(BibbleMidFailureBlock(block=bad_entry, error=ValueError("Couldn't parse"), source="test"))
+        lib.add(FailedBlock(block=bad_entry, error=ValueError("Couldn't parse"), source="test"))
         match obj.transform(lib):
             case Library():
                 assert(True)
@@ -96,7 +96,7 @@ class TestFailureHandler:
         assert(not obj.file_target.exists())
         lib = Library()
         bad_entry = model.Entry("test", "blah", [], 0, "this is some raw text")
-        lib.add(BibbleMidFailureBlock(block=bad_entry, error=ValueError("Couldn't parse"), source="test"))
+        lib.add(FailedBlock(block=bad_entry, error=ValueError("Couldn't parse"), source="test"))
         match obj.transform(lib):
             case Library():
                 assert(True)

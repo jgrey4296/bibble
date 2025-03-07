@@ -18,7 +18,8 @@ import pytest
 # ##-- end 3rd party imports
 
 import bibble._interface as API
-from bibble import model
+from bibtexparser import model
+import bibble.model as bmodel
 
 # ##-- types
 # isort: off
@@ -30,8 +31,6 @@ from typing import Generic, NewType
 from typing import Protocol, runtime_checkable
 # Typing Decorators:
 from typing import no_type_check, final, override, overload
-# from dataclasses import InitVar, dataclass, field
-# from pydantic import BaseModel, Field, model_validator, field_validator, ValidationError
 
 if TYPE_CHECKING:
     from jgdv import Maybe
@@ -61,23 +60,40 @@ class TestBibbleMetaBlock:
         assert(True is not False) # noqa: PLR0133
 
     def test_ctor(self):
-        match model.MetaBlock():
-            case model.MetaBlock():
+        match bmodel.MetaBlock():
+            case bmodel.MetaBlock():
                 assert(True)
             case x:
                  assert(False), x
 
 
     def test_visit(self):
-        obj = model.MetaBlock()
+        obj = bmodel.MetaBlock()
         match obj.visit():
             case []:
                 assert(True)
             case x:
                  assert(False), x
 
-    ##--|
 
-    @pytest.mark.skip
-    def test_todo(self):
-        pass
+class TestFailureBlock:
+
+    def test_sanity(self):
+        assert(True is not False) # noqa: PLR0133
+
+    def test_ctor(self):
+        match bmodel.FailedBlock(block=model.Entry("test", "blah", []), error=ValueError("test"), source="testing"):
+            case bmodel.FailedBlock():
+                assert(True)
+            case x:
+                assert(False), x
+
+
+    def test_visit(self):
+        obj = bmodel.FailedBlock(block=model.Entry("test", "blah", []), error=ValueError("test"), source="testing")
+        match obj.visit(i=0, total=0):
+            case [str()]:
+                assert(True)
+            case x:
+                 assert(False), x
+

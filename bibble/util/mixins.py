@@ -103,7 +103,7 @@ class ErrorRaiser_m:
     """ Mixin for easily combining middleware errors into a block"""
 
     def make_error_block(self, entry:API.Entry, err:Exception) -> MiddlewareErrorBlock:
-        return bmodel.BibbleMidFailBlock(block=entry, error=err, source=self)
+        return bmodel.FailedBlock(block=entry, error=err, source=self)
 
 class FieldMatcher_m:
     """ Mixin to process fields if their key matchs a regex

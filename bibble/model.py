@@ -85,7 +85,8 @@ class MetaBlock(model.Block):
         return []
 
 
-class BibbleMidFailureBlock(model.MiddlewareErrorBlock):
+@Proto(API.CustomWriter_p)
+class FailedBlock(model.MiddlewareErrorBlock):
     """ Records errors encountered by a middleware """
 
     def __init__(self, *, block:model.Block, error:Exception, source:type|str):
