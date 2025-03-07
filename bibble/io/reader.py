@@ -64,7 +64,10 @@ logging = logmod.getLogger(__name__)
 
 @Mixin(MiddlewareValidator_m)
 class BibbleReader:
-    """ A Refactored bibtexparser reader"""
+    """ A Refactored bibtexparser reader
+
+    TODO : handle a pairstack on init
+    """
     _middlewares : list[Middleware]
     _lib_class   : type[Library]
 

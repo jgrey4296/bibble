@@ -71,7 +71,7 @@ class MetaBlock(model.Block):
     @classmethod
     def find_in(cls, lib:Library) -> Maybe[Self]:
         """ Find a block of this cls in a given """
-        for block in cls.blocks:
+        for block in lib.blocks:
             if isinstance(block, cls):
                 return block
         else:

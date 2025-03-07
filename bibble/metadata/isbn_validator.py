@@ -77,10 +77,10 @@ class IsbnValidator(IdenBlockMiddleware):
     def on_read(self):
         return True
 
-    def transform_entry(self, entry, library):
+    def transform_Entry(self, entry, library):
         match entry.get(MAPI.ISBN_K):
             case None:
-                return entry
+                return [entry]
             case model.Field(value=str() as val) if bool(val):
                 try:
                     isbn = pyisbn.Isbn(MAPI.ISBN_STRIP_RE.sub("", val))
@@ -94,4 +94,4 @@ class IsbnValidator(IdenBlockMiddleware):
             case model.Field(value=str() as val):
                 del entry[MAPI.ISBN_K]
 
-        return entry
+        return [entry]

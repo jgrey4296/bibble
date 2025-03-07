@@ -367,10 +367,10 @@ class FileCheck(IdenBlockMiddleware):
     def metadata_key():
         return "PdfLockCheck"
 
-    def transform_entry(self, entry, library) -> Any:
+    def transform_Entry(self, entry, library) -> list:
         match self._get_file(entry):
             case None:
-                return
+                return []
             case x if not x.exists():
                 update = BTP.model.Field("orphaned", "True")
                 entry.set_field(update)
@@ -385,4 +385,4 @@ class FileCheck(IdenBlockMiddleware):
             case _:
                 pass
 
-        return entry
+        return [entry]

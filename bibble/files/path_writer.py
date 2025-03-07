@@ -87,15 +87,16 @@ class PathWriter(IdenBlockMiddleware):
     def on_write(self):
         return True
 
-    def transform_entry(self, entry:Entry, library:Library):
+    def transform_Entry(self, entry:Entry, library:Library):
         match self.match_on_fields(entry, library):
             case model.Entry() as x:
-                return x
+                return [x]
             case list() as errs:
                 return [entry, self.make_error_block(entry, errs)]
+            case x:
+                raise TypeError(type(x))
 
     def field_h(self, field:Field, entry:Entry):
-        errors = []
         match field.value:
             case str():
                 pass
@@ -109,4 +110,4 @@ class PathWriter(IdenBlockMiddleware):
                     field.value = str(val)
                     return ValueError(f"Failed to Relativize path {entry.key}: {val}")
 
-        return field
+        return [field]

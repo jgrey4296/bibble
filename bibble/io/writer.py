@@ -148,6 +148,8 @@ class _Visitors_m:
 class BibbleWriter:
     """ A Refactored bibtexparser writer
     Uses visitor pattern
+    
+    TODO handle a pair stack on init
     """
 
     def __init__(self, stack:list[Middleware], format:Maybe[BibtexFormat]=None):

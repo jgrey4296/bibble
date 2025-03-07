@@ -38,34 +38,42 @@ class Test:
 
     def test_no_value(self, subber, entry):
         entry.set_field(model.Field("author", []))
-        result = subber.transform_entry(entry, None)
-        assert(result is entry)
-        assert(result.get("author").value == [])
+        match subber.transform_Entry(entry, None):
+            case [x] if x is entry:
+                assert(x.get("author").value == [])
+            case x:
+                 assert(False), x
 
 
     def test_no_sub(self, subber, entry):
         entry.set_field(model.Field("author", ["bob"]))
-        result = subber.transform_entry(entry, None)
-        assert(result is entry)
-        assert(result.get("author").value == ["bob"])
+        match subber.transform_Entry(entry, None):
+            case [x] if x is entry:
+                assert(x.get("author").value == ["bob"])
 
 
     def test_simple_sub(self, subber, entry):
         entry.set_field(model.Field("author", ["blah"]))
-        result = subber.transform_entry(entry, None)
-        assert(result is entry)
-        assert(result.get("author").value == ["bloo"])
+        match subber.transform_Entry(entry, None):
+            case [x] if x is entry:
+                assert(x.get("author").value == ["bloo"])
+            case x:
+                 assert(False), x
 
 
     def test_selected_sub(self, subber, entry):
         entry.set_field(model.Field("author", ["jill", "blah", "bob"]))
-        result = subber.transform_entry(entry, None)
-        assert(result is entry)
-        assert(result.get("author").value == ["jill", "bloo", "bob"])
+        match subber.transform_Entry(entry, None):
+            case [x] if x is entry:
+                assert(x.get("author").value == ["jill", "bloo", "bob"])
+            case x:
+                assert(False), x
 
 
     def test_name_format_sub(self, subber, entry):
         entry.set_field(model.Field("author", ["von braun, Ernst"]))
-        result = subber.transform_entry(entry, None)
-        assert(result is entry)
-        assert(result.get("author").value == ["von Braun, Ernst"])
+        match subber.transform_Entry(entry, None):
+            case [x] if x is entry:
+                assert(x.get("author").value == ["von Braun, Ernst"])
+            case x:
+                 assert(False), x

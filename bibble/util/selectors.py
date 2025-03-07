@@ -33,6 +33,33 @@ from bibtexparser.middlewares.names import (NameParts,
 
 # ##-- end 3rd party imports
 
+# ##-- types
+# isort: off
+import abc
+import collections.abc
+from typing import TYPE_CHECKING, cast, assert_type, assert_never
+from typing import Generic, NewType
+# Protocols:
+from typing import Protocol, runtime_checkable
+# Typing Decorators:
+from typing import no_type_check, final, override, overload
+
+if TYPE_CHECKING:
+    from jgdv import Maybe
+    from typing import Final
+    from typing import ClassVar, Any, LiteralString
+    from typing import Never, Self, Literal
+    from typing import TypeGuard
+    from collections.abc import Iterable, Iterator, Callable, Generator
+    from collections.abc import Sequence, Mapping, MutableMapping, Hashable
+    
+    from bibtexparser.libary import Library
+
+##--|
+
+# isort: on
+# ##-- end types
+
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
@@ -40,45 +67,45 @@ logging = logmod.getLogger(__name__)
 class SelectN(LibraryMiddleware):
     """ Select N random entries """
 
-    def __init__(self, count=1):
+    def __init__(self, *, count:int=1):
         super().__init__()
         self._count = count
 
     def transform(self, library):
         entries = library.entries
         chosen = choices(entries, k=self._count)
-
-        library.entries = chosen
         return library
 
-class SelectEntries(LibraryMiddleware):
+class SelectEntriesByType(LibraryMiddleware):
     """ Select entries of a particular type """
+    default_targets = ("article",)
 
-    def __init__(self, target="article"):
+    def __init__(self, *, targets:list[str]):
         super().__init__()
         self._entry_target = target.lower()
 
     def transform(self, library):
         chosen = [x for x in library.entries if x.entry_type.lower() == self._entry_target]
-        library.entries = chosen
-        return library
+        return Library(chosen)
 
 class SelectTags(LibraryMiddleware):
     """ Select entries of with a particular tag """
 
-    def __init__(self, targets=None):
+    def __init__(self, *, tags:set[str]):
         super().__init__()
         self._targets = set(targets or [])
 
-    def transform(self, library):
+    def transform(self, library:Library) -> Library:
         chosen = [x for x in library.entries if bool(x.fields_dict['tags'].value & self._targets)]
-
-        library.entries = chosen
-        return library
+        return Library(chosen)
 
 class SelectAuthor(LibraryMiddleware):
+    """ TODO select entries by a set of authors 
+    
+    should run name split on them
+    """
 
-    def __init__(self, targets=None):
+    def __init__(self, *, authors:set[str]):
         super().__init__()
         self._targets = set(targets or [])
 

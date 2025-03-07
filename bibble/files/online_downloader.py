@@ -97,9 +97,9 @@ class OnlineDownloader(IdenBlockMiddleware):
         finally:
             FirefoxController.close()
 
-    def transform_entry(self, entry, library):
+    def transform_Entry(self, entry, library):
         if self.should_skip_entry(entry, library):
-            return entry
+            return [entry]
 
         match entry.get("url"), entry.get("file"):
             case _, pl.Path()|str():
@@ -115,4 +115,4 @@ class OnlineDownloader(IdenBlockMiddleware):
                 # add it to the entry
                 entry.set_field(model.Field("file", value=dest))
 
-        return entry
+        return [entry]

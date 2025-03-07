@@ -87,7 +87,7 @@ class LockCrossrefKeys(IdenBlockMiddleware):
     def on_read(self):
         return True
 
-    def transform_entry(self, entry, library):
+    def transform_Entry(self, entry, library) -> list:
         entry.key = self.clean_key(entry.key)
         match entry.get(MAPI.CROSSREF_K):
             case None:
@@ -95,7 +95,7 @@ class LockCrossrefKeys(IdenBlockMiddleware):
             case model.Field(value=value):
                 entry.set_field(model.Field(MAPI.CROSSREF_K, self.clean_key(value)))
 
-        return entry
+        return [entry]
 
     def clean_key(self, key:str) -> str:
         """ Convert the entry key to a canonical form """

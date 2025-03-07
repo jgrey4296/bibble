@@ -85,7 +85,7 @@ class TagsWriter(IdenBlockMiddleware):
     def on_write(self):
         return True
 
-    def transform_entry(self, entry, library):
+    def transform_Entry(self, entry, library) -> list:
         match entry.get(MAPI.TAGS_K):
             case None:
                 logging.warning("Entry has No Tags on write: %s", entry.key)
@@ -99,4 +99,4 @@ class TagsWriter(IdenBlockMiddleware):
         if self._to_keywords:
             entry.set_field(model.Field(MAPI.KEYWORDS_K, entry.get(MAPI.TAGS_K).value))
 
-        return entry
+        return [entry]

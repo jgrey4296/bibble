@@ -56,7 +56,7 @@ from typing import Protocol, runtime_checkable
 from typing import no_type_check, final, override, overload
 
 if TYPE_CHECKING:
-    from jgdv import Maybe
+    from jgdv import Maybe, Result
     from typing import Final
     from typing import ClassVar, Any, LiteralString
     from typing import Never, Self, Literal
@@ -65,7 +65,8 @@ if TYPE_CHECKING:
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
 
     type U2LRule = UnicodeToLatexConversionRule
-    type Entry = model.Field
+    type Entry = model.Entry
+    type Field = model.Field
     type Block = model.Block
     from bibtexparser.library import Library
 ##--|
@@ -114,20 +115,22 @@ class LatexWriter(BlockMiddleware):
     def on_write(self):
         return True
 
-    def transform_entry(self, entry: Entry, library: Library) -> Block:
+    def transform_Entry(self, entry: Entry, library: Library) -> list[Block]:
         match self.match_on_fields(entry, library):
             case model.Entry() as x:
-                return x
+                return [x]
             case list() as errs:
                 return [entry, self.make_error_block(entry, errs)]
 
-    def field_h(self, field:model.Field, entry) -> tuple[model.Field, list[str]]:
-        value, errs = self.transform_string_like(field.value)
-        new_field = model.Field(key=field.key, value=value)
-        return new_field, errs
+    def field_h(self, field:model.Field, entry) -> Result[list[Field], Exception]:
+        match self.transform_string_like(field.value):
+            case Exception() as err:
+                return err
+            case x:
+                return [model.Field(key=field.key, value=value)]
 
-    def _transform_raw_str(self, python_string: str) -> tuple[str, str]:
+    def _transform_raw_str(self, python_string: str) -> Result[str, Exception]:
         try:
-            return self._encoder.unicode_to_latex(python_string), ""
+            return self._encoder.unicode_to_latex(python_string)
         except Exception as e:
-            return python_string, str(e)
+            return e

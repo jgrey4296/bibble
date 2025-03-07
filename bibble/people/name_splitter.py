@@ -88,5 +88,14 @@ class SplitNames(IdenBlockMiddleware):
         super().__init__(**kwargs)
         self.set_field_matchers(white=fields or SplitNames._whitelist, black=[])
 
+    def transform_Entry(self, entry, library) -> list[Block]:
+        match self.match_on_fields(entry, library):
+            case model.Entry() as x:
+                return [x]
+            case Exception() as err:
+                return [entry, self.make_error_block(entry, err)]
+            case x:
+                raise TypeError(type(x))
+            
     def field_h(self, field:Field, entry:Entry) -> Result[list[Field], Exception]:
-        pass
+        raise NotImplementedError()

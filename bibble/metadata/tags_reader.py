@@ -53,7 +53,7 @@ class TagsReader(IdenBlockMiddleware):
     def on_read(self):
         return True
 
-    def transform_entry(self, entry, library):
+    def transform_Entry(self, entry, library) -> list:
         match entry.get(MAPI.TAGS_K):
             case None:
                 logging.warning("Entry has no Tags on parse: %s", entry.key)
@@ -66,4 +66,4 @@ class TagsReader(IdenBlockMiddleware):
                 entry.set_field(model.Field(MAPI.TAGS_K, as_set))
                 TagsReader._all_tags.update(as_set)
 
-        return entry
+        return [entry]

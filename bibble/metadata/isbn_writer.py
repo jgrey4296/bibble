@@ -79,20 +79,20 @@ class IsbnWriter(IdenBlockMiddleware):
     def on_write(self):
         return True
 
-    def transform_entry(self, entry, library):
+    def transform_Entry(self, entry, library) -> list:
         f_dict = entry.fields_dict
         if MAPI.ISBN_K not in f_dict:
-            return entry
+            return [entry]
         if MAPI.INVALID_ISBN_K in f_dict:
-            return entry
+            return [entry]
         if not bool(f_dict[MAPI.ISBN_K].value):
-            return entry
+            return [entry]
 
         try:
             isbn = isbn_hyphenate.hyphenate(f_dict[MAPI.ISBN_K].value)
             entry.set_field(model.Field(MAPI.ISBN_K, isbn))
-            return entry
+            return [entry]
         except isbn_hyphenate.IsbnError as err:
             self._logger.warning("Writing ISBN failed: %s : %s", f_dict[MAPI.ISBN_K].value, err)
             # TODO add fail block
-            return entry
+            return [entry]

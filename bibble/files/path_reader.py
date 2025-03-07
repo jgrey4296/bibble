@@ -84,10 +84,10 @@ class PathReader(BlockMiddleware):
     def on_read(self):
         return False
 
-    def transform_entry(self, entry, library):
+    def transform_Entry(self, entry, library):
         match self.match_on_fields(entry, library):
             case model.Entry() as x:
-                return x
+                return [x]
             case Exception() as err:
                 return [entry, self.make_error_block(entry, err)]
             case x:
@@ -106,4 +106,4 @@ class PathReader(BlockMiddleware):
         if not field.value.exists():
             return ValueError(f"File does not exist: {field.value}")
 
-        return field
+        return [field]
