@@ -165,7 +165,7 @@ class BidirectionalMiddleware_p(Protocol):
         pass
 
 @runtime_checkable
-class AdapatableMiddleware_p(Protocol):
+class AdaptiveMiddleware_p(Protocol):
     """ Middleware that looks up defined transforms using the type name,
     by mro.
     """

@@ -118,6 +118,8 @@ class IdenLibraryMiddleware(_BaseMiddleware):
             case Library():
                 return deepcopy(library)
 
+
+@Proto(API.AdaptiveMiddleware_p)
 class IdenBlockMiddleware(_BaseMiddleware):
     """ Identity Block Middleware, does nothing
     If passed 'tqdm'=True uses tqdm around the block level loop
