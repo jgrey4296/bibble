@@ -17,7 +17,10 @@ import warnings
 import pytest
 # ##-- end 3rd party imports
 
+from bibtexparser.library import Library
+from bibtexparser import model
 import bibble._interface as API
+from .. import _interface as API_F
 from bibble.fields import TitleCleaner, TitleSplitter
 # ##-- types
 # isort: off
@@ -59,6 +62,41 @@ class TestTitleCleaner:
     def test_sanity(self):
         assert(True is not False) # noqa: PLR0133
 
+    def test_ctor(self):
+        match TitleCleaner():
+            case TitleCleaner():
+                assert(True)
+            case x:
+                 assert(False), x
+
+    def test_clean(self):
+        initial_title =  "   a test title with whitespace   "
+        mid    = TitleCleaner()
+        entry1 = model.Entry("test", "first",  [
+            model.Field("title", initial_title),
+            model.Field("subtitle", initial_title),
+        ])
+        lib    = Library()
+        lib.add(entry1)
+        assert(mid.transform(lib) is lib)
+        assert(initial_title.endswith(" "))
+        assert(entry1.fields_dict['title'].value == initial_title.strip())
+        assert(entry1.fields_dict['subtitle'].value == initial_title.strip())
+
+    def test_clean_ignores_other_fields(self):
+        initial_title =  "  a test title with whitespace   "
+        mid    = TitleCleaner()
+        entry1 = model.Entry("test", "first",  [
+            model.Field("title", initial_title),
+            model.Field("not_title", initial_title),
+        ])
+        lib    = Library()
+        lib.add(entry1)
+        assert(mid.transform(lib) is lib)
+        assert(initial_title.endswith(" "))
+        assert(entry1.fields_dict['title'].value == initial_title.strip())
+        assert(entry1.fields_dict['not_title'].value == initial_title)
+
     @pytest.mark.skip
     def test_todo(self):
         pass
@@ -67,6 +105,74 @@ class TestTitleSplitter:
 
     def test_sanity(self):
         assert(True is not False) # noqa: PLR0133
+
+    def test_ctor(self):
+        match TitleSplitter():
+            case TitleSplitter():
+                assert(True)
+            case x:
+                 assert(False), x
+
+    def test_clean(self):
+        initial_title =  "  a test title with whitespace   "
+        mid    = TitleSplitter()
+        entry1 = model.Entry("test", "first",  [
+            model.Field("title", initial_title),
+            model.Field("subtitle", initial_title),
+        ])
+        lib    = Library()
+        lib.add(entry1)
+        assert(mid.transform(lib) is lib)
+        assert(initial_title.endswith(" "))
+        assert(entry1.fields_dict['title'].value == initial_title.strip())
+        assert(entry1.fields_dict['subtitle'].value == initial_title.strip())
+
+    def test_clean_ignores_other_fields(self):
+        initial_title =  "  a test title with whitespace   "
+        mid    = TitleSplitter()
+        entry1 = model.Entry("test", "first",  [
+            model.Field("title", initial_title),
+            model.Field("not_title", initial_title),
+        ])
+        lib    = Library()
+        lib.add(entry1)
+        assert(mid.transform(lib) is lib)
+        assert(initial_title.endswith(" "))
+        assert(entry1.fields_dict['title'].value == initial_title.strip())
+        assert(entry1.fields_dict['not_title'].value == initial_title)
+
+
+    def test_split(self):
+        initial_title =  "  a test title with whitespace : the subtitle   "
+        target = "a test title with whitespace"
+        target_sub = "the subtitle"
+        mid    = TitleSplitter()
+        entry1 = model.Entry("test", "first",  [
+            model.Field("title", initial_title),
+        ])
+        lib    = Library()
+        lib.add(entry1)
+        assert(mid.transform(lib) is lib)
+        assert(initial_title.endswith(" "))
+        assert(entry1.fields_dict['title'].value == target)
+        assert(entry1.fields_dict['subtitle'].value == target_sub)
+
+
+    def test_split_doesnt_override_subtitle(self):
+        initial_title =  "  a test title with whitespace : the subtitle   "
+        initial_sub   =  " diff subtitle "
+        target_sub    = "diff subtitle"
+        mid           = TitleSplitter()
+        entry1        = model.Entry("test", "first",  [
+            model.Field("title", initial_title),
+            model.Field("subtitle", initial_sub),
+        ])
+        lib    = Library()
+        lib.add(entry1)
+        assert(mid.transform(lib) is lib)
+        assert(initial_title.endswith(" "))
+        assert(entry1.fields_dict['title'].value == initial_title.strip())
+        assert(entry1.fields_dict['subtitle'].value == target_sub)
 
     @pytest.mark.skip
     def test_todo(self):

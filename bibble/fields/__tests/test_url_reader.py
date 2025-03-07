@@ -4,7 +4,6 @@
 """
 # ruff: noqa: ANN201, ARG001, ANN001, ARG002, ANN202
 
-
 # Imports
 from __future__ import annotations
 
@@ -18,7 +17,10 @@ import warnings
 import pytest
 # ##-- end 3rd party imports
 
+from bibtexparser.library import Library
+from bibtexparser import model
 import bibble._interface as API
+from .. import _interface as API_F
 from bibble.fields import CleanUrls
 
 # ##-- types
@@ -55,10 +57,50 @@ logging = logmod.getLogger(__name__)
 # Vars:
 
 # Body:
+
 class TestCleanUrls:
 
     def test_sanity(self):
         assert(True is not False) # noqa: PLR0133
+
+    def test_ctor(self):
+        match CleanUrls():
+            case CleanUrls():
+                assert(True)
+            case x:
+                 assert(False), x
+
+    def test_clean_DOI(self):
+        mid           = CleanUrls()
+        entry1        = model.Entry("test", "first",  [
+            model.Field("doi", "https://doi.org/blah/bloo"),
+        ])
+        lib    = Library()
+        lib.add(entry1)
+        assert(mid.transform(lib) is lib)
+        assert(entry1.fields_dict['doi'].value == "blah/bloo")
+
+    def test_clean_URL(self):
+        mid           = CleanUrls()
+        entry1        = model.Entry("test", "first",  [
+            model.Field("url", "db/blah/bloo"),
+        ])
+        lib    = Library()
+        lib.add(entry1)
+        assert(mid.transform(lib) is lib)
+        assert(entry1.fields_dict['biburl'].value == "https://dblp.org/db/blah/bloo")
+        assert("bibsource" in entry1.fields_dict)
+
+    def test_clean_EE(self):
+        mid           = CleanUrls()
+        entry1        = model.Entry("test", "first",  [
+            model.Field("ee", "https:://www.blah.com"),
+        ])
+        lib    = Library()
+        lib.add(entry1)
+        assert(mid.transform(lib) is lib)
+        assert(entry1.fields_dict['url'].value == "https:://www.blah.com")
+        assert(entry1.fields_dict['ee'].value == "")
 
     @pytest.mark.skip
     def test_todo(self):

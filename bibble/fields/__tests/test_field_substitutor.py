@@ -18,8 +18,12 @@ import warnings
 import pytest
 # ##-- end 3rd party imports
 
+from jgdv.files.tags import SubstitutionFile
+from bibtexparser import model
+from bibtexparser.library import Library
 import bibble._interface as API
-from bibble.fields import FieldSubstitutor
+import bibble.model as bmodel
+from .. import FieldSubstitutor
 
 # ##-- types
 # isort: off
@@ -67,6 +71,17 @@ class TestFieldSubstitutor:
             case x:
                  assert(False), x
 
-    @pytest.mark.skip
-    def test_todo(self):
-        pass
+    def test_substitution(self):
+        subs   = SubstitutionFile()
+        subs.update(("bob", ["bob", "bill", "jan"]))
+        mid    = FieldSubstitutor(name="test", fields=["author"], subs=subs)
+        entry1 = model.Entry("test", "first",  [model.Field("author", "bob")])
+        entry2 = model.Entry("test", "second", [model.Field("author", "jill")])
+        entry3 = model.Entry("test", "third",  [model.Field("author", "bob")])
+        lib    = Library()
+        lib.add(entry1)
+        lib.add(entry2)
+        lib.add(entry2)
+        assert(mid.transform(lib) is lib)
+        assert(set(entry1.fields_dict['author'].value) == {"bob", "bill", "jan"})
+        assert(set(entry2.fields_dict['author'].value) == {"jill"})

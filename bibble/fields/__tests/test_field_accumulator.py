@@ -4,7 +4,6 @@
 """
 # ruff: noqa: ANN201, ARG001, ANN001, ARG002, ANN202
 
-
 # Imports
 from __future__ import annotations
 
@@ -18,8 +17,11 @@ import warnings
 import pytest
 # ##-- end 3rd party imports
 
+from bibtexparser.library import Library
+from bibtexparser import model
 import bibble._interface as API
-from bibble.fields import FieldAccumulator
+from .. import FieldAccumulator
+from .. import _interface as API_F
 
 # ##-- types
 # isort: off
@@ -53,6 +55,7 @@ logging = logmod.getLogger(__name__)
 # Vars:
 
 # Body:
+
 class TestFieldAccumulator:
 
     def test_sanity(self):
@@ -65,6 +68,39 @@ class TestFieldAccumulator:
             case x:
                  assert(False), x
 
-    @pytest.mark.skip
-    def test_todo(self):
-        pass
+
+    def test_accumulation(self):
+        mid = FieldAccumulator(name="test", fields=["author"])
+        entry1 = model.Entry("test", "first",  [model.Field("author", "bob")])
+        entry2 = model.Entry("test", "second", [model.Field("author", "jill")])
+        entry3 = model.Entry("test", "third",  [model.Field("author", "bob")])
+        lib = Library()
+        lib.add(entry1)
+        lib.add(entry2)
+        lib.add(entry2)
+        assert(mid.transform(lib) is lib)
+        match API_F.AccumulationBlock.find_in(lib):
+            case API_F.AccumulationBlock() as bl:
+                assert(bl.collection == {"bob", "jill"})
+            case x:
+                 assert(False), x
+
+
+    def test_multi_field_accumulation(self):
+        mid = FieldAccumulator(name="test", fields=["author", "editor"])
+        entry1 = model.Entry("test", "first",  [model.Field("author", "bob")])
+        entry2 = model.Entry("test", "second", [model.Field("author", "jill")])
+        # author -> editor here:
+        entry3 = model.Entry("test", "third",  [model.Field("editor", "bob")])
+        lib = Library()
+        lib.add(entry1)
+        lib.add(entry2)
+        lib.add(entry2)
+        assert(mid.transform(lib) is lib)
+        match API_F.AccumulationBlock.find_in(lib):
+            case API_F.AccumulationBlock() as bl:
+                assert(bl.collection == {"bob", "jill"})
+            case x:
+                 assert(False), x
+            
+
