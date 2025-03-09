@@ -80,7 +80,7 @@ class TagsWriter(IdenBlockMiddleware):
       Pass in to_keywords=True to convert tags -> keywords for bibtex2html
     """
 
-    def __init__(self, to_keywords=False, **kwargs):
+    def __init__(self, *, to_keywords:bool=False, **kwargs):
         super().__init__(**kwargs)
         self._to_keywords = to_keywords
 

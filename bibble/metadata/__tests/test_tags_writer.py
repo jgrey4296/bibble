@@ -68,6 +68,45 @@ class TestTagsWriter:
             case x:
                  assert(False), x
 
+    def test_basic_write(self):
+        tags  = model.Field("tags", {"ai","machine_learning","literature"})
+        entry = model.Entry("test", "test:blah", [tags])
+        lib   = Library([entry])
+        mid   = TagsWriter()
+        match mid.transform(lib):
+            case Library() as l2:
+                assert(l2 is lib)
+                assert(not bool(lib.failed_blocks))
+                assert(l2.entries[0].fields[0].value == "ai,literature,machine_learning")
+            case x:
+                 assert(False), x
+
+    def test_to_keywords(self):
+        tags  = model.Field("tags", {"ai","machine_learning","literature"})
+        entry = model.Entry("test", "test:blah", [tags])
+        lib   = Library([entry])
+        mid   = TagsWriter(to_keywords=True)
+        match mid.transform(lib):
+            case Library() as l2:
+                assert(l2 is lib)
+                assert(not bool(lib.failed_blocks))
+                assert("keywords" in l2.entries[0].fields_dict)
+                assert(l2.entries[0].fields_dict['keywords'].value == "ai,literature,machine_learning")
+            case x:
+                 assert(False), x
+
+    def test_no_tags_write(self):
+        entry = model.Entry("test", "test:blah", [])
+        lib   = Library([entry])
+        mid   = TagsWriter()
+        match mid.transform(lib):
+            case Library() as l2:
+                assert(l2 is lib)
+                assert(not bool(lib.failed_blocks))
+                assert(l2.entries[0].fields[0].value == "")
+            case x:
+                 assert(False), x
+
     @pytest.mark.skip
     def test_todo(self):
         pass
