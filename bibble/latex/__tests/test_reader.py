@@ -19,7 +19,7 @@ import pytest
 
 from bibtexparser import model, Library
 import bibble._interface as API
-from bibble.latex import LatexReader
+from .. import LatexReader
 
 # ##-- types
 # isort: off
