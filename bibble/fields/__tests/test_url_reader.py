@@ -21,7 +21,7 @@ from bibtexparser.library import Library
 from bibtexparser import model
 import bibble._interface as API
 from .. import _interface as API_F
-from bibble.fields import CleanUrls
+from .. import CleanUrls, ExpandUrls
 
 # ##-- types
 # isort: off
@@ -101,6 +101,19 @@ class TestCleanUrls:
         assert(mid.transform(lib) is lib)
         assert(entry1.fields_dict['url'].value == "https:://www.blah.com")
         assert(entry1.fields_dict['ee'].value == "")
+
+    
+class TestExpandUrls:
+
+    def test_sanity(self):
+        assert(True is not False) # noqa: PLR0133
+        
+    def test_ctor(self):
+        match ExpandUrls():
+            case ExpandUrls():
+                assert(True)
+            case x:
+                 assert(False), x
 
     @pytest.mark.skip
     def test_todo(self):

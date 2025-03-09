@@ -35,7 +35,7 @@ from jgdv import Mixin, Proto
 # ##-- 1st party imports
 import bibble._interface as API
 from . import _interface as API_N
-from bibble.util.name_parts import NameParts
+from bibble.util.name_parts import NameParts_d
 # ##-- end 1st party imports
 
 # ##-- types
@@ -78,7 +78,7 @@ class NameReader(ms.SplitNameParts):
     def on_read(self):
         return True
 
-    def _transform_field_value(self, name) -> list[NameParts]:
+    def _transform_field_value(self, name) -> list[NameParts_d]:
         if not isinstance(name, list):
             raise ValueError(
                 "Expected a list of strings, got {}. "

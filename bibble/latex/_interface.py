@@ -66,7 +66,7 @@ MATH_MODE_K     : Final[str] = "math_mode"
 
 ##--| Encoding Rules:
 ## Turned into conversion rules using UnicodeHelper_m.builde_encode_rule
-ENCODING_RULES =[
+ENCODING_RULES : Final[list[tuple]] =[
     (r"ẹ", r'\\{d}'),
     (r"é", r"\\'{e}"),
 
@@ -81,11 +81,11 @@ ENCODING_RULES =[
     (r"ș", r'\\,{s}'),
     (r"Ș", r'\\,{S}'),
 ]
-URL_RULES = [
+URL_RULES : Final[list[tuple]] = [
     (r"(https?://\S*\.\S*)", r"\\url{\1}"),
     (r"(www.\S*\.\S*)",      r"\\url{\1}"),
 ]
-MATH_RULES = [
+MATH_RULES : Final[list[tuple]] = [
     (r"(?<!\\)(\$.*[^\\]\$)", r"\1"),
 ]
 

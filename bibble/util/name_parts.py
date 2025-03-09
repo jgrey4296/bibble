@@ -77,7 +77,7 @@ def escape_last_slash(string: str) -> str:
 
 ##--|
 
-class NameParts:
+class NameParts_d:
     """A dataclass representing the parts of a person name.
 
     The different parts are defined according to BibTex's implementation

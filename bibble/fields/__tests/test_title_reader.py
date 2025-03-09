@@ -97,10 +97,6 @@ class TestTitleCleaner:
         assert(entry1.fields_dict['title'].value == initial_title.strip())
         assert(entry1.fields_dict['not_title'].value == initial_title)
 
-    @pytest.mark.skip
-    def test_todo(self):
-        pass
-
 class TestTitleSplitter:
 
     def test_sanity(self):
@@ -141,7 +137,6 @@ class TestTitleSplitter:
         assert(entry1.fields_dict['title'].value == initial_title.strip())
         assert(entry1.fields_dict['not_title'].value == initial_title)
 
-
     def test_split(self):
         initial_title =  "  a test title with whitespace : the subtitle   "
         target = "a test title with whitespace"
@@ -156,7 +151,6 @@ class TestTitleSplitter:
         assert(initial_title.endswith(" "))
         assert(entry1.fields_dict['title'].value == target)
         assert(entry1.fields_dict['subtitle'].value == target_sub)
-
 
     def test_split_doesnt_override_subtitle(self):
         initial_title =  "  a test title with whitespace : the subtitle   "
@@ -173,7 +167,3 @@ class TestTitleSplitter:
         assert(initial_title.endswith(" "))
         assert(entry1.fields_dict['title'].value == initial_title.strip())
         assert(entry1.fields_dict['subtitle'].value == target_sub)
-
-    @pytest.mark.skip
-    def test_todo(self):
-        pass

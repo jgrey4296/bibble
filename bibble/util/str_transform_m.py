@@ -29,6 +29,8 @@ from bibtexparser import model
 
 # ##-- end 3rd party imports
 
+from bibble.util.name_parts import NameParts_d
+
 # ##-- types
 # isort: off
 import abc
@@ -63,6 +65,7 @@ OBRACE : Final[str] = "{"
 CBRACE : Final[str] = "}"
 
 ##--|
+
 class StringTransform_m:
     """ Mixin for handling transform of strings
     refactored from bibtexparser middlewares.
@@ -89,34 +92,33 @@ class StringTransform_m:
 
             return res
 
+    def _transform_nameparts(self, parts:NameParts) -> Result[NameParts, ValueError]:
+        parts.first = self._transform_all_strings(parts.first)
+        parts.last  = self._transform_all_strings(parts.last)
+        parts.von   = self._transform_all_strings(parts.von)
+        parts.jr    = self._transform_all_strings(parts.jr)
+        return parts
 
-    def _transform_nameparts(self, value:NameParts) -> Result[NameParts, ValueError]:
-
-        val.first = self._transform_all_strings(val.first, errors)
-        val.last  = self._transform_all_strings(val.last,  errors)
-        val.von   = self._transform_all_strings(val.von,   errors)
-        val.jr    = self._transform_all_strings(val.jr,    errors)
-
-    def transform_strlike(self, value:StrLike) -> Result[StrLike,ValueError]:
+    def transform_strlike(self, slike:StrLike) -> Result[StrLike,ValueError]:
         """
         Transform str likes: str,s
         """
-        match val:
+        match slike:
             case model.String(value=str() as sval):
                 match self.transform_strlike(sval):
                     case ValueError() as err:
                         res = err
                     case str() as x:
-                        val.value = x
-                        res = val
-            case str() as x if x.startswith(OBRACE) and x.endswith(CBRACE):
-                match self._transform_braced_str(val[1:-1]):
+                        slike.value = x
+                        res = slike
+            case str() as sval if sval.startswith(OBRACE) and x.endswith(CBRACE):
+                match self._transform_raw_str(sval[0:-1]):
                     case ValueError() as err:
                         res = err
                     case str() as x:
                         res = "".join([OBRACE, x, CBRACE])
-            case str():
-                res = self._transform_raw_str(field.value)
+            case str() as sval:
+                res = self._transform_raw_str(sval)
             case NameParts() as np:
                 res = self._transform_nameparts(np)
             case list() as vals:
@@ -132,7 +134,7 @@ class StringTransform_m:
                     if bool(errs):
                         res = ValueError(*errs)
             case set() as vals:
-                res = []
+                res  = []
                 errs = []
                 for x in vals:
                     match self.transform_strlike(x):
@@ -147,10 +149,9 @@ class StringTransform_m:
                         res = set(res)
             case x:
                 logging.info(
-                    f" [{self.metadata_key()}] Cannot python-str transform: {val}"
+                    f" [{self.metadata_key()}] Cannot python-str transform: {x}"
                     f" with value type {type(x)}"
                 )
                 res = x
 
         return res
-

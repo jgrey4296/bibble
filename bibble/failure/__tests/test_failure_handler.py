@@ -114,6 +114,3 @@ class TestFailureHandler:
                   ]:
             assert(x in log_text), x
 
-    @pytest.mark.skip
-    def test_todo(self):
-        pass

@@ -99,9 +99,10 @@ class _BaseMiddleware:
         """
 
         """
-        self.allow_inplace  = kwargs.pop(API.ALLOW_INPLACE_MOD_K, True)
+        inplace             = kwargs.pop(API.ALLOW_INPLACE_MOD_K, True)
+        self.allow_inplace  = inplace
         self.allow_parallel = kwargs.pop(API.ALLOW_PARALLEL_K, False)
-        fallback_name = f"{type(self).__module__}.{type(self).__name__}"
+        fallback_name       = f"{type(self).__module__}.{type(self).__name__}"
         self._logger        = kwargs.pop(API.LOGGER_K, logmod.getLogger(fallback_name))
         self._extra         = kwargs
 
@@ -117,7 +118,6 @@ class IdenLibraryMiddleware(_BaseMiddleware):
                 return library
             case Library():
                 return deepcopy(library)
-
 
 @Proto(API.AdaptiveMiddleware_p)
 class IdenBlockMiddleware(_BaseMiddleware):
@@ -143,11 +143,19 @@ class IdenBlockMiddleware(_BaseMiddleware):
         return self._transform_cache[type(block)]
 
     def transform(self, library:Library) -> Library:
+        match self.allow_inplace:
+            case True:
+                lib = library
+            case False:
+                lib = deepcopy(library)
+            case x:
+                raise TypeError(type(x))
+
         match self._extra:
             case {"tqdm":True}:
-                iterator = tqdm(enumerate(library.blocks))
+                iterator = tqdm(enumerate(lib.blocks))
             case _:
-                iterator = enumerate(library.blocks)
+                iterator = enumerate(lib.blocks)
 
         blocks = []
         for i,block in iterator:
@@ -159,7 +167,7 @@ class IdenBlockMiddleware(_BaseMiddleware):
                 case x:
                     raise TypeError(type(x))
 
-            match transform(block, library):
+            match transform(block, lib):
                 case [] | None:
                      blocks.append(block)
                 case [*xs]:
@@ -167,8 +175,4 @@ class IdenBlockMiddleware(_BaseMiddleware):
                 case x:
                     raise TypeError(type(x), i, block)
         else:
-            if self.allow_inplace:
-                library._blocks = blocks
-                return library
-            else:
-                return Library(blocks=blocks)
+            return lib

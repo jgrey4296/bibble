@@ -122,7 +122,3 @@ class TestDuplicateHandler:
         assert("duplicate fields" in caplog.text)
         assert("bloo" in bad_entry)
         assert("bloo_2" in bad_entry)
-
-    @pytest.mark.skip
-    def test_todo(self):
-        pass

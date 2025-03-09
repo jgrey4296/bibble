@@ -32,7 +32,7 @@ from bibtexparser import model
 from jgdv import Proto, Mixin
 from bibble.util.middlecore import IdenBlockMiddleware
 import bibble._interface as API
-from bibble.util.name_parts import NameParts
+from bibble.util.name_parts import NameParts_d
 from bibble.mixins import FieldMatcher_m
 
 # ##-- types
