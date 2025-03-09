@@ -41,7 +41,7 @@ from typing import Protocol, runtime_checkable
 from typing import no_type_check, final, override, overload
 
 if TYPE_CHECKING:
-    from jgdv import Maybe
+    from jgdv import Maybe, Fifo, Lifo
     from typing import Final
     from typing import ClassVar, Any, LiteralString
     from typing import Never, Self, Literal
@@ -69,9 +69,16 @@ logging = logmod.getLogger(__name__)
 class PairStack:
     """ A pair of middleware stacks,
     allowing reader/writer pairs to be added at the same time
+
+    The read stack is Fifo, the write stack is Lifo.
+    So any transforms are undone in the correct order before writing.
+    Parse[m1, m2, m3] -> Write[m3, m2, m1]
+
+    eg: Parse[LatexToUnicode, SplitName] -> Write[MergeNames, UnicodeToLatex]
+
     """
-    _read_time  : list[Middleware]
-    _write_time : list[Middleware]
+    _read_time  : Fifo[Middleware]
+    _write_time : Lifo[Middleware]
 
     def __init__(self):
         self._read_time  = []
@@ -124,4 +131,4 @@ class PairStack:
 
     def write_stack(self) -> list[Middleware]:
         """ Return the write stack """
-        return self._write_time[:]
+        return self._write_time[::-1]
