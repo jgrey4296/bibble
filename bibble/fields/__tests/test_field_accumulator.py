@@ -63,7 +63,7 @@ class TestFieldAccumulator:
 
     def test_ctor(self):
         match FieldAccumulator(name="test", fields=[]):
-            case FieldAccumulator():
+            case API.AdaptiveMiddleware_p():
                 assert(True)
             case x:
                  assert(False), x

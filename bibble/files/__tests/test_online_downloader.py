@@ -18,8 +18,8 @@ import pytest
 # ##-- end 3rd party imports
 
 import bibble._interface as API
-from bibble.files import OnlineDownloader
-from bibble.files._firefox import FirefoxController
+from .. import OnlineDownloader
+from .._firefox import FirefoxController
 
 # ##-- types
 # isort: off
@@ -60,6 +60,13 @@ class TestOnlineDownloader:
 
     def test_sanity(self):
         assert(True is not False) # noqa: PLR0133
+
+    def test_ctor(self):
+        match OnlineDownloader(target=pl.Path(".")):
+            case API.AdaptiveMiddleware_p():
+                assert(True)
+            case x:
+                 assert(False), x
 
     @pytest.mark.skip
     def test_todo(self):

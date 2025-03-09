@@ -18,6 +18,7 @@ import pytest
 # ##-- end 3rd party imports
 
 from bibtexparser import model, Library
+import bibble._interface as API
 from .. import IsbnValidator
 
 # ##-- types
@@ -62,7 +63,7 @@ class TestIsbnValidator:
 
     def test_ctor(self):
         match IsbnValidator():
-            case IsbnValidator():
+            case API.AdaptiveMiddleware_p():
                 assert(True)
             case x:
                  assert(False), x

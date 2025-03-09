@@ -17,6 +17,7 @@ import warnings
 import pytest
 # ##-- end 3rd party imports
 
+import bibble._interface as API
 from bibtexparser import model, Library
 from .. import KeyLocker
 
@@ -62,7 +63,7 @@ class TestKeyLocker:
 
     def test_ctor(self):
         match KeyLocker():
-            case KeyLocker():
+            case API.AdaptiveMiddleware_p():
                 assert(True)
             case x:
                  assert(False), x

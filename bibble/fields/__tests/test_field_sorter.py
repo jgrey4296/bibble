@@ -13,6 +13,7 @@ import warnings
 
 import pytest
 from bibtexparser import model
+import bibble._interface as API
 from bibble.fields import FieldSorter
 
 logging = logmod.root
@@ -34,6 +35,13 @@ class TestFieldSorter:
 
     def test_sanity(self):
         assert(True is not False) # noqa: PLR0133
+
+    def test_ctor(self, sorter):
+        match sorter:
+            case API.LibraryMiddleware_p():
+                assert(True)
+            case x:
+                 assert(False), x
 
     def test_basic(self, sorter, entry):
         result = sorter.transform_Entry(entry, None)

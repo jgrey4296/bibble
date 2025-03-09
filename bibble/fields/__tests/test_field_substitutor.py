@@ -66,7 +66,7 @@ class TestFieldSubstitutor:
 
     def test_ctor(self):
         match FieldSubstitutor(fields=[], subs={}):
-            case FieldSubstitutor():
+            case API.AdaptiveMiddleware_p():
                 assert(True)
             case x:
                  assert(False), x

@@ -17,6 +17,7 @@ import warnings
 import pytest
 # ##-- end 3rd party imports
 
+import bibble._interface as API
 from bibtexparser import model, Library
 from .. import MetadataApplicator, FileCheck, _interface as MAPI
 
@@ -62,7 +63,7 @@ class TestMetadataApplicator:
 
     def test_ctor(self):
         match MetadataApplicator():
-            case MetadataApplicator():
+            case API.AdaptiveMiddleware_p():
                 assert(True)
             case x:
                  assert(False), x
@@ -154,7 +155,7 @@ class TestFileCheck:
 
     def test_ctor(self):
         match FileCheck():
-            case FileCheck():
+            case API.AdaptiveMiddleware_p():
                 assert(True)
             case x:
                 assert(False), x

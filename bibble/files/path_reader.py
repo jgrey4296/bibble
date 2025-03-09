@@ -34,6 +34,7 @@ from jgdv import Proto, Mixin
 # ##-- 1st party imports
 import bibble._interface as API
 from bibble.util.mixins import ErrorRaiser_m, FieldMatcher_m
+from bibble.util.middlecore import IdenBlockMiddleware
 
 # ##-- end 1st party imports
 
@@ -68,7 +69,7 @@ logging = logmod.getLogger(__name__)
 
 @Proto(API.ReadTime_p)
 @Mixin(ErrorRaiser_m, FieldMatcher_m)
-class PathReader(BlockMiddleware):
+class PathReader(IdenBlockMiddleware):
     """
       Convert file paths in bibliography to pl.Path's, expanding relative paths
       according to lib_root

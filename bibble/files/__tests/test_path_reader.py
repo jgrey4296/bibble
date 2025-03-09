@@ -18,7 +18,7 @@ import pytest
 # ##-- end 3rd party imports
 
 import bibble._interface as API
-from bibble.files import PathReader
+from .. import PathReader
 
 # ##-- types
 # isort: off
@@ -59,6 +59,14 @@ class TestPathReader:
 
     def test_sanity(self):
         assert(True is not False) # noqa: PLR0133
+
+    def test_ctor(self):
+        match PathReader():
+            case API.AdaptiveMiddleware_p():
+                assert(True)
+            case x:
+                 assert(False), x
+
 
     @pytest.mark.skip
     def test_todo(self):

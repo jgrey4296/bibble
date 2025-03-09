@@ -22,7 +22,7 @@ from uuid import UUID, uuid1
 # ##-- end stdlib imports
 
 # ##-- 3rd party imports
-from jgdv import Mixin
+from jgdv import Mixin, Proto
 from bibtexparser.library import Library
 from bibtexparser.splitter import Splitter
 
@@ -62,6 +62,7 @@ if TYPE_CHECKING:
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
+@Proto(API.Reader_p)
 @Mixin(MiddlewareValidator_m)
 class BibbleReader:
     """ A Refactored bibtexparser reader
@@ -71,7 +72,7 @@ class BibbleReader:
     _middlewares : list[Middleware]
     _lib_class   : type[Library]
 
-    def __init__(self, stack:list[Middleware], lib_base:Maybe[type]=None):
+    def __init__(self, stack:list[Middleware], *, lib_base:Maybe[type]=None):
         self._middlewares      = stack
         self._lib_class : type = lib_base or Library
 

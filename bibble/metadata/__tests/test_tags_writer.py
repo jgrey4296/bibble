@@ -2,7 +2,7 @@
 """
 
 """
-# ruff: noqa: ANN201, ARG001, ANN001, ARG002, ANN202
+# ruff: noqa: ANN201, ARG001, ANN001, ARG002, ANN202, B011
 
 # Imports
 from __future__ import annotations
@@ -17,7 +17,9 @@ import warnings
 import pytest
 # ##-- end 3rd party imports
 
-from bibble.metadata import TagsWriter
+from bibtexparser import model, Library
+import bibble._interface as API
+from .. import TagsWriter
 
 # ##-- types
 # isort: off
@@ -58,6 +60,13 @@ class TestTagsWriter:
 
     def test_sanity(self):
         assert(True is not False) # noqa: PLR0133
+
+    def test_ctor(self):
+        match TagsWriter():
+            case API.AdaptiveMiddleware_p():
+                assert(True)
+            case x:
+                 assert(False), x
 
     @pytest.mark.skip
     def test_todo(self):

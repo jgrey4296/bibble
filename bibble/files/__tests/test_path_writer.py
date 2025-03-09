@@ -2,7 +2,7 @@
 """
 
 """
-# ruff: noqa: ANN201, ARG001, ANN001, ARG002, ANN202
+# ruff: noqa: ANN201, ARG001, ANN001, ARG002, ANN202, B011
 
 # Imports
 from __future__ import annotations
@@ -18,7 +18,7 @@ import pytest
 # ##-- end 3rd party imports
 
 import bibble._interface as API
-from bibble.files import PathWriter
+from .. import PathWriter
 
 # ##-- types
 # isort: off
@@ -59,6 +59,13 @@ class TestPathWriter:
 
     def test_sanity(self):
         assert(True is not False) # noqa: PLR0133
+
+    def test_ctor(self):
+        match PathWriter():
+            case API.AdaptiveMiddleware_p():
+                assert(True)
+            case x:
+                 assert(False), x
 
     @pytest.mark.skip
     def test_todo(self):

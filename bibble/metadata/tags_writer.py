@@ -60,6 +60,8 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Callable, Generator
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
 
+    from bibtexparser import Library
+    type Entry = model.Entry
 ##--|
 
 # isort: on
@@ -85,13 +87,13 @@ class TagsWriter(IdenBlockMiddleware):
     def on_write(self):
         return True
 
-    def transform_Entry(self, entry, library) -> list:
+    def transform_Entry(self, entry:Entry, library:Library) -> list[Entry]:
         match entry.get(MAPI.TAGS_K):
             case None:
-                logging.warning("Entry has No Tags on write: %s", entry.key)
+                self._logger.warning("Entry has No Tags on write: %s", entry.key)
                 entry.set_field(model.Field(MAPI.TAGS_K, ""))
             case model.Field(value=val) if not bool(val):
-                logging.warning("Entry has No Tags on write: %s", entry.key)
+                self._logger.warning("Entry has No Tags on write: %s", entry.key)
                 entry.set_field(model.Field(MAPI.TAGS_K, ""))
             case model.Field(value=set() as vals):
                 entry.set_field(model.Field(MAPI.TAGS_K, ",".join(sorted(vals))))

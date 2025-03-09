@@ -37,7 +37,7 @@ from waybackpy import WaybackMachineSaveAPI
 import bibble._interface as API
 from . import  _interface as FAPI
 from ._firefox import FirefoxController
-from bibble.util.mixins import FieldMatcher_m
+from bibble.util.mixins import FieldMatcher_m, EntrySkipper_m
 from bibble.util.middlecore import IdenBlockMiddleware
 
 # ##-- end 1st party imports
@@ -75,7 +75,7 @@ logging = logmod.getLogger(__name__)
 
 ##--|
 
-@Mixin(FieldMatcher_m)
+@Mixin(EntrySkipper_m)
 class OnlineDownloader(IdenBlockMiddleware):
     """
       if the entry is 'online', and it doesn't have a file associated with it,

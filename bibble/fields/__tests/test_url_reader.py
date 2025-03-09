@@ -110,7 +110,7 @@ class TestExpandUrls:
         
     def test_ctor(self):
         match ExpandUrls():
-            case ExpandUrls():
+            case API.AdaptiveMiddleware_p():
                 assert(True)
             case x:
                  assert(False), x

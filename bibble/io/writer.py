@@ -143,7 +143,7 @@ class _Visitors_m:
         return [parsing_failed_comment, "\n", block.raw, "\n"]
 ##--|
 
-@Proto(jgdv.protos.Visitor_p)
+@Proto(jgdv.protos.Visitor_p, API.Writer_p)
 @Mixin(_VisitEntry_m, _Visitors_m, MiddlewareValidator_m)
 class BibbleWriter:
     """ A Refactored bibtexparser writer
@@ -152,7 +152,7 @@ class BibbleWriter:
     TODO handle a pair stack on init
     """
 
-    def __init__(self, stack:list[Middleware], format:Maybe[BibtexFormat]=None):
+    def __init__(self, stack:list[Middleware], *, format:Maybe[BibtexFormat]=None):
         self._middlewares            = stack
         self._val_sep                = " = "
         self._parsing_failed_comment = "% WARNING Parsing failed for the following {n} lines."

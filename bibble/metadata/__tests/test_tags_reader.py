@@ -63,7 +63,7 @@ class TestTagsReader:
     @pytest.mark.skip
     def test_ctor(self):
         match TagsReader():
-            case TagsReader():
+            case API.AdaptiveMiddleware_p():
                 assert(True)
             case x:
                  assert(False), x

@@ -17,6 +17,7 @@ import warnings
 import pytest
 # ##-- end 3rd party imports
 
+import bibble._interface as API
 from bibtexparser import model
 from bibtexparser.library import Library
 from .. import DuplicateKeyHandler
@@ -60,7 +61,7 @@ class TestDuplicateHandler:
 
     def test_ctor(self):
         match DuplicateKeyHandler():
-            case DuplicateKeyHandler():
+            case API.LibraryMiddleware_p():
                 assert(True)
             case x:
                 raise TypeError(type(x))

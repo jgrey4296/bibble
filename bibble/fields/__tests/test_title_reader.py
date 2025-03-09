@@ -104,7 +104,7 @@ class TestTitleSplitter:
 
     def test_ctor(self):
         match TitleSplitter():
-            case TitleSplitter():
+            case API.AdaptiveMiddleware_p():
                 assert(True)
             case x:
                  assert(False), x

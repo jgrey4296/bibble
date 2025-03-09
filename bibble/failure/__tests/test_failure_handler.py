@@ -17,6 +17,7 @@ import warnings
 import pytest
 # ##-- end 3rd party imports
 
+import bibble._interface as API
 from bibtexparser import model
 from bibtexparser.library import Library
 from bibble.model import FailedBlock
@@ -62,7 +63,7 @@ class TestFailureHandler:
 
     def test_ctor(self):
         match FailureHandler(file="blah"):
-            case FailureHandler() as fh:
+            case API.LibraryMiddleware_p() as fh:
                 assert(fh.file_target == pl.Path("blah"))
             case x:
                  assert(False), x

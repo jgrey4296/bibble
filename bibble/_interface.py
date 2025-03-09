@@ -155,6 +155,8 @@ class LibraryMiddleware_p(Protocol):
     def transform(self, library:Library) -> Library:
         pass
 
+##--| New Middleware protocols:
+
 @runtime_checkable
 class BidirectionalMiddleware_p(Protocol):
 
@@ -175,15 +177,22 @@ class AdaptiveMiddleware_p(Protocol):
 
     def transform(self, library:Library) -> Library:
         pass
-    
 
-##--|
+##--| IO Protocols
 
 @runtime_checkable
-class BibbleWriter_p(Protocol):
+class Reader_p(Protocol):
+
+    def read(self, source:str|pl.Path, *, into:Maybe[Library]=None, append:Maybe[list[Middleware]]=None) -> Maybe[Library]:
+        pass
+
+@runtime_checkable
+class Writer_p(Protocol):
 
     def write(self, library:Library, *, file:Maybe[pl.Path]=None, append:Maybe[list[BlockMiddleware_p|LibraryMiddleware_p]]=None) -> str:
         pass
+
+##--| Middleware protocols
 
 @runtime_checkable
 class CustomWriter_p(Protocol):
@@ -203,32 +212,30 @@ class MiddlewareDir_p(Protocol):
 
 @runtime_checkable
 class ReadTime_p(Protocol):
-    """ Protocol for signifying a middleware is for use on parsing bibtex to data """
+    """ Protocol for signifying a middleware is for use on parsing bibtex to data
+    TODO merge this into middlewaredir_p
+    """
 
     def on_read(self) -> bool:
         pass
 
 @runtime_checkable
 class WriteTime_p(Protocol):
-    """ Protocol for signifying middleware is for use on writing data to bibtex """
+    """ Protocol for signifying middleware is for use on writing data to bibtex
+    TODO merge this into middlewaredir_p
+    """
 
     def on_write(self) -> bool:
-        pass
-
-@runtime_checkable
-class ErrorRaiser_p(Protocol):
-
-    def make_error_block(self, entry:Entry, errs:list[str]) -> ErrorBlock:
         pass
 
 @runtime_checkable
 class EntrySkipper_p(Protocol):
     """ A whitelist based test for middlewares """
 
-    def set_entry_whitelist(self, whitelist:list[str]) -> None:
+    def set_entry_skiplist(self, whitelist:list[str]) -> None:
         pass
 
-    def should_skip_entry(self, entry, library) -> bool:
+    def should_skip_entry(self, entry:Entry, library:Library) -> bool:
         pass
 
 @runtime_checkable
