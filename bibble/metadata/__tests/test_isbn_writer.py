@@ -17,7 +17,8 @@ import warnings
 import pytest
 # ##-- end 3rd party imports
 
-from bibble.metadata import IsbnWriter
+from bibtexparser import model, Library
+from .. import IsbnWriter
 
 # ##-- types
 # isort: off
@@ -59,6 +60,35 @@ class TestIsbnWriter:
     def test_sanity(self):
         assert(True is not False) # noqa: PLR0133
 
-    @pytest.mark.skip
-    def test_todo(self):
-        pass
+    def test_ctor(self):
+        match IsbnWriter():
+            case IsbnWriter():
+                assert(True)
+            case x:
+                 assert(False), x
+                 
+    def test_basic_format(self):
+        field = model.Field("isbn", "9780192805928")
+        entry = model.Entry("test", "test", [field])
+        lib   = Library([entry])
+        mid   = IsbnWriter()
+        match mid.transform(lib):
+            case Library() as l2:
+                assert(l2 is lib)
+                assert(l2.entries[0].fields[0].value == "978-0-19-280592-8")
+                assert(not l2.failed_blocks)
+            case x:
+                 assert(False), x
+
+    def test_basic_format_fail(self):
+        field = model.Field("isbn", "978019")
+        entry = model.Entry("test", "test", [field])
+        lib   = Library([entry])
+        mid   = IsbnWriter()
+        match mid.transform(lib):
+            case Library() as l2:
+                assert(l2 is lib)
+                assert(bool(l2.failed_blocks))
+            case x:
+                 assert(False), x
+                 

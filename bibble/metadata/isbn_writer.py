@@ -22,6 +22,7 @@ from uuid import UUID, uuid1
 # ##-- end stdlib imports
 
 # ##-- 3rd party imports
+from jgdv import Proto, Mixin
 import bibtexparser
 import bibtexparser.model as model
 import isbn_hyphenate
@@ -29,7 +30,6 @@ import pyisbn
 from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import (BlockMiddleware,
                                                  LibraryMiddleware)
-from jgdv import Proto
 
 # ##-- end 3rd party imports
 
@@ -37,6 +37,7 @@ from jgdv import Proto
 import bibble._interface as API
 from . import _interface as MAPI
 from bibble.util.middlecore import IdenBlockMiddleware
+from bibble.util.mixins import ErrorRaiser_m
 # ##-- end 1st party imports
 
 # ##-- types
@@ -71,6 +72,7 @@ logging = logmod.getLogger(__name__)
 ##--|
 
 @Proto(API.WriteTime_p)
+@Mixin(ErrorRaiser_m)
 class IsbnWriter(IdenBlockMiddleware):
     """
       format the isbn for writing
@@ -94,5 +96,6 @@ class IsbnWriter(IdenBlockMiddleware):
             return [entry]
         except isbn_hyphenate.IsbnError as err:
             self._logger.warning("Writing ISBN failed: %s : %s", f_dict[MAPI.ISBN_K].value, err)
-            # TODO add fail block
-            return [entry]
+            return [entry,
+                    self.make_error_block(entry, err)
+                    ]

@@ -76,15 +76,10 @@ class TestIsbnValidator:
             case Library() as l2:
                 assert(l2 is lib)
                 assert(l2.entries[0].fields[0].value == "9780192805928")
+                assert(not l2.failed_blocks)
             case x:
                  assert(False), x
                  
-        match lib.failed_blocks:
-            case []:
-                assert(True)
-            case x:
-                 assert(False), x
-
 
     def test_basic_check_fail(self):
         field = model.Field("isbn", "978019")
