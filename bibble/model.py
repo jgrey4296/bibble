@@ -104,6 +104,11 @@ class FailedBlock(model.MiddlewareErrorBlock):
             case x:
                 raise TypeError(type(x))
 
+            
+    def __repr__(self):
+        key = self.ignore_error_block.key
+        return f"<{self.__class__.__name__}: {key}>"
+        
     def visit(self, *, i:int, total:int, source_file:Maybe[str|pl.Path]=None, **kwargs) -> list[str]:
         match source_file:
             case None:

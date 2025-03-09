@@ -161,18 +161,28 @@ class IdenBlockMiddleware(_BaseMiddleware):
         for i,block in iterator:
             match self.get_transforms_for(block):
                 case []:
+                    # No transforms for this block type, do nothing
                     continue
                 case [x, *_]:
+                    # Use the first found transform,
+                    # ie: the most specific
                     transform = x
                 case x:
                     raise TypeError(type(x))
 
             match transform(block, lib):
                 case [] | None:
-                     blocks.append(block)
+                    # Transform gave nothing, so keep the original block.
+                    # (it might have been modified)
+                    blocks.append(block)
                 case [*xs]:
+                    # new blocks
                     blocks += xs
                 case x:
                     raise TypeError(type(x), i, block)
         else:
+            # Remove the old blocks
+            lib.remove(lib.blocks)
+            # Add the new blocks
+            lib.add(blocks)
             return lib

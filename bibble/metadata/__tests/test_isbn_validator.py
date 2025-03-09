@@ -4,7 +4,6 @@
 """
 # ruff: noqa: ANN201, ARG001, ANN001, ARG002, ANN202
 
-
 # Imports
 from __future__ import annotations
 
@@ -18,7 +17,8 @@ import warnings
 import pytest
 # ##-- end 3rd party imports
 
-from bibble.metadata import IsbnValidator
+from bibtexparser import model, Library
+from .. import IsbnValidator
 
 # ##-- types
 # isort: off
@@ -54,11 +54,52 @@ logging = logmod.getLogger(__name__)
 # Vars:
 
 # Body:
+
 class TestIsbnValidator:
 
     def test_sanity(self):
         assert(True is not False) # noqa: PLR0133
 
+    def test_ctor(self):
+        match IsbnValidator():
+            case IsbnValidator():
+                assert(True)
+            case x:
+                 assert(False), x
+                 
+    def test_basic_check(self):
+        field = model.Field("isbn", "9780192805928")
+        entry = model.Entry("test", "test", [field])
+        lib   = Library([entry])
+        mid   = IsbnValidator()
+        match mid.transform(lib):
+            case Library() as l2:
+                assert(l2 is lib)
+                assert(l2.entries[0].fields[0].value == "9780192805928")
+            case x:
+                 assert(False), x
+                 
+        match lib.failed_blocks:
+            case []:
+                assert(True)
+            case x:
+                 assert(False), x
+
+
+    def test_basic_check_fail(self):
+        field = model.Field("isbn", "978019")
+        entry = model.Entry("test", "test", [field])
+        lib   = Library([entry])
+        mid   = IsbnValidator()
+        match mid.transform(lib):
+            case Library() as l2:
+                assert(bool(l2.failed_blocks))
+                assert(l2 is lib)
+            case x:
+                 assert(False), x
+                 
+
+        
     @pytest.mark.skip
     def test_todo(self):
         pass

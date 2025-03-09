@@ -2,6 +2,7 @@
 
 __version__ = "0.1.0"
 
+from . import model
 from bibble import metadata as metadata
 from bibble import files
 from bibble import fields

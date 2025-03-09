@@ -36,6 +36,7 @@ from jgdv import Mixin, Proto
 import bibble._interface as API
 from . import _interface as MAPI
 from bibble.util.middlecore import IdenBlockMiddleware
+from bibble.util.mixins import ErrorRaiser_m
 
 # ##-- types
 # isort: off
@@ -69,6 +70,7 @@ logging = logmod.getLogger(__name__)
 ##--|
 
 @Proto(API.ReadTime_p)
+@Mixin(ErrorRaiser_m)
 class IsbnValidator(IdenBlockMiddleware):
     """
       Try to validate the entry's isbn number
@@ -86,12 +88,19 @@ class IsbnValidator(IdenBlockMiddleware):
                     isbn = pyisbn.Isbn(MAPI.ISBN_STRIP_RE.sub("", val))
                     if not isbn.validate():
                         raise pyisbn.IsbnError("validation fail")
-                except pyisbn.IsbnError:
+                    else:
+                        return [entry]
+                except pyisbn.IsbnError as err:
                     # TODO add a fail block
                     self._logger.warning("ISBN validation fail: %s : %s", entry.key, val)
                     entry.set_field(model.Field(MAPI.INVALID_ISBN_K, val))
                     entry.set_field(model.Field(MAPI.ISBN_K, ""))
+                    return [entry,
+                            self.make_error_block(entry, err),
+                            ]
             case model.Field(value=str() as val):
                 del entry[MAPI.ISBN_K]
+                return [entry]
+            case x:
+                raise TypeError(type(x))
 
-        return [entry]
