@@ -4,7 +4,6 @@
 """
 # ruff: noqa: ANN201, ARG001, ANN001, ARG002, ANN202
 
-
 # Imports
 from __future__ import annotations
 
@@ -18,7 +17,8 @@ import warnings
 import pytest
 # ##-- end 3rd party imports
 
-from bibble.metadata import LockCrossrefKeys
+from bibtexparser import model, Library
+from .. import KeyLocker
 
 # ##-- types
 # isort: off
@@ -54,11 +54,64 @@ logging = logmod.getLogger(__name__)
 # Vars:
 
 # Body:
-class TestLockCrossrefKeys:
+
+class TestKeyLocker:
 
     def test_sanity(self):
         assert(True is not False) # noqa: PLR0133
 
-    @pytest.mark.skip
-    def test_todo(self):
-        pass
+    def test_ctor(self):
+        match KeyLocker():
+            case KeyLocker():
+                assert(True)
+            case x:
+                 assert(False), x
+
+    def test_basic_format(self):
+        entry = model.Entry("test", "test:blah", [])
+        lib   = Library([entry])
+        mid   = KeyLocker()
+        match mid.transform(lib):
+            case Library() as l2:
+                assert(l2 is lib)
+                assert(l2.entries[0].key == "test_blah_")
+                assert(not bool(lib.failed_blocks))
+            case x:
+                 assert(False), x
+
+    def test_multi_format(self):
+        entry = model.Entry("test", "test:blah::bloo", [])
+        lib   = Library([entry])
+        mid   = KeyLocker()
+        match mid.transform(lib):
+            case Library() as l2:
+                assert(l2 is lib)
+                assert(l2.entries[0].key == "test_blah_bloo_")
+                assert(not bool(lib.failed_blocks))
+            case x:
+                 assert(False), x
+
+    def test_leave_locked(self):
+        entry = model.Entry("test", "test:blah::bloo_", [])
+        lib   = Library([entry])
+        mid   = KeyLocker()
+        match mid.transform(lib):
+            case Library() as l2:
+                assert(l2 is lib)
+                assert(l2.entries[0].key == "test:blah::bloo_")
+                assert(not bool(lib.failed_blocks))
+            case x:
+                 assert(False), x
+
+    def test_format_crossref(self):
+        crossref = model.Field("crossref", "test:blah:bloo")
+        entry = model.Entry("test", "test:blah::bloo_", [crossref])
+        lib   = Library([entry])
+        mid   = KeyLocker()
+        match mid.transform(lib):
+            case Library() as l2:
+                assert(l2 is lib)
+                assert(l2.entries[0].fields[0].value == "test_blah_bloo_")
+                assert(not bool(lib.failed_blocks))
+            case x:
+                 assert(False), x

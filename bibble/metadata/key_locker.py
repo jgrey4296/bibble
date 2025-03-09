@@ -17,6 +17,7 @@ import re
 import time
 import types
 import weakref
+from copy import deepcopy
 from uuid import UUID, uuid1
 
 # ##-- end stdlib imports
@@ -35,6 +36,7 @@ from jgdv import Mixin, Proto
 import bibble._interface as API
 from . import _interface as MAPI
 from bibble.util.middlecore import IdenBlockMiddleware
+from bibble.util.mixins import ErrorRaiser_m
 # ##-- end 1st party imports
 
 # ##-- types
@@ -49,7 +51,7 @@ from typing import Protocol, runtime_checkable
 from typing import no_type_check, final, override, overload
 
 if TYPE_CHECKING:
-    from jgdv import Maybe
+    from jgdv import Maybe, Rx, RxStr
     from typing import Final
     from typing import ClassVar, Any, LiteralString
     from typing import Never, Self, Literal
@@ -68,26 +70,33 @@ logging = logmod.getLogger(__name__)
 ##--|
 
 @Proto(API.ReadTime_p)
-class LockCrossrefKeys(IdenBlockMiddleware):
+@Mixin(ErrorRaiser_m)
+class KeyLocker(IdenBlockMiddleware):
     """ Ensure key/crossref consistency by:
     removing unwanted chars in the key,
-    'locking' the key by forcing the key suffix to be a single underscore
-    doing the same process to crossref fields.
+    'locking' the key with a specific suffix (by default a '_').
 
-    locked keys are ignored
+    Also formats crossref values so they match.
+    Already locked keys are ignored.
+
+    __init__ takes:
+    - regex = the regex of chars to remove.
+    - sub   = the substitute for removed chars
     """
 
-    def __init__(self, regex:str|re.Pattern, sub:str, **kwargs):
+    def __init__(self, *, regex:Maybe[RxStr|Rx]=None, sub:Maybe[str]=None, lock_suffix:Maybe[str]=None, key_suffix:Maybe[RxStr|Rx]=None, **kwargs):
         super().__init__(**kwargs)
-        self._regex     : re.Pattern = re.compile(regex or MAPI.KEY_CLEAN_RE)
-        self._sub       : str        = sub or MAPI.KEY_SUB_CHAR
-        self._lock_char : str        = MAPI.LOCK_CHAR
-        self._bad_lock  : str        = f"{MAPI.LOCK_CHAR}{MAPI.LOCK_CHAR}"
+        self._remove_re         : Rx         = re.compile(regex or MAPI.KEY_CLEAN_RE)
+        self._key_suffix_re     : Rx         = re.compile(key_suffix or MAPI.KEY_SUFFIX_RE)
+        self._sub               : str        = sub or MAPI.KEY_SUB_CHAR
+        self._lock_suffix       : str        = MAPI.LOCK_SUFFIX
+        self._bad_lock          : str        = f"{self._lock_suffix}{self._lock_suffix}"
 
     def on_read(self):
         return True
 
     def transform_Entry(self, entry, library) -> list:
+        entry = deepcopy(entry)
         entry.key = self.clean_key(entry.key)
         match entry.get(MAPI.CROSSREF_K):
             case None:
@@ -99,9 +108,11 @@ class LockCrossrefKeys(IdenBlockMiddleware):
 
     def clean_key(self, key:str) -> str:
         """ Convert the entry key to a canonical form """
-        if key.endswith(self._lock_char) and not key.endswith(self._bad_lock):
+        if key.endswith(self._lock_suffix) and not key.endswith(self._bad_lock):
             return key
 
-        clean_key = self._regex.sub(self._sub, key)
-        clean_key = MAPI.KEY_SUFFIX_RE.sub("", key)
-        return f"{clean_key}{self._lock_char}"
+        # Remove bad chars
+        clean_key = self._remove_re.sub(self._sub, key)
+        # Enforce the correct suffix
+        clean_key = self._key_suffix_re.sub(self._lock_suffix, clean_key)
+        return clean_key

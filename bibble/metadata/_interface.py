@@ -64,10 +64,10 @@ ISBN_STRIP_RE                      = re.compile(r"[\s-]")
 ISBN_K         : Final[str]        = "isbn"
 INVALID_ISBN_K : Final[str]        = "invalid_isbn"
 
-KEY_CLEAN_RE   : Final[re.Pattern] = re.compile(r"[/:{}]")
-KEY_SUFFIX_RE  : Final[re.Pattern] = re.compile("_+$")
+KEY_CLEAN_RE   : Final[re.Pattern] = re.compile(r"[/:{}]+")
+KEY_SUFFIX_RE  : Final[re.Pattern] = re.compile(r"_*$")
 KEY_SUB_CHAR   : Final[str]        = "_"
-LOCK_CHAR      : Final[str]        = "_"
+LOCK_SUFFIX    : Final[str]        = "_"
 
 CROSSREF_K     : Final[str]        = "crossref"
 
