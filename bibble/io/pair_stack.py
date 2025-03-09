@@ -49,9 +49,9 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Callable, Generator
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
 
-    type UniMiddleware = API.LibraryMiddleware_p
-    type BiMiddleware  = API.BidirectionalMiddleware_p
-    type Middleware    = UniMiddleware | BiMiddleware
+    type UniMiddleware   = API.UniMiddleware
+    type BidiMiddleware  = API.BidiMiddleware
+    type Middleware      = API.Middleware
 
 ##--|
 
@@ -77,17 +77,51 @@ class PairStack:
         self._read_time  = []
         self._write_time = []
 
-    def add(self, *, read:Maybe[UniMiddleware]=None, write:Maybe[UniMiddleware]=None) -> None:
-        if read is not None:
-            self._read_time.append(read)
-        if write is not None:
-            self._write_time.append(write)
+    def add(self, *, read:Maybe[list|Middleware]=None, write:Maybe[list|Middleware]=None) -> Self:
+        """
+        Add middlewares to the read/write stacks.
+        """
+        match read:
+            case None | []:
+                pass
+            case [*xs]:
+                for x in xs:
+                    self.add(read=x)
+            case API.LibraryMiddleware_p():
+                self._read_time.append(read)
+            case x:
+                raise TypeError(type(x))
 
-    def add_pair(self, mid:BidirectionalMiddleware_p):
-        pass
+        match write:
+            case None | []:
+                pass
+            case [*xs]:
+                for x in xs:
+                    self.add(write=x)
+            case API.LibraryMiddleware_p():
+                self._write_time.append(write)
 
-    def read_stack() -> list[Middleware]:
+        return self
+
+    def add_pairs(self, *mids:BidiMiddleware) -> Self:
+        """
+        Add bidirectional middlewares to both the read and write stacks
+        """
+        for mid in mids:
+            match mid:
+                case API.BidirectionalMiddleware_p():
+                    self._read_time.append(mid)
+                    self._write_time.append(mid)
+                case x:
+                    raise TypeError(type(x))
+
+        else:
+            return self
+
+    def read_stack(self) -> list[Middleware]:
+        """ Return the read stack """
         return self._read_time[:]
 
-    def write_stack() -> list[Middleware]:
+    def write_stack(self) -> list[Middleware]:
+        """ Return the write stack """
         return self._write_time[:]

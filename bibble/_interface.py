@@ -50,14 +50,19 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Callable, Generator
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
 
+
 ##--|
-type StringBlock  = model.String
-type Field        = model.Field
-type Block        = model.Block
-type Entry        = model.Entry
-type FailedBlock  = model.ParsingFailedBlock
-type ErrorBlock   = model.MiddlewareErrorBlock
-type CommentBlock = model.ExplicitComment | model.ImplicitComment
+type StringBlock     = model.String
+type Preamble        = model.Preamble
+type Field           = model.Field
+type Block           = model.Block
+type Entry           = model.Entry
+type FailedBlock     = model.ParsingFailedBlock
+type ErrorBlock      = model.MiddlewareErrorBlock
+type CommentBlock    = model.ExplicitComment | model.ImplicitComment
+type UniMiddleware   = LibraryMiddleware_p | AdaptiveMiddleware_p
+type BidiMiddleware  = BidirectionalMiddleware_p
+type Middleware      = UniMiddleware | BidiMiddleware
 
 # isort: on
 # ##-- end types
@@ -157,6 +162,24 @@ class LibraryMiddleware_p(Protocol):
 
 ##--| New Middleware protocols:
 
+
+@runtime_checkable
+class PairStack_p(Protocol):
+    """ Protocol for both storing both read and write middlewares
+
+    """
+    def add(self, *, read:Maybe[list|Middleware]=None, write:Maybe[list|Middleware]=None) -> Self:
+        pass
+
+    def add_pairs(self, *mids:BidirectionalMiddleware_p) -> Self:
+        pass
+
+    def read_stack(self) -> list[Middleware]:
+        pass
+
+    def write_stack(self) -> list[Middleware]:
+        pass
+
 @runtime_checkable
 class BidirectionalMiddleware_p(Protocol):
 
@@ -197,7 +220,7 @@ class Writer_p(Protocol):
 @runtime_checkable
 class CustomWriter_p(Protocol):
 
-    def visit(self, writer:BibbleWriter_p) -> list[str]:
+    def visit(self, writer:Writer_p) -> list[str]:
         pass
 
 @runtime_checkable
