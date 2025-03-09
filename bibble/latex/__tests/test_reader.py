@@ -17,6 +17,7 @@ import warnings
 import pytest
 # ##-- end 3rd party imports
 
+from bibtexparser import model, Library
 import bibble._interface as API
 from bibble.latex import LatexReader
 
@@ -59,6 +60,33 @@ class TestLatexReader:
 
     def test_sanity(self):
         assert(True is not False) # noqa: PLR0133
+
+    def test_ctor(self):
+        match LatexReader():
+            case LatexReader():
+                assert(True)
+            case x:
+                 assert(False), x
+
+    def test_basic_latex_inplace(self):
+        field = model.Field("title", r"\'{e}")
+        entry = model.Entry("test", "test", [field])
+        lib = Library([entry])
+        mid = LatexReader(allow_inplace_modification=True)
+        assert(mid.transform(lib) is lib)
+        assert(entry.fields[0] is not field)
+        assert(entry.fields[0].value != r"\'{e}")
+
+    def test_basic_latex_out_of_place(self):
+        field = model.Field("title", r"\'{e}")
+        entry = model.Entry("test", "test", [field])
+        lib = Library([entry])
+        mid = LatexReader(allow_inplace_modification=False)
+        match mid.transform(lib):
+            case Library() as lib2 if lib2 is not lib:
+                assert(lib2.entries[0].fields[0].value != r"\'{e}")
+            case x:
+                 assert(False), x
 
     @pytest.mark.skip
     def test_todo(self):

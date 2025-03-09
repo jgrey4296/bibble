@@ -29,7 +29,6 @@ import bibtexparser.model as model
 from bibtexparser.library import Library
 from bibtexparser import exceptions as bexp
 from bibtexparser import middlewares as ms
-from bibtexparser.middlewares.middleware import (BlockMiddleware, LibraryMiddleware)
 from bibtexparser.model import MiddlewareErrorBlock
 # ##-- end 3rd party imports
 
@@ -39,6 +38,7 @@ from . import _interface as LAPI
 from bibble.util.mixins import ErrorRaiser_m, FieldMatcher_m
 from bibble.util.str_transform_m import StringTransform_m
 from ._util import UnicodeHelper_m
+from bibble.util.middlecore import IdenBlockMiddleware
 
 # ##-- end 1st party imports
 
@@ -78,7 +78,7 @@ logging = logmod.getLogger(__name__)
 
 @Proto(API.ReadTime_p)
 @Mixin(UnicodeHelper_m, ErrorRaiser_m, FieldMatcher_m, StringTransform_m)
-class LatexReader(BlockMiddleware):
+class LatexReader(IdenBlockMiddleware):
     """ Latex->unicode transform.
     all strings in the library, except urls, files, doi's and crossrefs
     """
@@ -87,7 +87,6 @@ class LatexReader(BlockMiddleware):
     _total_rules   : dict
     _total_options : dict
 
-    @staticmethod
     def __init__(self, *, extra:Maybe[dict]=None, **kwargs):
         super().__init__(**kwargs)
         self.set_field_matchers(black=self._blacklist, white=[])
@@ -96,7 +95,7 @@ class LatexReader(BlockMiddleware):
             LAPI.MATH_MODE_K   : kwargs.pop(LAPI.MATH_MODE_K, 'text'),
         }
         self._total_rules : dict[str, VList[LAPI.MacroTextSpec]] = {
-            "BM-reader-simplify-urls" : self.build_decode_rule(LAPI.URL_SIMPL)
+            f"{self.metadata_key()}-simplify-urls" : self.build_decode_rule(LAPI.URL_SIMPL)
         }
         match extra:
             case dict():
@@ -117,7 +116,7 @@ class LatexReader(BlockMiddleware):
                 return [entry, self.make_error_block(entry, err)]
 
     def field_h(self, field:Field, entry) -> Result[list[Field], Exception]:
-        match self.transform_string_like(field.value):
+        match self.transform_strlike(field.value):
             case Exception() as err:
                 return err
             case x:

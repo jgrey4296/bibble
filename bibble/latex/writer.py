@@ -27,7 +27,6 @@ import bibtexparser
 import bibtexparser.model as model
 from bibtexparser import exceptions as bexp
 from bibtexparser import middlewares as ms
-from bibtexparser.middlewares.middleware import (BlockMiddleware, LibraryMiddleware)
 from bibtexparser.model import MiddlewareErrorBlock
 from pylatexenc.latexencode import (RULE_REGEX, UnicodeToLatexConversionRule,
                                     UnicodeToLatexEncoder)
@@ -41,6 +40,7 @@ from . import _interface as LAPI
 from ._util import UnicodeHelper_m
 from bibble.util.mixins import ErrorRaiser_m, FieldMatcher_m
 from bibble.util.str_transform_m import StringTransform_m
+from bibble.util.middlecore import IdenBlockMiddleware
 
 # ##-- end 1st party imports
 
@@ -84,7 +84,7 @@ logging = logmod.getLogger(__name__)
 
 @Proto(API.WriteTime_p, API.StrTransformer_p)
 @Mixin(UnicodeHelper_m, FieldMatcher_m, StringTransform_m)
-class LatexWriter(BlockMiddleware):
+class LatexWriter(IdenBlockMiddleware):
     """ Unicode->Latex Transform.
     all strings in the library except urls, files, dois and crossrefs
     see https://pylatexenc.readthedocs.io/en/latest/latexencode/
@@ -96,13 +96,13 @@ class LatexWriter(BlockMiddleware):
 
     _blacklist = ("url", "file", "doi", "crossref")
 
-    def __init__(self, *, extra:list[tuple], **kwargs):
+    def __init__(self, **kwargs):
         kwargs.setdefault(API.ALLOW_INPLACE_MOD_K, False)
         super().__init__(**kwargs)
         self.set_field_matchers(black=self._blacklist, white=[])
         self._total_options               = {}
         self._total_rules : list[U2LRule] = [
-            self.build_encode_rule()
+            self.build_encode_rule(LAPI.ENCODING_RULES)
         ]
         if kwargs.get(API.KEEP_MATH_K, True):
             self._total_rules.append(self.build_encode_rule(LAPI.MATH_RULES))
@@ -123,11 +123,11 @@ class LatexWriter(BlockMiddleware):
                 return [entry, self.make_error_block(entry, errs)]
 
     def field_h(self, field:model.Field, entry) -> Result[list[Field], Exception]:
-        match self.transform_string_like(field.value):
+        match self.transform_strlike(field.value):
             case Exception() as err:
                 return err
             case x:
-                return [model.Field(key=field.key, value=value)]
+                return [model.Field(key=field.key, value=x)]
 
     def _transform_raw_str(self, python_string: str) -> Result[str, Exception]:
         try:
