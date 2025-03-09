@@ -25,9 +25,6 @@ from uuid import UUID, uuid1
 # ##-- 3rd party imports
 import bibtexparser
 import bibtexparser.model as model
-from bibtexparser import middlewares as ms
-from bibtexparser.middlewares.middleware import (BlockMiddleware,
-                                                 LibraryMiddleware)
 from bibtexparser.middlewares.names import NameParts
 from jgdv import Mixin, Proto
 
@@ -35,8 +32,13 @@ from jgdv import Mixin, Proto
 
 # ##-- 1st party imports
 import bibble._interface as API
+from bibble.util.middlecore import IdenBlockMiddleware
+from bibble.util.mixins import FieldMatcher_m
+from bibble.util.name_parts import NameParts_d
 
 # ##-- end 1st party imports
+
+from . import _interface as API_N
 
 # ##-- types
 # isort: off
@@ -50,13 +52,17 @@ from typing import Protocol, runtime_checkable
 from typing import no_type_check, final, override, overload
 
 if TYPE_CHECKING:
-    from jgdv import Maybe
+    from jgdv import Maybe, Result
     from typing import Final
     from typing import ClassVar, Any, LiteralString
     from typing import Never, Self, Literal
     from typing import TypeGuard
     from collections.abc import Iterable, Iterator, Callable, Generator
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
+
+    type Entry = model.Entry
+    type Field = model.Field
+    from bibtexparser import Library
 
 ##--|
 
@@ -68,22 +74,53 @@ logging = logmod.getLogger(__name__)
 ##-- end logging
 
 @Proto(API.WriteTime_p)
-class NameWriter(ms.MergeNameParts):
+@Mixin(FieldMatcher_m)
+class NameWriter(IdenBlockMiddleware):
     """ Converts NameParts -> str's """
+    _whitelist = ("author", "editor", "translator")
 
-    def __init__(self):
-        super().__init__(allow_inplace_modification=False)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.set_field_matchers(white=self._whitelist, black=[])
 
     def on_write(self):
         return True
 
-    def _transform_field_value(self, name) -> list[str]:
-        if not isinstance(name, list) and all(isinstance(n, NameParts) for n in name):
-            raise ValueError("Expected a list of NameParts", name)
+    def transform_Entry(self, entry:Entry, library:Library) -> list[Entry]:
+        match self.match_on_fields(entry, library):
+            case model.Entry() as x:
+                return [x]
+            case Exception() as err:
+                return [entry, self.make_error_block(entry, err)]
+            case x:
+                raise TypeError(type(x))
 
-        return [self._merge_name(n) for n in name]
+    def field_h(self, field:Field, entry:Entry) -> Result[list[Field], Exception]:
+        result = []
+        merger = self._merge_von_last_jr_first
+        match field.value:
+            case str():
+                pass
+            case [*xs] if all(isinstance(x, str) for x in xs):
+                joined = API_N.JOIN_STR.join(xs)
+                result.append(model.Field(field.key, joined, start_line=field.start_line))
+            case [*xs] if all(isinstance(x, NameParts|NameParts_d) for x in xs):
+                merged = [merger(x) for x in xs]
+                joined = API_N.JOIN_STR.join(merged)
+                result.append(model.Field(field.key, joined, start_line=field.start_line))
+            case x:
+                return TypeError("Unexpected name type", entry.key, type(x))
 
-    def _merge_name(self, name):
+
+        return result
+
+    def _merge_von_last_jr_first(self, name:NameParts|NameParts_d) -> str:
+        match name:
+            case NameParts() | NameParts_d():
+                pass
+            case x:
+                raise TypeError(type(x))
+
         result = []
         if name.von:
             result.append(" ".join(name.von))

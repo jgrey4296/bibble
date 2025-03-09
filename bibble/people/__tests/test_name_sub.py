@@ -19,12 +19,16 @@ from jgdv.files.tags import SubstitutionFile
 
 logging = logmod.root
 
-class Test:
+class TestNameSubtitutor:
 
     @pytest.fixture(scope="function")
     def subber(self):
+        """
+        blah -> bloo
+        von braun, Ernst -> von Braun, Ernst
+        """
         subs = SubstitutionFile(norm_replace=" ", sep=" % ")
-        subs.update("blah % 1 % bloo")
+        subs.update("blah % 2 % bloo")
         subs.update("von braun, Ernst % 1 % von Braun, Ernst")
         return NameSubstitutor(subs=subs)
 
@@ -32,6 +36,7 @@ class Test:
     def entry(self):
         return model.Entry("book", "test", [])
 
+    ##--|
     def test_sanity(self, subber, entry):
         assert(True is True)
         assert("blah" in subber._subs)
@@ -44,13 +49,11 @@ class Test:
             case x:
                  assert(False), x
 
-
     def test_no_sub(self, subber, entry):
         entry.set_field(model.Field("author", ["bob"]))
         match subber.transform_Entry(entry, None):
             case [x] if x is entry:
                 assert(x.get("author").value == ["bob"])
-
 
     def test_simple_sub(self, subber, entry):
         entry.set_field(model.Field("author", ["blah"]))
@@ -60,7 +63,6 @@ class Test:
             case x:
                  assert(False), x
 
-
     def test_selected_sub(self, subber, entry):
         entry.set_field(model.Field("author", ["jill", "blah", "bob"]))
         match subber.transform_Entry(entry, None):
@@ -68,7 +70,6 @@ class Test:
                 assert(x.get("author").value == ["jill", "bloo", "bob"])
             case x:
                 assert(False), x
-
 
     def test_name_format_sub(self, subber, entry):
         entry.set_field(model.Field("author", ["von braun, Ernst"]))

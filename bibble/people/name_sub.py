@@ -38,6 +38,7 @@ import bibble._interface as API
 from . import _interface as API_N
 from bibble.util.mixins import ErrorRaiser_m, FieldMatcher_m
 from bibble.fields.field_substitutor import FieldSubstitutor
+from bibble.util.name_parts import NameParts_d
 
 # ##-- end 1st party imports
 
@@ -63,7 +64,7 @@ class NameSubstitutor(FieldSubstitutor):
         match field.value:
             case str():
                 return ValueError("Name parts should already be combined, but authors shouldn't be merged yet")
-            case [*xs] if any(isinstance(x, NameParts) for x in xs):
+            case [*xs] if any(isinstance(x, NameParts|NameParts_d) for x in xs):
                 return ValueError("Name parts should already be combined, but authors shouldn't be merged yet")
             case []:
                 return [field]

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
 
-
 """
 # ruff: noqa:
 
@@ -64,10 +63,12 @@ OBRACE   : Final[str] = "{"
 CBRACE   : Final[str] = "}"
 AUTHOR_K : Final[str] = "author"
 EDITOR_K : Final[str] = "editor"
+JOIN_STR : Final[str] = " and "
 
 NAME_WHITESPACE : Final[set] = set(" ~\r\n\t")
 
 # Body:
+
 class NameSplitState_e(enum.IntEnum):
     start_ws  = enum.auto()
     end_ws    = enum.auto()
