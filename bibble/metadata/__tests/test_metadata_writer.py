@@ -17,7 +17,8 @@ import warnings
 import pytest
 # ##-- end 3rd party imports
 
-from bibble.metadata import MetadataApplicator, FileCheck
+from bibtexparser import model, Library
+from .. import MetadataApplicator, FileCheck, _interface as MAPI
 
 # ##-- types
 # isort: off
@@ -59,8 +60,90 @@ class TestMetadataApplicator:
     def test_sanity(self):
         assert(True is not False) # noqa: PLR0133
 
+    def test_ctor(self):
+        match MetadataApplicator():
+            case MetadataApplicator():
+                assert(True)
+            case x:
+                 assert(False), x
+
+    def test_no_file_entry(self):
+        entry = model.Entry("test", "test:blah", [])
+        lib   = Library([entry])
+        mid   = MetadataApplicator()
+        match mid.transform(lib):
+            case Library() as l2:
+                assert(l2 is lib)
+                assert(not bool(lib.failed_blocks))
+            case x:
+                 assert(False), x
+
+
+    def test_orphaned_entry(self):
+        field = model.Field("file", "does/not/exist.pdf")
+        entry = model.Entry("test", "test:blah", [field])
+        lib   = Library([entry])
+        mid   = MetadataApplicator()
+        match mid.transform(lib):
+            case Library() as l2:
+                assert(l2 is lib)
+                assert(not bool(lib.failed_blocks))
+                assert(l2.entries[0].fields_dict.get(MAPI.ORPHANED_K, None) is not None)
+            case x:
+                 assert(False), x
+
+
+    def test_noop_from_meta_match(self, mocker, tmpdir, caplog):
+        logger = logmod.getLogger("test")
+        caplog.set_level(logmod.INFO, logger.name)
+        tmpfile = pl.Path(tmpdir) / "test.pdf"
+        tmpfile.touch()
+        assert(tmpfile.exists())
+        field = model.Field("file", tmpfile)
+        entry = model.Entry("test", "test:blah", [field])
+        lib   = Library([entry])
+        mid   = MetadataApplicator(logger=logger)
+        mid.metadata_matches_entry = mocker.Mock(return_value=True)
+        match mid.transform(lib):
+            case Library() as l2:
+                assert(l2 is lib)
+                assert(not bool(lib.failed_blocks))
+                assert("No Metadata Update Necessary" in caplog.text)
+            case x:
+                 assert(False), x
+                 
+
+
+    def test_locked_entry(self, mocker, tmpdir):
+        tmpfile = pl.Path(tmpdir) / "test.pdf"
+        tmpfile.touch()
+        assert(tmpfile.exists())
+        field                      = model.Field("file", tmpfile)
+        entry                      = model.Entry("test", "test:blah", [field])
+        lib                        = Library([entry])
+        mid                        = MetadataApplicator()
+        mid.pdf_is_modifiable      = mocker.Mock(return_value=False)
+        mid.metadata_matches_entry = mocker.Mock(return_value=False)
+        match mid.transform(lib):
+            case Library() as l2:
+                assert(l2 is lib)
+                assert(bool(l2.failed_blocks))
+                assert(l2.entries[0].fields_dict.get(MAPI.PDF_LOCKED_K, None) is not None)
+            case x:
+                assert(False), x
+
     @pytest.mark.skip
     def test_todo(self):
+        """
+        Still to test:
+        - modifiable failure
+        - original metadata backup
+        - epub update
+        - pdf update
+        - pdf validation
+        - pdf finalization
+        - get_file and get_files
+        """
         pass
 
 class TestFileCheck:
@@ -68,6 +151,70 @@ class TestFileCheck:
     def test_sanity(self):
         assert(True is not False) # noqa: PLR0133
 
+
+    def test_ctor(self):
+        match FileCheck():
+            case FileCheck():
+                assert(True)
+            case x:
+                assert(False), x
+
+    def test_orphan_check(self, mocker, tmpdir):
+        tmpfile = pl.Path(tmpdir) / "test.pdf"
+        tmpfile.touch()
+        assert(tmpfile.exists())
+        field = model.Field("file", tmpfile)
+        entry = model.Entry("test", "test:blah", [field])
+        lib   = Library([entry])
+        mid   = FileCheck()
+        mid.pdf_is_modifiable = mocker.Mock(return_value=True)
+        match mid.transform(lib):
+            case Library() as l2:
+                assert(l2 is lib)
+                assert(MAPI.ORPHANED_K not in l2.entries[0].fields_dict)
+                assert(not bool(lib.failed_blocks))
+            case x:
+                 assert(False), x
+
+
+    def test_orphan_check_fail(self, tmpdir):
+        tmpfile = pl.Path(tmpdir) / "test.pdf"
+        assert(not tmpfile.exists())
+        field = model.Field("file", tmpfile)
+        entry = model.Entry("test", "test:blah", [field])
+        lib   = Library([entry])
+        mid   = FileCheck()
+        match mid.transform(lib):
+            case Library() as l2:
+                assert(l2 is lib)
+                assert(MAPI.ORPHANED_K in l2.entries[0].fields_dict)
+                assert(not bool(lib.failed_blocks))
+            case x:
+                 assert(False), x
+
+
+    def test_lock_check_fail(self, mocker, tmpdir):
+        tmpfile = pl.Path(tmpdir) / "test.pdf"
+        tmpfile.touch()
+        assert(tmpfile.exists())
+        field = model.Field("file", tmpfile)
+        entry = model.Entry("test", "test:blah", [field])
+        lib   = Library([entry])
+        mid   = FileCheck()
+        mid.pdf_is_modifiable = mocker.Mock(return_value=False)
+        match mid.transform(lib):
+            case Library() as l2:
+                assert(l2 is lib)
+                assert(MAPI.PDF_LOCKED_K in lib.entries[0].fields_dict)
+                assert(not bool(lib.failed_blocks))
+            case x:
+                 assert(False), x
+
+
     @pytest.mark.skip
     def test_todo(self):
+        """
+        still to test:
+        - epub existence
+        """
         pass

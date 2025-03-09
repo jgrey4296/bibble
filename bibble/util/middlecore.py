@@ -153,7 +153,7 @@ class IdenBlockMiddleware(_BaseMiddleware):
 
         match self._extra:
             case {"tqdm":True}:
-                iterator = tqdm(enumerate(lib.blocks))
+                iterator = tqdm.tqdm(enumerate(lib.blocks))
             case _:
                 iterator = enumerate(lib.blocks)
 

@@ -28,8 +28,8 @@ import bibtexparser as BTP
 import jsonlines
 import sh
 from bibtexparser import model
-from bibtexparser.middlewares.middleware import (BlockMiddleware,
-                                                 LibraryMiddleware)
+from bibtexparser.middlewares import NameParts
+
 from jgdv import Proto, Mixin
 
 # ##-- end 3rd party imports
@@ -37,6 +37,8 @@ from jgdv import Proto, Mixin
 import bibble._interface as API
 from . import _interface as MAPI
 from bibble.util.middlecore import IdenBlockMiddleware
+from bibble.util.mixins import ErrorRaiser_m
+from bibble.util.name_parts import NameParts_d
 
 # ##-- types
 # isort: off
@@ -58,6 +60,8 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Callable, Generator
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
 
+    type Field  = model.Field
+    type Entry  = model.Entry
 ##--|
 
 # isort: on
@@ -65,7 +69,6 @@ if TYPE_CHECKING:
 
 ##-- logging
 logging = logmod.getLogger(__name__)
-fail_l  = logging.getChild("_failures")
 ##-- end logging
 
 exiftool = sh.exiftool
@@ -75,24 +78,46 @@ pdfinfo  = sh.pdfinfo
 ##--|
 
 class _EntryFileGetter_m:
+    """ Mixin for getting the paths of files in the entry
+    can return a list of all file_{N} field values
+    """
+
+    def _get_files(self, entry) -> list[pl.Path]:
+        """ gets all paths of fields with 'file' in the field name """
+        paths = []
+        for field in entry.fields:
+            match field.value:
+                case _ if MAPI.FILE_K not in field.key:
+                    continue
+                case None:
+                    continue
+                case pl.Path() as path:
+                    paths.append(paths)
+                case str() as pathstr:
+                    paths.append(pl.Path(pathstr))
+                case x:
+                    raise TypeError(type(x))
+        else:
+            return paths
 
     def _get_file(self, entry) -> Maybe[pl.Path]:
+        """ Gets the main file fields path of an entry """
         match entry.fields_dict.get(MAPI.FILE_K, None):
-            case None:
-                return None
-            case pl.Path() as path:
+            case BTP.model.Field(value=pl.Path() as path):
                 return path
-            case BTP.model.Field() as path if isinstance(path.value, pl.Path) :
-                return path.value
+            case BTP.model.Field(value=str() as pathstr):
+                return pl.Path(pathstr)
             case _:
-                raise TypeError("Bad File Path Type", path)
+                return None
 
 class _Metadata_Check_m:
     """A mixin for checking the metadata fof files"""
 
-    def backup_original_metadata(self, path) -> None:
+    def backup_original_metadata(self, path:pl.Path) -> None:
         """
         If self._backup is set, backup the files metadata as jsonlines there
+        Uses exiftool to export the metadata as json,
+        which is then appended into the backup as a jsonlines file.
         """
         match self._backup:
             case pl.Path():
@@ -108,32 +133,38 @@ class _Metadata_Check_m:
         with jsonlines.open(self._backup, mode='a') as f:
             f.write(result)
 
-    def metadata_matches_entry(self, path, entry) -> bool:
+    def metadata_matches_entry(self, path:pl.Path, entry:Entry) -> bool:
+        """ Test the given path to see if the metadata matches.
+        This is quite naive.
+        From exiftool, it looks for either:
+        - a 'Bibtex' field,
+        - a 'Description' field,
+
+        and compares that to the raw entry's text.
+
+        TODO switch to use a stored hash instead
+        """
         try:
             result = json.loads(exiftool("-J", str(path)))[0]
         except sh.ErrorReturnCode:
-            fail_l.warning("Couldn't match metadata", path)
+            self._logger.warning("Couldn't match metadata", path)
             return False
 
-        if MAPI.BIBTEX_EXIF not in result and MAPI.DESC_EXIF not in result:
-            return False
+        bib_field_matches  = result.get(MAPI.BIBTEX_EXIF, None) == entry.raw
+        desc_field_matches = result.get(MAPI.DESC_EXIF, None) == entry.raw
 
-        if result.get(MAPI.BIBTEX_EXIF, None) == entry.raw:
-            return True
-
-        if result.get(MAPI.DESC_EXIF, None) == entry.raw:
-            return True
-
-        return False
+        return bib_field_matches or desc_field_matches
 
 class _Pdf_Update_m:
     """A Mixin for pdf specific metadata manipulation"""
 
-    def update_pdf_by_exiftool(self, path, entry) -> None:
-        # exiftool -{tag}="{content}" {file}
+    def update_pdf_by_exiftool(self, path:pl.Path, entry:Entry) -> None:
+        """
+        exiftool -{tag}="{content}" {file}
+        https://exiftool.org/
+        """
         # Build args:
-        args   = []
-        exiftool_args = self._entry_to_exiftool_args(entry)
+        args = self._entry_to_exiftool_args(entry)
 
         self._logger.debug("Pdf update args: %s : %s", path, args)
         # Call
@@ -142,8 +173,9 @@ class _Pdf_Update_m:
         except sh.ErrorReturnCode as err:
             raise ChildProcessError("Exiftool update failed", err) from None
 
-    def pdf_is_modifiable(self, path) -> bool:
-        """ Test the pdf for encryption or password locking """
+    def pdf_is_modifiable(self, path:pl.Path) -> bool:
+        """ Use qpdf to test the pdf for encryption or password locking,
+        """
         try:
             cmd1 = qpdf(MAPI.QPDF_IS_ENCRPT, str(path), _ok_code=MAPI.QPDF_OK_CODES)
             cmd2 = qpdf(MAPI.QPDF_REQ_PASS, str(path), _ok_code=MAPI.QPDF_OK_CODES)
@@ -152,17 +184,25 @@ class _Pdf_Update_m:
 
         return True
 
-    def pdf_validate(self, path) -> None:
-        # code 0 for fine,
-        # writes to stderr for issues
+    def pdf_validate(self, path:pl.Path) -> None:
+        """
+        Validates a pdf using qpdf
+        https://qpdf.readthedocs.io/en/stable/
+
+        code 0 for fine,
+        code 2 for errors
+        code 3 for warnings
+        writes to stderr for issues
+        """
         try:
             qpdf(MAPI.QPDF_CHECK, str(path))
         except sh.ErrorReturnCode:
             raise ChildProcessError("PDF Failed Validation") from None
 
-    def pdf_finalize(self, path) -> None:
+    def pdf_finalize(self, path:pl.Path) -> None:
         """ run qpdf --linearize,
-          and delete the pdf_original if it exists
+
+        on success, delete the original if it exists
         """
         assert(path.suffix == MAPI.PDF_SUFF)
         self._logger.debug("Finalizing Pdf: %s", path)
@@ -173,7 +213,6 @@ class _Pdf_Update_m:
             raise FileExistsError("The temp copy for linearization shouldn't already exist", original)
 
         path.rename(copied)
-
         try:
             qpdf(str(copied), MAPI.QPDF_LINEAR, original)
         except sh.ErrorReturnCode:
@@ -182,11 +221,14 @@ class _Pdf_Update_m:
         else:
             if backup.exists():
                 backup.unlink()
-            copied.unlink()
+            if original.exists() and copied.exists() and original != copied:
+                copied.unlink()
 
-    def _entry_to_exiftool_args(self, entry) -> list:
+    def _entry_to_exiftool_args(self, entry) -> list[str]:
         """
         Extract and format the entry as exiftool args
+        Uses XMP for the metadata under a custom XMP-bib namespace
+        # TODO add exiftool config to bibble
         """
         fields = entry.fields_dict
         args   = []
@@ -235,6 +277,9 @@ class _Epub_Update_m:
     """A Mixin for epub-specific metadata manipulation"""
 
     def update_epub_by_calibre(self, path, entry) -> None:
+        """ Uses calibre to modify epub metadata
+        https://manual.calibre-ebook.com/generated/en/cli-index.html
+        """
         args = self.entry_to_calibre_args(entry)
 
         self._logger.debug("Ebook update args: %s : %s", path, args)
@@ -243,27 +288,29 @@ class _Epub_Update_m:
         except sh.ErrorReturnCode:
             raise ChildProcessError("Calibre Update Failed") from None
 
-    def entry_to_calibre_args(self, entry) -> list:
+    def entry_to_calibre_args(self, entry) -> list[str]:
         fields = entry.fields_dict
-        args = []
-        title = None
+        args   = []
+        title  = None
 
         match fields:
+            case {"title":t, "subtitle":st}:
+                args.append(f"--title={t.value}: {st.value}")
             case {"title":t}:
-                title = t.value
+                args.append(f"--title={t.value}")
             case {"short_parties":t}:
-                title = t.value
+                args.append(f"--title={t.value}")
 
-        if 'subtitle' in fields:
-            title += ": {}".format(fields['subtitle'].value)
-
-        args += ['--title={}'.format(title)]
-
+        # authors should be joined into one string already
         match fields:
-            case {"author":a}:
-                args += ['--authors={}'.format(a.value)]
-            case {"editor":a}:
-                args += ['--authors={}'.format(a.value)]
+            case {"author":str() as auth}:
+                args += ['--authors={}'.format(auth.value)]
+            case {"editor":str() as ed}:
+                args += ['--authors={}'.format(ed.value)]
+            case {"author":list()|NameParts()|NameParts_d() as bad}:
+                raise TypeError("Author Should have been reduced already", entry.key, bad)
+            case {"editor":list()|NameParts()|NameParts_d() as bad}:
+                raise TypeError("Editor Should have been reduced already", entry.key, bad)
 
         if 'publisher' in fields:
             args += ["--publisher={}".format(fields['publisher'].value)]
@@ -273,12 +320,10 @@ class _Epub_Update_m:
             args += ['--index={}'.format(fields['number'].value)]
         if 'volume' in fields:
             args += ['--index={}'.format(fields['volume'].value)]
-
         if 'isbn' in fields:
             args += ['--isbn={}'.format(fields['isbn'].value)]
         if 'doi' in fields:
             args += ['--identifier=doi:{}'.format(fields['doi'].value)]
-
         if 'tags' in fields:
             args += ['--tags={}'.format(",".join(fields['tags'].value))]
         if 'year' in fields:
@@ -291,19 +336,19 @@ class _Epub_Update_m:
 ##--|
 
 @Proto(API.WriteTime_p)
-@Mixin(_Pdf_Update_m, _Epub_Update_m, _EntryFileGetter_m, _Metadata_Check_m)
+@Mixin(_Pdf_Update_m, _Epub_Update_m, _EntryFileGetter_m, _Metadata_Check_m, ErrorRaiser_m)
 class MetadataApplicator(IdenBlockMiddleware):
     """ Apply metadata to files mentioned in bibtex entries
       uses xmp-prism tags and some custom ones for pdfs,
       and epub standard.
+
+    TODO add a 'meta_update' status field to the entry for [locked,failed]
       """
+    _backup   : Maybe[pl.path]
+    _failures : list[Exception]
 
-    @staticmethod
-    def metadata_key():
-        return "MetadataApplicator"
-
-    def __init__(self, backup:Maybe[pl.Path]=None):
-        super().__init__()
+    def __init__(self, *, backup:Maybe[pl.Path]=None, **kwargs):
+        super().__init__(**kwargs)
         self._extra.setdefault("tqdm", True)
         self._backup   = backup
         self._failures = []
@@ -311,78 +356,96 @@ class MetadataApplicator(IdenBlockMiddleware):
     def on_write(self):
         return True
 
-    def transform_entry(self, entry,  library) -> Any:
-        # TODO add a 'meta_update' status field to the entry for [locked,failed]
+    def transform_Entry(self, entry,  library) -> Any:
+        result = []
         match self._get_file(entry):
             case None:
                 pass
-            case x if not x.exists():
+            case pl.Path() as x if not x.exists():
                 update = BTP.model.Field(MAPI.ORPHANED_K, True)
                 entry.set_field(update)
-            case x if x.suffix == MAPI.PDF_SUFF and not self.pdf_is_modifiable(x):
-                update = BTP.model.Field(MAPI.PDF_LOCKED_K , True)
-                entry.set_field(update)
-                self._failures.append(("locked", x, None))
-                fail_l.warning("PDF is locked: %s", x)
-            case x if self.metadata_matches_entry(x, entry):
-                fail_l.info("No Metadata Update Necessary: %s", x)
-            case x if x.suffix == MAPI.PDF_SUFF:
-                try:
-                    self.backup_original_metadata(x)
-                    self.update_pdf_by_exiftool(x, entry)
-                    self.pdf_validate(x)
-                    self.pdf_finalize(x)
-                except (ValueError, ChildProcessError, FileExistsError) as err:
-                    self._failures.append(("pdf_fail", x, err))
-                    fail_l.warning("Pdf Update Failed: %s : %s", x, err)
-                finally:
-                    if not x.exists():
-                        raise FileNotFoundError("File has gone missing", x)
-            case x if x.suffix == MAPI.EPUB_SUFF:
-                try:
-                    self.backup_original_metadata(x)
-                    self.update_epub_by_calibre(x, entry)
-                except (ValueError, ChildProcessError) as err:
-                    self._failures.append(("epub_fail", x, err))
-                    fail_l.warning("Epub Update failed: %s : %s", x, err)
-                finally:
-                    if not x.exists():
-                        raise FileNotFoundError("File has gone missing", x)
+                result.append(entry)
+            case pl.Path() as x if self.metadata_matches_entry(x, entry):
+                self._logger.info("No Metadata Update Necessary: %s", x)
+            case pl.Path() as x if x.suffix == MAPI.PDF_SUFF:
+                for field in self.process_pdf(x, entry):
+                    entry.set_field(field)
+                else:
+                    result.append(entry)
+            case pl.Path() as x if x.suffix == MAPI.EPUB_SUFF:
+                for field in self.process_epub(x, entry):
+                    entry.set_field(field)
+                else:
+                    result.append(entry)
             case x:
-                self._failures.append(("unknown", x, None))
-                fail_l.warning("Found a file that wasn't an epub or pdf: %s", x)
+                self._failures.append(TypeError("Unknown File Type", entry.key, x))
+                self._logger.warning("Found a file that wasn't an epub or pdf: %s", x)
+                result.append(entry)
 
-        return entry
+        for x in self._failures:
+            result.append(self.make_error_block(entry, x))
+        else:
+            self._failures = []
+            return result
+
+    def process_epub(self, epub:pl.Path(), entry) -> list[Field]:
+        try:
+            self.backup_original_metadata(epub)
+            self.update_epub_by_calibre(epub, entry)
+        except (ValueError, ChildProcessError) as err:
+            self._failures.append(ValueError("Epub meta update failed", epub, *err.args))
+            self._logger.warning("Epub Update failed: %s : %s", epub, err)
+        finally:
+            if not epub.exists():
+                raise FileNotFoundError("File has gone missing", epub)
+
+    def process_pdf(self, pdf:pl.Path(), entry) -> list[Field]:
+        if not self.pdf_is_modifiable(pdf):
+            locked_field = BTP.model.Field(MAPI.PDF_LOCKED_K , True)
+            self._failures.append(ValueError("Pdf is locked", pdf))
+            return [locked_field]
+
+        try:
+            self.backup_original_metadata(pdf)
+            self.update_pdf_by_exiftool(pdf, entry)
+            self.pdf_validate(pdf)
+            self.pdf_finalize(pdf)
+        except (ValueError, ChildProcessError, FileExistsError) as err:
+            self._failures.append(ValueError("Pdf Meta update failed", pdf, *err.args))
+            self._logger.warning("Pdf Update Failed: %s : %s", pdf, err)
+            return []
 
 ##--|
 
 @Mixin(_Pdf_Update_m, _EntryFileGetter_m)
 class FileCheck(IdenBlockMiddleware):
-    """
+    """ Like MetadataApplicator, but just checks for files that can't be modified or are missing,
+    so they can be fixed.
+    ie: its faster
+
       Annotate entries with 'pdf_locked' if the pdf can't be modified,
       "orphan_file" if the pdf or epub does not exist
     """
 
-    @staticmethod
-    def metadata_key():
-        return "PdfLockCheck"
-
     def transform_Entry(self, entry, library) -> list:
+        """
+        TODDO remove orphan/lock field if its no longer the case
+        """
         match self._get_file(entry):
             case None:
                 return []
-            case x if not x.exists():
-                update = BTP.model.Field("orphaned", "True")
+            case pl.Path() as x if not x.exists():
+                update = BTP.model.Field(MAPI.ORPHANED_K, True)
                 entry.set_field(update)
-            case x if x.suffix == MAPI.PDF_SUFF and MAPI.PDF_LOCKED_K in entry.fields_dict:
+            case pl.Path() as x if x.suffix == MAPI.PDF_SUFF and MAPI.PDF_LOCKED_K in entry.fields_dict:
                 pass
-            case x if x.suffix == MAPI.PDF_SUFF and not self.pdf_is_modifiable(x):
+            case pl.Path() as x if x.suffix == MAPI.PDF_SUFF and not self.pdf_is_modifiable(x):
                 update = BTP.model.Field(MAPI.PDF_LOCKED_K, True)
                 entry.set_field(update)
-            case x if x.suffix == MAPI.PDF_SUFF:
+            case pl.Path() as x if x.suffix == MAPI.PDF_SUFF:
                 update = BTP.model.Field(MAPI.PDF_LOCKED_K,  False)
                 entry.set_field(update)
             case _:
-                pass
+                return []
 
         return [entry]
