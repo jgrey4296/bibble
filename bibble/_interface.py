@@ -50,7 +50,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Callable, Generator
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
 
-
 ##--|
 type StringBlock     = model.String
 type Preamble        = model.Preamble
@@ -162,12 +161,12 @@ class LibraryMiddleware_p(Protocol):
 
 ##--| New Middleware protocols:
 
-
 @runtime_checkable
 class PairStack_p(Protocol):
     """ Protocol for both storing both read and write middlewares
 
     """
+
     def add(self, *, read:Maybe[list|Middleware]=None, write:Maybe[list|Middleware]=None) -> Self:
         pass
 
@@ -283,4 +282,20 @@ class StrTransformer_p(Protocol):
     """ Describes the StringTransform_m """
 
     def _transform_raw_str(self, python_string:str) -> Result[str, Exception]:
+        pass
+
+@runtime_checkable
+class DependentMiddleware_p(Protocol):
+    """
+    For middlewares that depend on a middleware to be able to work themselves.
+
+    eg: metadata applicator requires path reader
+    """
+
+    def requires_in_same_stack(self) -> list[type]:
+        """ The given types need to be in the same stack """
+        pass
+
+    def requires_in_parse_stack(self) -> list[type]:
+        """ The given types need to be in the parse stack """
         pass
