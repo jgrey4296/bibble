@@ -64,4 +64,14 @@ OBRACE   : Final[str] = "{"
 CBRACE   : Final[str] = "}"
 AUTHOR_K : Final[str] = "author"
 EDITOR_K : Final[str] = "editor"
+
+NAME_WHITESPACE : Final[set] = set(" ~\r\n\t")
+
 # Body:
+class NameSplitState_e(enum.IntEnum):
+    start_ws  = enum.auto()
+    end_ws    = enum.auto()
+    find_a    = enum.auto()
+    find_n    = enum.auto()
+    find_d    = enum.auto()
+    next_word = enum.auto()

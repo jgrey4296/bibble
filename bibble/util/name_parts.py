@@ -42,7 +42,7 @@ from typing import no_type_check, final, override, overload
 # from pydantic import BaseModel, Field, model_validator, field_validator, ValidationError
 
 if TYPE_CHECKING:
-    from jgdv import Maybe
+    from jgdv import Maybe, M_
     from typing import Final
     from typing import ClassVar, Any, LiteralString
     from typing import Never, Self, Literal
@@ -50,6 +50,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Callable, Generator
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
 
+    type MbList = Maybe[list[str]]
 ##--|
 
 # isort: on
@@ -90,11 +91,11 @@ class NameParts_d:
     last  :  list[str]
     jr    :  list[str]
 
-    def __init__(self, *, first:list[str], von:list[str], last:list[str], jr:list[str]):
-        self.first = first
-        self.von   = von
-        self.last  = last
-        self.jr    = jr
+    def __init__(self, *, first:MbList=None, von:MbList=None, last:MbList=None, jr:MbList=None):
+        self.first = first or []
+        self.von   = von   or []
+        self.last  = last  or []
+        self.jr    = jr    or []
 
     def merge(self, *, format:Maybe[list[str]]=None) -> str:
         match format:
