@@ -337,7 +337,7 @@ class _Epub_Update_m:
 
 @Proto(API.WriteTime_p)
 @Mixin(_Pdf_Update_m, _Epub_Update_m, _EntryFileGetter_m, _Metadata_Check_m, ErrorRaiser_m)
-class MetadataApplicator(IdenBlockMiddleware):
+class ApplyMetadata(IdenBlockMiddleware):
     """ Apply metadata to files mentioned in bibtex entries
       uses xmp-prism tags and some custom ones for pdfs,
       and epub standard.
@@ -419,7 +419,7 @@ class MetadataApplicator(IdenBlockMiddleware):
 
 @Mixin(_Pdf_Update_m, _EntryFileGetter_m)
 class FileCheck(IdenBlockMiddleware):
-    """ Like MetadataApplicator, but just checks for files that can't be modified or are missing,
+    """ Like ApplyMetadata, but just checks for files that can't be modified or are missing,
     so they can be fixed.
     ie: its faster
 
