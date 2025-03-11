@@ -119,7 +119,7 @@ class IdenLibraryMiddleware(_BaseMiddleware):
             case Library():
                 return deepcopy(library)
 
-@Proto(API.AdaptiveMiddleware_p)
+@Proto(API.AdaptiveMiddleware_p, API.Middleware_p)
 class IdenBlockMiddleware(_BaseMiddleware):
     """ Identity Block Middleware, does nothing
     If passed 'tqdm'=True uses tqdm around the block level loop
@@ -130,10 +130,11 @@ class IdenBlockMiddleware(_BaseMiddleware):
         super().__init__(*args, **kwargs)
         self._transform_cache = dict()
 
-    def get_transforms_for(self, block:Block) -> list[Callable]:
+    def get_transforms_for(self, block:Block, *, direction:Maybe[str]=None) -> list[Callable]:
         """ Get all transforms of the form transform_{Type},
         by mro, from most -> least specific
         """
+        assert(direction is None)
         if type(block) not in self._transform_cache:
             mro = type(block).mro()
             formatted = [f"transform_{x.__name__}" for x in mro]
@@ -145,17 +146,17 @@ class IdenBlockMiddleware(_BaseMiddleware):
     def transform(self, library:Library) -> Library:
         match self.allow_inplace:
             case True:
-                lib = library
+                library = library
             case False:
-                lib = deepcopy(library)
+                library = deepcopy(library)
             case x:
                 raise TypeError(type(x))
 
         match self._extra:
             case {"tqdm":True}:
-                iterator = tqdm.tqdm(enumerate(lib.blocks))
+                iterator = tqdm.tqdm(enumerate(library.blocks))
             case _:
-                iterator = enumerate(lib.blocks)
+                iterator = enumerate(library.blocks)
 
         blocks = []
         for i,block in iterator:
@@ -170,7 +171,7 @@ class IdenBlockMiddleware(_BaseMiddleware):
                 case x:
                     raise TypeError(type(x))
 
-            match transform(block, lib):
+            match transform(block, library):
                 case [] | None:
                     # Transform gave nothing, so keep the original block.
                     # (it might have been modified)
@@ -182,7 +183,95 @@ class IdenBlockMiddleware(_BaseMiddleware):
                     raise TypeError(type(x), i, block)
         else:
             # Remove the old blocks
-            lib.remove(lib.blocks)
+            library.remove(library.blocks)
             # Add the new blocks
-            lib.add(blocks)
-            return lib
+            library.add(blocks)
+            return library
+
+@Proto(API.AdaptiveMiddleware_p, API.BidirectionalMiddleware_p)
+class IdenBidiMiddleware(_BaseMiddleware):
+
+    _transform_cache : dict[type, list[Callable]]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._transform_cache = dict()
+
+    def get_transforms_for(self, block:Block, *, direction:Maybe[str]=None) -> list[Callable]:
+        """ Get all transforms of the form {direction}_transform_{Type},
+        by mro, from most -> least specific
+        """
+        cache_key = f"{direction}_{type(block).__name__}"
+        if cache_key not in self._transform_cache:
+            mro       = type(block).mro()
+            formatted = [f"{direction}_transform_{x.__name__}" for x in mro]
+            methods   = [getattr(self, x, None) for x in formatted]
+            self._transform_cache[cache_key] = [x for x in methods if x is not None]
+
+        return self._transform_cache[cache_key]
+
+    def _get_lib_iterator(self, library:Library) -> Iterator:
+        match self.allow_inplace:
+            case True:
+                library = library
+            case False:
+                library = deepcopy(library)
+            case x:
+                raise TypeError(type(x))
+
+        match self._extra:
+            case {"tqdm":True}:
+                iterator = tqdm.tqdm(enumerate(library.blocks))
+            case _:
+                iterator = enumerate(library.blocks)
+
+        return iterator
+
+    def read_transform(self, library:Library) -> Library:
+        iterator = self._get_lib_iterator(library)
+        blocks   = []
+        for i,block in iterator:
+            match self.get_transforms_for(block, direction="read"):
+                case [x, *_]: # Use the first found transform,
+                    transform = x
+                case _:
+                    continue
+
+            match transform(block, library):
+                case [] | None: # Transform gave nothing, so keep the original block.
+                    blocks.append(block)
+                case [*xs]:
+                    # new blocks
+                    blocks += xs
+                case x:
+                    raise TypeError(type(x), i, block)
+        else:
+            # Remove the old blocks
+            library.remove(library.blocks)
+            # Add the new blocks
+            library.add(blocks)
+            return library
+
+    def write_transform(self, library:Library) -> Library:
+        iterator = self._get_lib_iterator(library)
+        blocks = []
+        for i,block in iterator:
+            match self.get_transforms_for(block, direction="write"):
+                case [x, *_]: # Use the first found transform,
+                    transform = x
+                case _:
+                    continue
+
+            match transform(block, library):
+                case [] | None: # Transform gave nothing, so keep the original block.
+                    blocks.append(block)
+                case [*xs]: # new blocks
+                    blocks += xs
+                case x:
+                    raise TypeError(type(x), i, block)
+        else:
+            # Remove the old blocks
+            library.remove(library.blocks)
+            # Add the new blocks
+            library.add(blocks)
+            return library
