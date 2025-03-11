@@ -13,14 +13,13 @@ import pathlib as pl
 import warnings
 # ##-- end stdlib imports
 
+from bibtexparser import model, Library
+import bibble._interface as API
+from ..entry_sorter import EntrySorterMiddleware
+
 # ##-- 3rd party imports
 import pytest
 # ##-- end 3rd party imports
-
-import bibble._interface as API
-from bibtexparser import model, Library
-from .. import NameWriter
-from bibble.util.name_parts import NameParts_d
 
 # ##-- types
 # isort: off
@@ -57,46 +56,17 @@ logging = logmod.getLogger(__name__)
 
 # Body:
 
-class TestNameWriter:
+class TestEntrySorter:
 
     def test_sanity(self):
         assert(True is not False) # noqa: PLR0133
 
     def test_ctor(self):
-        match NameWriter():
+        match EntrySorterMiddleware(key=lambda x: x.fields_dict['year'].value):
             case API.Middleware_p():
                 assert(True)
             case x:
                  assert(False), x
-
-    def test_basic_merge(self):
-        authors = model.Field("authors", ["Bill", "Bob"])
-        entry = model.Entry("test", "test:blah", [authors])
-        lib   = Library([entry])
-        mid   = NameWriter()
-        match mid.transform(lib):
-            case Library() as l2:
-                assert(l2 is lib)
-                assert(not bool(lib.failed_blocks))
-                assert(l2.entries[0].fields[0].value == "Bill and Bob")
-            case x:
-                assert(False), x
-
-    def test_merge_nameparts(self):
-        authors = model.Field("authors", [
-            NameParts_d(first=["Bill"], last=["Builder"]),
-            NameParts_d(first=["Bob"], von=["de", "la"], last=["Builder"]),
-        ])
-        entry = model.Entry("test", "test:blah", [authors])
-        lib   = Library([entry])
-        mid   = NameWriter()
-        match mid.transform(lib):
-            case Library() as l2:
-                assert(l2 is lib)
-                assert(not bool(lib.failed_blocks))
-                assert(l2.entries[0].fields[0].value == "Builder, Bill and de la Builder, Bob")
-            case x:
-                assert(False), x
 
     @pytest.mark.skip
     def test_todo(self):

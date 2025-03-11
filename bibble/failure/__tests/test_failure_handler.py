@@ -63,7 +63,7 @@ class TestFailureHandler:
 
     def test_ctor(self):
         match FailureHandler(file="blah"):
-            case API.LibraryMiddleware_p() as fh:
+            case API.Middleware_p() as fh:
                 assert(fh.file_target == pl.Path("blah"))
             case x:
                  assert(False), x

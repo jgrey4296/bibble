@@ -19,7 +19,7 @@ import pytest
 
 import bibble._interface as API
 from bibtexparser import model, Library
-from .. import MetadataApplicator, FileCheck, _interface as MAPI
+from .. import ApplyMetadata, FileCheck, _interface as MAPI
 
 # ##-- types
 # isort: off
@@ -56,13 +56,13 @@ logging = logmod.getLogger(__name__)
 
 # Body:
 
-class TestMetadataApplicator:
+class TestApplyMetadata:
 
     def test_sanity(self):
         assert(True is not False) # noqa: PLR0133
 
     def test_ctor(self):
-        match MetadataApplicator():
+        match ApplyMetadata():
             case API.AdaptiveMiddleware_p():
                 assert(True)
             case x:
@@ -71,7 +71,7 @@ class TestMetadataApplicator:
     def test_no_file_entry(self):
         entry = model.Entry("test", "test:blah", [])
         lib   = Library([entry])
-        mid   = MetadataApplicator()
+        mid   = ApplyMetadata()
         match mid.transform(lib):
             case Library() as l2:
                 assert(l2 is lib)
@@ -84,7 +84,7 @@ class TestMetadataApplicator:
         field = model.Field("file", "does/not/exist.pdf")
         entry = model.Entry("test", "test:blah", [field])
         lib   = Library([entry])
-        mid   = MetadataApplicator()
+        mid   = ApplyMetadata()
         match mid.transform(lib):
             case Library() as l2:
                 assert(l2 is lib)
@@ -103,7 +103,7 @@ class TestMetadataApplicator:
         field = model.Field("file", tmpfile)
         entry = model.Entry("test", "test:blah", [field])
         lib   = Library([entry])
-        mid   = MetadataApplicator(logger=logger)
+        mid   = ApplyMetadata(logger=logger)
         mid.metadata_matches_entry = mocker.Mock(return_value=True)
         match mid.transform(lib):
             case Library() as l2:
@@ -122,7 +122,7 @@ class TestMetadataApplicator:
         field                      = model.Field("file", tmpfile)
         entry                      = model.Entry("test", "test:blah", [field])
         lib                        = Library([entry])
-        mid                        = MetadataApplicator()
+        mid                        = ApplyMetadata()
         mid.pdf_is_modifiable      = mocker.Mock(return_value=False)
         mid.metadata_matches_entry = mocker.Mock(return_value=False)
         match mid.transform(lib):

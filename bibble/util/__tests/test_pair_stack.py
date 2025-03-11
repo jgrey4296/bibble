@@ -54,6 +54,7 @@ logging = logmod.getLogger(__name__)
 # Vars:
 
 # Body:
+
 class TestPairStack:
 
     def test_sanity(self):
@@ -66,7 +67,62 @@ class TestPairStack:
             case x:
                  assert(False), x
 
+    def test_addition_handles_none(self, mocker):
+        pair = PairStack()
+        pair.add(None, None, read=[None, None], write=[None, None])
+        assert(len(pair.read_stack()) == 0)
+        assert(len(pair.write_stack()) == 0)
+
+    def test_addition_errors_on_non_middlewares(self, mocker):
+        pair = PairStack()
+        with pytest.raises(TypeError):
+            pair.add(2)
+
+    def test_addition_errors_on_non_middlewares_read(self, mocker):
+        pair = PairStack()
+        with pytest.raises(TypeError):
+            pair.add(read=[False])
+
+    def test_addition_errors_on_non_middlewares_write(self, mocker):
+        pair = PairStack()
+        with pytest.raises(TypeError):
+            pair.add(write="blah")
+
+    def test_addition_read(self, mocker):
+        pair = PairStack()
+        mock_mw = mocker.Mock(API.Middleware_p)
+        pair.add(read=[mock_mw])
+        assert(len(pair.read_stack()) == 1)
+        assert(len(pair.write_stack()) == 0)
+
+    def test_addition_write(self, mocker):
+        pair = PairStack()
+        mock_mw = mocker.Mock(API.Middleware_p)
+        pair.add(write=[mock_mw])
+        assert(len(pair.write_stack()) == 1)
+        assert(len(pair.read_stack()) == 0)
+
+    def test_addition_bidirectional(self, mocker):
+        pair = PairStack()
+        mock_mw = mocker.Mock(API.BidirectionalMiddleware_p)
+        pair.add(mock_mw)
+        assert(len(pair.write_stack()) == 1)
+        assert(len(pair.read_stack()) == 1)
+
+    def test_symmetric_stacks(self, mocker):
+        pair      = PairStack()
+        bidi1     = mocker.Mock(API.BidirectionalMiddleware_p)
+        bidi2     = mocker.Mock(API.BidirectionalMiddleware_p)
+        mw1       = mocker.Mock(API.Middleware_p)
+        mw2       = mocker.Mock(API.Middleware_p)
+        pair.add(bidi1, read=[mw1], write=[mw2]).add(bidi2)
+        assert(len(pair.read_stack()) == 3)
+        assert(len(pair.write_stack()) == 3)
+        assert(pair.read_stack() == [bidi1, mw1, bidi2])
+        assert(pair.write_stack() == [bidi2, mw2, bidi1])
+
     ##--|
+
     @pytest.mark.skip
     def test_todo(self):
         pass

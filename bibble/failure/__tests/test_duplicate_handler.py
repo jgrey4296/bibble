@@ -61,7 +61,7 @@ class TestDuplicateHandler:
 
     def test_ctor(self):
         match DuplicateKeyHandler():
-            case API.LibraryMiddleware_p():
+            case API.Middleware_p():
                 assert(True)
             case x:
                 raise TypeError(type(x))

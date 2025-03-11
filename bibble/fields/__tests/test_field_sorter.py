@@ -38,7 +38,7 @@ class TestFieldSorter:
 
     def test_ctor(self, sorter):
         match sorter:
-            case API.LibraryMiddleware_p():
+            case API.Middleware_p():
                 assert(True)
             case x:
                  assert(False), x

@@ -210,7 +210,7 @@ class TestNameReader:
 
     def test_ctor(self):
         match NameReader():
-            case API.LibraryMiddleware_p():
+            case API.Middleware_p():
                 assert(True)
             case x:
                  assert(False), x
