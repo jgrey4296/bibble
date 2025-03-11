@@ -23,6 +23,7 @@ from uuid import UUID, uuid1
 
 # ##-- 3rd party imports
 from jgdv import Mixin, Proto
+from jgdv.util.time_ctx import TimeCtx
 from bibtexparser.library import Library
 from bibtexparser.splitter import Splitter
 
@@ -52,7 +53,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Callable, Generator
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
 
-    type Middleware = API.LibraryMiddleware_p | API.BidirectionalMiddleware_p
+    type Middleware = API.Middleware_p | API.BidirectionalMiddleware_p
 ##--|
 
 # isort: on
@@ -80,6 +81,34 @@ class BibbleReader:
         if not issubclass(self._lib_class, Library):
             raise TypeError("Bad library base pased to reader", lib_base)
 
+    def read_dir(self, source:pl.Path, *, ext:str, into:Maybe[Library]=None, append:Maybe[list[Middleware]]=None) -> Maybe[Library]:
+        visited : set = set()
+        to_read : list = []
+        for args in pl.Path().walk(top_down=True, on_error=None, follow_symlinks=False):
+            dpath     : pl.Path   = args[0]
+            dnames    : list[str] = args[0] # Edit to control descent
+            filenames : list[str] = args[2]
+            if dpath in visited:
+                dnames.clear()
+            else:
+                visited.add(dpath)
+
+            to_read += [y for x in filenames if (y:=dpath/x).suffix == ext]
+        else:
+            pass
+        ##--|
+        lib = into or self._lib_class()
+        for x in to_read:
+            match self.read(x, into=lib, append=append):
+                case None:
+                    return None
+                case Library() as y:
+                    lib = y
+        else:
+            return lib
+
+
+
     def read(self, source:str|pl.Path, *, into:Maybe[Library]=None, append:Maybe[list[Middleware]]=None) -> Maybe[Library]:
         """ read source and make a new library.
         if given 'into' lib, add the newly read entries into that libray as well
@@ -96,8 +125,11 @@ class BibbleReader:
             case x:
                 raise TypeError(type(x))
 
-        basic       : Library   = self._read_into(self._lib_class(), source_text)
-        transformed : Library   = self._run_middlewares(basic, append=append)
+        with TimeCtx():
+            basic       : Library   = self._read_into(self._lib_class(), source_text)
+
+        with TimeCtx():
+            transformed : Library   = self._run_middlewares(basic, append=append)
 
         entry_keys : set = {x.key for x in transformed.entries}
         match into:
@@ -108,6 +140,7 @@ class BibbleReader:
             case x:
                 raise TypeError(type(x))
 
+        # Map source -> keys
         match MetaBlock.find_in(final_lib), source:
             case None, str():
                 final_lib.add(MetaBlock(sources={"raw_text"}, raw_text=entry_keys))
@@ -129,7 +162,6 @@ class BibbleReader:
         return final_lib
 
     def _read_into(self, lib:Library, source:str) -> Library:
-        # TODO add a timer to this
         assert(isinstance(source, str))
         splitter       = Splitter(bibstr=source)
         library        = splitter.split(library=lib)
@@ -137,30 +169,25 @@ class BibbleReader:
 
     def _run_middlewares(self, library:Library, *, append:Maybe[list[Middleware]]=None) -> Library:
         # TODO time this
-        for middleware in self._middlewares:
+        for middleware in itz.chain(self._middlewares, append or []):
             match middleware:
-                case API.LibraryMiddleware_p():
+                case API.Middleware_p():
                     library = middleware.transform(library=library)
                 case API.BidirectionalMiddleware_p():
                     library = middleware.read_transform(library=library)
                 case x:
                     raise TypeError(type(x))
 
-        match append:
-            case None | []:
-                return library
-            case list():
-                pass
-            case x:
-                raise TypeError(type(x))
-
-        for middleware in append:
-            match middleware:
-                case API.LibraryMiddleware_p():
-                    library = middleware.transform(library=library)
-                case API.BidirectionalMiddleware_p():
-                    library = middleware.read_transform(library=library)
-                case x:
-                    raise TypeError(type(x))
         else:
+            # Now record the meta key chain in the meta block
+            match MetaBlock.find_in(library):
+                case None:
+                    library.add(MetaBlock(read_stack=[x.metadata_key() for x in library + append]))
+                case MetaBlock() as mb if "read_stack" in mb.data:
+                    mb.data['read_stack'] += [x.metadata_key() for x in library + append]
+                case MetaBlock() as mb:
+                    mb.data['read_stack'] = [x.metadata_key() for x in library + append]
+                case x:
+                    raise TypeError(type(x))
+
             return library

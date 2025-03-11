@@ -76,11 +76,18 @@ logging = logmod.getLogger(__name__)
 @Proto(API.WriteTime_p)
 @Mixin(FieldMatcher_m)
 class NameWriter(IdenBlockMiddleware):
-    """ Converts NameParts -> str's """
+    """ Transforms NameParts -> [str] -> str
+
+    on init:
+    - parts : bool    = merge name parts together
+    - authors : bool  = merge separate authors together
+    """
     _whitelist = ("author", "editor", "translator")
 
-    def __init__(self, **kwargs):
+    def __init__(self, *, parts:bool, authors:bool, **kwargs):
         super().__init__(**kwargs)
+        self._merge_parts   = parts
+        self._merge_authors = authors
         self.set_field_matchers(white=self._whitelist, black=[])
 
     def on_write(self):
@@ -98,19 +105,26 @@ class NameWriter(IdenBlockMiddleware):
     def field_h(self, field:Field, entry:Entry) -> Result[list[Field], Exception]:
         result = []
         merger = self._merge_von_last_jr_first
-        match field.value:
-            case str():
+        match field.value, self.merge_parts, self._merge_authors:
+            case str(), _, _:
                 pass
-            case [*xs] if all(isinstance(x, str) for x in xs):
-                joined = API_N.JOIN_STR.join(xs)
-                result.append(model.Field(field.key, joined, start_line=field.start_line))
-            case [*xs] if all(isinstance(x, NameParts|NameParts_d) for x in xs):
+            case [*xs], True, False if all(isinstance(x, NameParts|NameParts_d) for x in xs):
+                # Merge nameparts, but not authors
+                merged = [merger(x) for x in xs]
+                result.append(model.Field(field.key, merged, start_line=field.start_line))
+            case [*xs], True, True if all(isinstance(x, NameParts|NameParts_d) for x in xs):
+                # Merge nameparts, then authors
                 merged = [merger(x) for x in xs]
                 joined = API_N.JOIN_STR.join(merged)
                 result.append(model.Field(field.key, joined, start_line=field.start_line))
-            case x:
+            case [*xs], _, True if all(isinstance(x, str) for x in xs) and self.authors:
+                # Just merge authors
+                joined = API_N.JOIN_STR.join(xs)
+                result.append(model.Field(field.key, joined, start_line=field.start_line))
+            case _, False, False:
+                pass
+            case x, _, _:
                 return TypeError("Unexpected name type", entry.key, type(x))
-
 
         return result
 

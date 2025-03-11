@@ -29,7 +29,7 @@ from bibtexparser import model
 
 # ##-- end 3rd party imports
 
-from bibble.util.name_parts import NameParts_d
+from .name_parts import NameParts_d
 
 # ##-- types
 # isort: off

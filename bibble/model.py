@@ -62,7 +62,7 @@ if TYPE_CHECKING:
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-@Proto(API.CustomWriter_p)
+@Proto(API.CustomWriteBlock_p)
 class MetaBlock(model.Block):
     """ A Metadata Block baseclass that does not get written out (typically),
     But can hold information about the library
@@ -85,7 +85,7 @@ class MetaBlock(model.Block):
         return []
 
 
-@Proto(API.CustomWriter_p)
+@Proto(API.CustomWriteBlock_p)
 class FailedBlock(model.MiddlewareErrorBlock):
     """ Records errors encountered by a middleware """
 

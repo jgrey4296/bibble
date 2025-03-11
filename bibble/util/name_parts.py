@@ -61,7 +61,7 @@ logging = logmod.getLogger(__name__)
 ##-- end logging
 
 # Vars:
-
+JOIN_STR : Final[str] = ", "
 # Body:
 
 def escape_last_slash(string: str) -> str:
@@ -114,4 +114,4 @@ class NameParts_d:
         }
         parts['von_last'] = " ".join(name for name in [parts['von'], parts['last']] if name)
         ordered = [parts[x] for x in format]
-        return ", ".join(escape_last_slash(name) for name in ordered if name)
+        return JOIN_STR.join(escape_last_slash(name) for name in ordered if name)

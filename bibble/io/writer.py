@@ -25,6 +25,7 @@ from uuid import UUID, uuid1
 # ##-- 3rd party imports
 import jgdv
 from jgdv import Proto, Mixin
+from jgdv.util.time_ctx import TimeCtx
 from bibtexparser import model
 from bibtexparser.model import MiddlewareErrorBlock
 from bibtexparser.library import Library
@@ -59,7 +60,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Callable, Generator
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
 
-    type Middleware = API.LibraryMiddleware_p | API.BidirectionalMiddleware_p
+    type Middleware = API.Middleware_p | API.BidirectionalMiddleware_p
 ##--|
 
 # isort: on
@@ -79,7 +80,7 @@ class _VisitEntry_m:
 
     def visit(self, block) -> list[str]:
         match block:
-            case x if isinstance(x, API.CustomWriter_p):
+            case x if isinstance(x, API.CustomWriteBlock_p):
                 assert(hasattr(x, "visit"))
                 return x.visit(self)
             case MetaBlock():
@@ -148,7 +149,7 @@ class _Visitors_m:
 class BibbleWriter:
     """ A Refactored bibtexparser writer
     Uses visitor pattern
-    
+
     TODO handle a pair stack on init
     """
 
@@ -175,11 +176,10 @@ class BibbleWriter:
         if self._format.value_column == "auto":
             self._format.value_column = self._calculate_auto_value_align(library)
 
-        transformed = self._run_middlewares(library, append=append)
-        string_pieces = []
+        with TimeCtx():
+            transformed = self._run_middlewares(library, append=append)
 
-        string_pieces.extend(self.make_header(transformed, file))
-
+        string_pieces = self.make_header(transformed, file)
         for i, block in enumerate(transformed.blocks):
             # Get string representation (as list of strings) of block
             string_block_pieces = self.visit(block)
@@ -187,18 +187,16 @@ class BibbleWriter:
             # Separate Blocks
             if i < len(transformed.blocks) - 1:
                 string_pieces.append(self._format.block_separator)
-
-        string_pieces.extend(self.make_footer(transformed, file))
-
-        result = "".join(string_pieces)
+        else:
+            string_pieces.extend(self.make_footer(transformed, file))
+            result = "".join(string_pieces)
 
         match file:
             case pl.Path():
                 file.write_text(result)
+                return result
             case _:
-                pass
-
-        return result
+                return result
 
     def _calculate_auto_value_align(self, library: Library) -> int:
         max_key_len = 0
@@ -213,31 +211,16 @@ class BibbleWriter:
         return "" if length <= 0 else " " * length
 
     def _run_middlewares(self, library:Library, *, append:Maybe[list[Middleware]]=None) -> Library:
+        append = append or []
         # TODO time this
         for middleware in self._middlewares:
             match middleware:
-                case API.LibraryMiddleware_p():
+                case API.Middleware_p():
                     library = middleware.transform(library=library)
                 case API.BidirectionalMiddleware_p():
                     library = middleware.read_transform(library=library)
                 case x:
                     raise TypeError(type(x))
 
-        match append:
-            case None | []:
-                return library
-            case list():
-                pass
-            case x:
-                raise TypeError(type(x))
-
-        for middleware in append:
-            match middleware:
-                case API.LibraryMiddleware_p():
-                    library = middleware.transform(library=library)
-                case API.BidirectionalMiddleware_p():
-                    library = middleware.read_transform(library=library)
-                case x:
-                    raise TypeError(type(x))
         else:
             return library
