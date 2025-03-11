@@ -30,7 +30,7 @@ import faulthandler
 import jgdv
 from jgdv import Proto, Mixin
 from bibble import _interface as API  # noqa: N812
-from .middlecore import IdenBidiMiddleware
+from bibble.util.middlecore import IdenBidiMiddleware
 from bibtexparser import model
 
 # ##-- types

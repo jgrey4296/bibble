@@ -105,7 +105,7 @@ class NameWriter(IdenBlockMiddleware):
     def field_h(self, field:Field, entry:Entry) -> Result[list[Field], Exception]:
         result = []
         merger = self._merge_von_last_jr_first
-        match field.value, self.merge_parts, self._merge_authors:
+        match field.value, self._merge_parts, self._merge_authors:
             case str(), _, _:
                 pass
             case [*xs], True, False if all(isinstance(x, NameParts|NameParts_d) for x in xs):
@@ -117,7 +117,7 @@ class NameWriter(IdenBlockMiddleware):
                 merged = [merger(x) for x in xs]
                 joined = API_N.JOIN_STR.join(merged)
                 result.append(model.Field(field.key, joined, start_line=field.start_line))
-            case [*xs], _, True if all(isinstance(x, str) for x in xs) and self.authors:
+            case [*xs], _, True if all(isinstance(x, str) for x in xs) and self._merge_authors:
                 # Just merge authors
                 joined = API_N.JOIN_STR.join(xs)
                 result.append(model.Field(field.key, joined, start_line=field.start_line))

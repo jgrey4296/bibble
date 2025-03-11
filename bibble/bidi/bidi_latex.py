@@ -30,8 +30,8 @@ import faulthandler
 from jgdv import Proto, Mixin
 import bibble._interface as API
 from bibble.util.middlecore import IdenBidiMiddleware
-from .reader import LatexReader
-from .writer import LatexWriter
+from bibble.latex import LatexReader
+from bibble.latex import LatexWriter
 
 # ##-- types
 # isort: off

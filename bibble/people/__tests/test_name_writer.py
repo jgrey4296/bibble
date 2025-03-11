@@ -63,7 +63,7 @@ class TestNameWriter:
         assert(True is not False) # noqa: PLR0133
 
     def test_ctor(self):
-        match NameWriter():
+        match NameWriter(parts=True, authors=True):
             case API.Middleware_p():
                 assert(True)
             case x:
@@ -73,7 +73,7 @@ class TestNameWriter:
         authors = model.Field("authors", ["Bill", "Bob"])
         entry = model.Entry("test", "test:blah", [authors])
         lib   = Library([entry])
-        mid   = NameWriter()
+        mid   = NameWriter(parts=True, authors=True)
         match mid.transform(lib):
             case Library() as l2:
                 assert(l2 is lib)
@@ -89,7 +89,7 @@ class TestNameWriter:
         ])
         entry = model.Entry("test", "test:blah", [authors])
         lib   = Library([entry])
-        mid   = NameWriter()
+        mid   = NameWriter(parts=True, authors=True)
         match mid.transform(lib):
             case Library() as l2:
                 assert(l2 is lib)
