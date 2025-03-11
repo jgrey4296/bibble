@@ -429,7 +429,7 @@ class FileCheck(IdenBlockMiddleware):
 
     def transform_Entry(self, entry, library) -> list:
         """
-        TODDO remove orphan/lock field if its no longer the case
+        TODO remove orphan/lock field if its no longer the case
         """
         match self._get_file(entry):
             case None:
