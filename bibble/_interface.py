@@ -50,18 +50,23 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Callable, Generator
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
 
+    from bibble.util import NameParts_d
+    from bibtexparser.middlewares import NameParts
+    type StringBlock     = model.String
+    type Preamble        = model.Preamble
+    type Field           = model.Field
+    type Block           = model.Block
+    type Entry           = model.Entry
+    type String          = model.String
+    type FailedBlock     = model.ParsingFailedBlock
+    type ErrorBlock      = model.MiddlewareErrorBlock
+    type CommentBlock    = model.ExplicitComment | model.ImplicitComment
+    type UniMiddleware   = Middleware_p | AdaptiveMiddleware_p
+    type BidiMiddleware  = BidirectionalMiddleware_p
+    type Middleware      = UniMiddleware | BidiMiddleware
+
+    type StrLike         = list|set|String|NameParts_d|NameParts
 ##--|
-type StringBlock     = model.String
-type Preamble        = model.Preamble
-type Field           = model.Field
-type Block           = model.Block
-type Entry           = model.Entry
-type FailedBlock     = model.ParsingFailedBlock
-type ErrorBlock      = model.MiddlewareErrorBlock
-type CommentBlock    = model.ExplicitComment | model.ImplicitComment
-type UniMiddleware   = LibraryMiddleware_p | AdaptiveMiddleware_p
-type BidiMiddleware  = BidirectionalMiddleware_p
-type Middleware      = UniMiddleware | BidiMiddleware
 
 # isort: on
 # ##-- end types
@@ -89,12 +94,14 @@ class Capability_f(enum.Flag):
     validate     = enum.auto()
     transform    = enum.auto()
     report       = enum.auto()
+    dependent    = enum.auto()
 
 ##--|
 ## Bibtexparser protcols
 
 @runtime_checkable
 class Library_p(Protocol):
+    """ The core methods of a library """
 
     def add(self, blocks:list[Block], fail_on_duplicate_key: bool = False) -> None:
         pass
@@ -130,7 +137,15 @@ class Library_p(Protocol):
         pass
 
 @runtime_checkable
+class Middleware_p(Protocol):
+    """ A Middleware is something with a 'transform' method """
+
+    def transform(self, library:Library) -> Library:
+        pass
+
+@runtime_checkable
 class BlockMiddleware_p(Protocol):
+    """ A (non-adaptive) block middleware has 'transform_x' methods """
 
     def transform(self, library:Library) -> Library:
         pass
@@ -153,12 +168,6 @@ class BlockMiddleware_p(Protocol):
     def transform_implicit_comment(self, comment:model.ImplicitComment, library:Library) -> list[Block]:
         pass
 
-@runtime_checkable
-class LibraryMiddleware_p(Protocol):
-
-    def transform(self, library:Library) -> Library:
-        pass
-
 ##--| New Middleware protocols:
 
 @runtime_checkable
@@ -167,10 +176,7 @@ class PairStack_p(Protocol):
 
     """
 
-    def add(self, *, read:Maybe[list|Middleware]=None, write:Maybe[list|Middleware]=None) -> Self:
-        pass
-
-    def add_pairs(self, *mids:BidirectionalMiddleware_p) -> Self:
+    def add(self, *args:BidiMiddleware, read:Maybe[list|Middleware]=None, write:Maybe[list|Middleware]=None) -> Self:
         pass
 
     def read_stack(self) -> list[Middleware]:
@@ -181,6 +187,11 @@ class PairStack_p(Protocol):
 
 @runtime_checkable
 class BidirectionalMiddleware_p(Protocol):
+    """ A Single middleware that holds the logic for reading and writing,
+    Intended for undoing what is done on read, prior to writing.
+
+    eg: Latex Decoding, then Encoding
+    """
 
     def read_transform(self, library:Library) -> Library:
         pass
@@ -190,52 +201,58 @@ class BidirectionalMiddleware_p(Protocol):
 
 @runtime_checkable
 class AdaptiveMiddleware_p(Protocol):
-    """ Middleware that looks up defined transforms using the type name,
-    by mro.
+    """ Middleware that looks up defined transforms using the type name, by mro.
+    The form for method lookup is either:
+    - transform_{type(block).__class__}
+    - {direction}_transform_{type(block).__class__}
+
+    An adaptive middleware doesn't need all the 'transform_X' methods a BlockMiddleware_p does.
+
     """
 
-    def get_transforms_for(self, block:Block) -> list[Callable[[Block, Library], list[Block]]]:
-        pass
-
-    def transform(self, library:Library) -> Library:
+    def get_transforms_for(self, block:Block, *, direction:Maybe[str]=None) -> list[Callable[[Block, Library], list[Block]]]:
         pass
 
 ##--| IO Protocols
 
 @runtime_checkable
 class Reader_p(Protocol):
+    """ Readers take source text, or a file, or a directory,
+    parses the read bibtex, running middlewares on the parsed bibtex
+    """
 
     def read(self, source:str|pl.Path, *, into:Maybe[Library]=None, append:Maybe[list[Middleware]]=None) -> Maybe[Library]:
         pass
 
+    def read_dir(self, source:pl.Path, *, ext:str, into:Maybe[Library]=None, append:Maybe[list[Middleware]]=None) -> Maybe[Library]:
+        pass
+
 @runtime_checkable
 class Writer_p(Protocol):
+    """ Writers take a library, format it, and write it to a file.
+    *typically* it formats as bibtex, but doesn't *have* to.
+    (eg: RstWriter)
+    """
 
-    def write(self, library:Library, *, file:Maybe[pl.Path]=None, append:Maybe[list[BlockMiddleware_p|LibraryMiddleware_p]]=None) -> str:
+    def write(self, library:Library, *, file:Maybe[pl.Path]=None, append:Maybe[list[Middleware]]=None) -> str:
         pass
 
 ##--| Middleware protocols
 
 @runtime_checkable
-class CustomWriter_p(Protocol):
+class CustomWriteBlock_p(Protocol):
+    """ Writers can be Visitors, in which case they call ths visit method on
+    blocks
+
+    """
 
     def visit(self, writer:Writer_p) -> list[str]:
         pass
 
 @runtime_checkable
-class MiddlewareDir_p(Protocol):
-    """ For Querying whether a middleware is for using at read or write time. """
-
-    def on_read(self) -> bool:
-        pass
-
-    def on_write(self) -> bool:
-        pass
-
-@runtime_checkable
 class ReadTime_p(Protocol):
-    """ Protocol for signifying a middleware is for use on parsing bibtex to data
-    TODO merge this into middlewaredir_p
+    """ Protocol for signifying a middleware is for use on parsing bibtex to
+    data
     """
 
     def on_read(self) -> bool:
@@ -244,7 +261,7 @@ class ReadTime_p(Protocol):
 @runtime_checkable
 class WriteTime_p(Protocol):
     """ Protocol for signifying middleware is for use on writing data to bibtex
-    TODO merge this into middlewaredir_p
+
     """
 
     def on_write(self) -> bool:
@@ -252,7 +269,12 @@ class WriteTime_p(Protocol):
 
 @runtime_checkable
 class EntrySkipper_p(Protocol):
-    """ A whitelist based test for middlewares """
+    """ A whitelist based test for middlewares.
+    Middleware's set their skiplist on init,
+    and can call 'should_skip_entry' when transforming blocks
+
+    eg: for only processing type='article' entries, not books
+    """
 
     def set_entry_skiplist(self, whitelist:list[str]) -> None:
         pass
@@ -280,6 +302,9 @@ class FieldMatcher_p(Protocol):
 @runtime_checkable
 class StrTransformer_p(Protocol):
     """ Describes the StringTransform_m """
+
+    def transform_strlike(self, slike:StrLike) -> Result[StrLike, Exception]:
+        pass
 
     def _transform_raw_str(self, python_string:str) -> Result[str, Exception]:
         pass
