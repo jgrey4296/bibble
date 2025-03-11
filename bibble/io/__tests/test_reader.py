@@ -18,7 +18,9 @@ import pytest
 # ##-- end 3rd party imports
 
 import bibble._interface as API
+from bibtexparser import Library
 from .. import Reader
+from bibble.bidi import BraceWrapper
 
 # ##-- types
 # isort: off
@@ -52,7 +54,14 @@ logging = logmod.getLogger(__name__)
 ##-- end logging
 
 # Vars:
+EXAMPLE_BIB : Final[str] = """
+@article{test_art,
+  title  = {Blah},
+  year   = {1992},
+  author = {Bob},
+}
 
+"""
 # Body:
 
 class TestBibbleReader:
@@ -64,6 +73,35 @@ class TestBibbleReader:
         match Reader([]):
             case API.Reader_p():
                 assert(True)
+            case x:
+                 assert(False), x
+
+    def test_read(self):
+        reader = Reader([])
+        match reader.read(EXAMPLE_BIB):
+            case Library() as lib:
+                assert(len(lib.entries) == 1)
+                entry                                    = lib.entries[0]
+                assert(entry.key                         == "test_art")
+                assert(entry.entry_type                  == "article")
+                assert(entry.fields_dict['title'].value  == "{Blah}")
+                assert(entry.fields_dict['author'].value == "{Bob}")
+                assert(entry.fields_dict['year'].value   == "{1992}")
+            case x:
+                 assert(False), x
+
+
+    def test_read_with_middleware(self):
+        reader = Reader([BraceWrapper()])
+        match reader.read(EXAMPLE_BIB):
+            case Library() as lib:
+                assert(len(lib.entries) == 1)
+                entry                                    = lib.entries[0]
+                assert(entry.key                         == "test_art")
+                assert(entry.entry_type                  == "article")
+                assert(entry.fields_dict['title'].value  == "Blah")
+                assert(entry.fields_dict['author'].value == "Bob")
+                assert(entry.fields_dict['year'].value   == "1992")
             case x:
                  assert(False), x
 

@@ -19,6 +19,8 @@ import pytest
 
 import bibble._interface as API
 from .. import Writer
+from bibtexparser import Library, model
+from bibble.bidi import BraceWrapper
 
 # ##-- types
 # isort: off
@@ -52,7 +54,21 @@ logging = logmod.getLogger(__name__)
 ##-- end logging
 
 # Vars:
+EXAMPLE_NO_WRAP : Final[str] = """
+@article{test_art,
+ year         = 1992,
+ author       = Bob,
+ title        = Testing Title,
+}
+"""
 
+EXAMPLE_WRAP : Final[str] = """
+@article{test_art,
+ year         = {1992},
+ author       = {Bob},
+ title        = {Testing Title},
+}
+"""
 # Body:
 
 class TestBibbleWriter:
@@ -64,6 +80,34 @@ class TestBibbleWriter:
     def test_ctor(self):
         match Writer([]):
             case API.Writer_p():
+                assert(True)
+            case x:
+                 assert(False), x
+
+    def test_basic_write_no_wrap(self):
+        lib = Library([model.Entry("article", "test_art", [
+            model.Field("year", 1992),
+            model.Field("author", "Bob"),
+            model.Field("title", "Testing Title"),
+        ])])
+        writer = Writer([])
+        match writer.write(lib):
+            case str() as x:
+                assert(x.strip() == EXAMPLE_NO_WRAP.strip())
+                assert(True)
+            case x:
+                 assert(False), x
+
+    def test_basic_write_with_wrap(self):
+        lib = Library([model.Entry("article", "test_art", [
+            model.Field("year", 1992),
+            model.Field("author", "Bob"),
+            model.Field("title", "Testing Title"),
+        ])])
+        writer = Writer([BraceWrapper()])
+        match writer.write(lib):
+            case str() as x:
+                assert(x.strip() == EXAMPLE_WRAP.strip())
                 assert(True)
             case x:
                  assert(False), x

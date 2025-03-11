@@ -37,6 +37,7 @@ from bibtexparser.writer import BibtexFormat
 from bibble import _interface as API
 from bibble.util.mixins import MiddlewareValidator_m
 from bibble.model import MetaBlock
+from bibble.util import PairStack
 
 # ##-- end 1st party imports
 
@@ -153,8 +154,14 @@ class BibbleWriter:
     TODO handle a pair stack on init
     """
 
-    def __init__(self, stack:list[Middleware], *, format:Maybe[BibtexFormat]=None):
-        self._middlewares            = stack
+    def __init__(self, stack:PairStack|list[Middleware], *, format:Maybe[BibtexFormat]=None):
+        match stack:
+            case PairStack():
+                self._middlewares = stack.write_stack()
+            case list():
+                self._middlewares = stack
+            case x:
+                raise TypeError(type(x))
         self._val_sep                = " = "
         self._parsing_failed_comment = "% WARNING Parsing failed for the following {n} lines."
         self.exclude_middlewares(API.WriteTime_p)
@@ -189,7 +196,7 @@ class BibbleWriter:
                 string_pieces.append(self._format.block_separator)
         else:
             string_pieces.extend(self.make_footer(transformed, file))
-            result = "".join(string_pieces)
+            result = "".join(str(x) for x in string_pieces)
 
         match file:
             case pl.Path():
@@ -218,7 +225,7 @@ class BibbleWriter:
                 case API.Middleware_p():
                     library = middleware.transform(library=library)
                 case API.BidirectionalMiddleware_p():
-                    library = middleware.read_transform(library=library)
+                    library = middleware.write_transform(library=library)
                 case x:
                     raise TypeError(type(x))
 

@@ -32,6 +32,7 @@ from bibtexparser.splitter import Splitter
 from bibble import _interface as API
 from bibble.model import MetaBlock
 from bibble.util.mixins import MiddlewareValidator_m
+from bibble.util import PairStack
 
 # ##-- types
 # isort: off
@@ -68,13 +69,19 @@ logging = logmod.getLogger(__name__)
 class BibbleReader:
     """ A Refactored bibtexparser reader
 
-    TODO : handle a pairstack on init
     """
     _middlewares : list[Middleware]
     _lib_class   : type[Library]
 
-    def __init__(self, stack:list[Middleware], *, lib_base:Maybe[type]=None):
-        self._middlewares      = stack
+    def __init__(self, stack:PairStack|list[Middleware], *, lib_base:Maybe[type]=None):
+        match stack:
+            case PairStack():
+                self._middlewares = stack.read_stack()
+            case list():
+                self._middlewares = stack
+            case x:
+                raise TypeError(type(x))
+
         self._lib_class : type = lib_base or Library
 
         self.exclude_middlewares(API.ReadTime_p)
@@ -106,8 +113,6 @@ class BibbleReader:
                     lib = y
         else:
             return lib
-
-
 
     def read(self, source:str|pl.Path, *, into:Maybe[Library]=None, append:Maybe[list[Middleware]]=None) -> Maybe[Library]:
         """ read source and make a new library.
@@ -163,13 +168,13 @@ class BibbleReader:
 
     def _read_into(self, lib:Library, source:str) -> Library:
         assert(isinstance(source, str))
-        splitter       = Splitter(bibstr=source)
-        library        = splitter.split(library=lib)
+        splitter = Splitter(bibstr=source)
+        library  = splitter.split(library=lib)
         return library
 
     def _run_middlewares(self, library:Library, *, append:Maybe[list[Middleware]]=None) -> Library:
-        # TODO time this
-        for middleware in itz.chain(self._middlewares, append or []):
+        append = append or []
+        for middleware in itz.chain(self._middlewares, append):
             match middleware:
                 case API.Middleware_p():
                     library = middleware.transform(library=library)
@@ -182,11 +187,11 @@ class BibbleReader:
             # Now record the meta key chain in the meta block
             match MetaBlock.find_in(library):
                 case None:
-                    library.add(MetaBlock(read_stack=[x.metadata_key() for x in library + append]))
+                    library.add(MetaBlock(read_stack=[x.metadata_key() for x in itz.chain(self._middlewares, append)]))
                 case MetaBlock() as mb if "read_stack" in mb.data:
-                    mb.data['read_stack'] += [x.metadata_key() for x in library + append]
+                    mb.data['read_stack'] += [x.metadata_key() for x in itz.chain(self._middlewares, append)]
                 case MetaBlock() as mb:
-                    mb.data['read_stack'] = [x.metadata_key() for x in library + append]
+                    mb.data['read_stack'] = [x.metadata_key() for x in itz.chain(self._middlewares, append)]
                 case x:
                     raise TypeError(type(x))
 

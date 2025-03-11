@@ -33,8 +33,6 @@ import bibtexparser
 import bibtexparser.model as model
 from bibtexparser import exceptions as bexp
 from bibtexparser import middlewares as ms
-from bibtexparser.middlewares.middleware import (BlockMiddleware,
-                                                 LibraryMiddleware, Middleware)
 from bibtexparser.model import MiddlewareErrorBlock
 
 # ##-- end 3rd party imports
@@ -93,7 +91,7 @@ class MiddlewareValidator_m:
             # note: no 'not'.
             if isinstance(middle, proto):
                 failures.append(middle)
-            elif not isinstance(middle, Middleware):
+            elif not isinstance(middle, API.Middleware_p|API.BidirectionalMiddleware_p):
                 failures.append(middle)
         else:
             if bool(failures):
