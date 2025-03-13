@@ -18,11 +18,6 @@ import time
 import types
 import weakref
 from collections import defaultdict
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generator,
-                    Generic, Iterable, Iterator, Mapping, Match,
-                    MutableMapping, Protocol, Self, Sequence, Tuple, TypeAlias,
-                    TypeGuard, TypeVar, cast, final, overload,
-                    runtime_checkable)
 from uuid import UUID, uuid1
 
 # ##-- end stdlib imports
@@ -35,6 +30,34 @@ from bibtexparser.middlewares import BlockMiddleware
 # ##-- end 3rd party imports
 
 import bibble._interface as API
+
+# ##-- types
+# isort: off
+import abc
+import collections.abc
+from typing import TYPE_CHECKING, cast, assert_type, assert_never
+from typing import Generic, NewType
+# Protocols:
+from typing import Protocol, runtime_checkable
+# Typing Decorators:
+from typing import no_type_check, final, override, overload
+# from dataclasses import InitVar, dataclass, field
+# from pydantic import BaseModel, Field, model_validator, field_validator, ValidationError
+
+if TYPE_CHECKING:
+    from jgdv import Maybe
+    from typing import Final
+    from typing import ClassVar, Any, LiteralString
+    from typing import Never, Self, Literal
+    from typing import TypeGuard
+    from collections.abc import Iterable, Iterator, Callable, Generator
+    from collections.abc import Sequence, Mapping, MutableMapping, Hashable
+
+    from API import Middleware
+##--|
+
+# isort: on
+# ##-- end types
 
 ##-- logging
 logging = logmod.getLogger(__name__)
@@ -69,7 +92,9 @@ class BibbleLib(Library):
             case _:
                 raise TypeError("Bad update sublibrary")
 
-    def store_meta_value(self, key:str|Middleware_p, value:Any):
+        return self
+
+    def store_meta_value(self, key:str|Middleware, value:Any):
         raise DeprecationWarning("Use a MetaBlock")
 
     def get_meta_value(self, key) -> set|Any:

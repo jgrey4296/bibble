@@ -2,6 +2,7 @@
 """
 
 """
+# mypy: disable-error-code="attr-defined"
 
 # Imports:
 from __future__ import annotations
