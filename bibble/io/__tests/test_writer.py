@@ -2,7 +2,7 @@
 """
 
 """
-# ruff: noqa: ANN201, ARG001, ANN001, ARG002, ANN202
+# ruff: noqa: ANN201, ARG001, ANN001, ARG002, ANN202, B011
 
 # Imports
 from __future__ import annotations
@@ -69,13 +69,21 @@ EXAMPLE_WRAP : Final[str] = """
  title        = {Testing Title},
 }
 """
+
+EXAMPLE_ALIGNED : Final[str] = """
+@article{test_art,
+year                        = {1992},
+author                      = {Bob},
+title                       = {Testing Title},
+}
+"""
+
 # Body:
 
 class TestBibbleWriter:
 
     def test_sanity(self):
-        assert(True is not False) # noqa: PLR0133
-
+        assert(True is not False)
 
     def test_ctor(self):
         match Writer([]):
@@ -84,7 +92,7 @@ class TestBibbleWriter:
             case x:
                  assert(False), x
 
-    def test_basic_write_no_wrap(self):
+    def test_basic_write(self):
         lib = Library([model.Entry("article", "test_art", [
             model.Field("year", 1992),
             model.Field("author", "Bob"),
@@ -98,7 +106,7 @@ class TestBibbleWriter:
             case x:
                  assert(False), x
 
-    def test_basic_write_with_wrap(self):
+    def test_write_with_wrap(self):
         lib = Library([model.Entry("article", "test_art", [
             model.Field("year", 1992),
             model.Field("author", "Bob"),
@@ -108,6 +116,28 @@ class TestBibbleWriter:
         match writer.write(lib):
             case str() as x:
                 assert(x.strip() == EXAMPLE_WRAP.strip())
+                assert(True)
+            case x:
+                 assert(False), x
+
+    def test_custom_aligned(self):
+        column = 30
+        lib = Library([model.Entry("article", "test_art", [
+            model.Field("year", 1992),
+            model.Field("author", "Bob"),
+            model.Field("title", "Testing Title"),
+        ])])
+        writer = Writer([BraceWrapper()])
+        writer.format.value_column = column
+        writer.format.indent = ""
+
+        match writer.write(lib):
+            case str() as x:
+                assert(x.strip() == EXAMPLE_ALIGNED.strip())
+                # All lines with values (so not top and last)
+                # must be the start of a value at 'column'.
+                # ie: '{'
+                assert(all([x[column] == "{" for x in x.splitlines()[1:-1]]))
                 assert(True)
             case x:
                  assert(False), x

@@ -130,10 +130,10 @@ class BibbleReader:
             case x:
                 raise TypeError(type(x))
 
-        with TimeCtx():
+        with TimeCtx(enter_msg="> Bibtex Reading: Start", exit_msg="< Bibtex Reading:"):
             basic       : Library   = self._read_into(self._lib_class(), source_text)
 
-        with TimeCtx():
+        with TimeCtx(enter_msg="> Read Transforms: Start", exit_msg="< Read Transforms:"):
             transformed : Library   = self._run_middlewares(basic, append=append)
 
         entry_keys : set = {x.key for x in transformed.entries}

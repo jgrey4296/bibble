@@ -28,13 +28,12 @@ from jgdv import Proto, Mixin
 from jgdv.util.time_ctx import TimeCtx
 from bibtexparser import model
 from bibtexparser.model import MiddlewareErrorBlock
-from bibtexparser.library import Library
-from bibtexparser.writer import BibtexFormat
 
 # ##-- end 3rd party imports
 
 # ##-- 1st party imports
 from bibble import _interface as API
+from . import _interface as API_W
 from bibble.util.mixins import MiddlewareValidator_m
 from bibble.model import MetaBlock
 from bibble.util import PairStack
@@ -61,6 +60,9 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Callable, Generator
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
 
+    from bibtexparser.library import Library
+    from bibtexparser.writer import BibtexFormat
+
     type Middleware = API.Middleware_p | API.BidirectionalMiddleware_p
 ##--|
 
@@ -85,7 +87,7 @@ class _VisitEntry_m:
                 assert(hasattr(x, "visit"))
                 return x.visit(self)
             case MetaBlock():
-                pass
+                return []
             case model.Entry():
                 return self.visit_entry(block)
             case model.String():
@@ -99,7 +101,7 @@ class _VisitEntry_m:
             case model.ParsingFailedBlock():
                 return self.visit_failed_block(block)
             case MiddlewareErrorBlock():
-                pass
+                return []
             case _:
                 raise ValueError(f"Unknown block type: {type(block)}")
 
@@ -109,22 +111,20 @@ class _Visitors_m:
         res = ["@", block.entry_type, "{", block.key, ",\n"]
         field: model.Field
         for i, field in enumerate(block.fields):
-            res.append(self._format.indent)
-            res.append(field.key)
-            res.append(self._align_string(field.key))
-            res.append(self._val_sep)
+            res.append(self._align_key(field.key))
             res.append(field.value)
-            if self._format.trailing_comma or i < len(block.fields) - 1:
+            if self.format.trailing_comma or i < len(block.fields) - 1:
                 res.append(",")
-            res.append("\n")
-        res.append("}\n")
-        return res
+                res.append("\n")
+        else:
+            res.append("}\n")
+            return res
 
     def visit_string(self, block:model.String) -> list[str]:
         return [
             "@string{",
             block.key,
-            self._val_sep,
+            self._value_sep,
             block.value,
             "}\n",
         ]
@@ -141,9 +141,9 @@ class _Visitors_m:
 
     def visit_failed_block(self, block:model.ParsingFailedBlock) -> list[str]:
         lines = len(block.raw.splitlines())
-        parsing_failed_comment = self._parsing_failed_comment.format(n=lines)
+        parsing_failed_comment = self.format.parsing_failed_comment.format(n=lines)
         return [parsing_failed_comment, "\n", block.raw, "\n"]
-##--|
+    ##--|
 
 @Proto(jgdv.protos.Visitor_p, API.Writer_p)
 @Mixin(_VisitEntry_m, _Visitors_m, MiddlewareValidator_m)
@@ -153,8 +153,14 @@ class BibbleWriter:
 
     TODO handle a pair stack on init
     """
+    _value_sep             : str
+    _value_column          : Maybe[int]
+    _middlewares           : list[Middleware]
+    format                 : BibtexFormat
 
     def __init__(self, stack:PairStack|list[Middleware], *, format:Maybe[BibtexFormat]=None):
+        self._value_sep = API_W.VAL_SEP
+        self._value_column = None
         match stack:
             case PairStack():
                 self._middlewares = stack.write_stack()
@@ -162,28 +168,27 @@ class BibbleWriter:
                 self._middlewares = stack
             case x:
                 raise TypeError(type(x))
-        self._val_sep                = " = "
-        self._parsing_failed_comment = "% WARNING Parsing failed for the following {n} lines."
-        self.exclude_middlewares(API.WriteTime_p)
+
         match format:
             case None:
-                self._format                 = BibtexFormat()
-                self._format.value_column    = 15
-                self._format.indent          = " "
-                self._format.block_separator = "\n"
-                self._format.trailing_comma  = True
+                self.format = deepcopy(API_W.default_format())
             case BibtexFormat():
-                self._format                 = deepcopy(format)
-            case _:
-                raise TypeError("Bad BibtexFormat passed to writer", format)
+                self.format = deepcopy(format)
+            case x:
+                raise TypeError(type(x))
+
+        self.exclude_middlewares(API.WriteTime_p)
+
 
     def write(self, library, *, file:None|pl.Path=None, append:Maybe[list[Middleware]]=None) -> str:
         """ Write the library to a string, and possbly a file """
 
-        if self._format.value_column == "auto":
-            self._format.value_column = self._calculate_auto_value_align(library)
 
-        with TimeCtx():
+        self._calculate_auto_value_align(library)
+
+        with TimeCtx(logger=logging,
+                     enter_msg="> Write Transforms: Start",
+                     exit_msg="< Write Transforms:") as ctx:
             transformed = self._run_middlewares(library, append=append)
 
         string_pieces = self.make_header(transformed, file)
@@ -193,11 +198,13 @@ class BibbleWriter:
             string_pieces.extend(string_block_pieces)
             # Separate Blocks
             if i < len(transformed.blocks) - 1:
-                string_pieces.append(self._format.block_separator)
+                string_pieces.append(self.format.block_separator)
         else:
             string_pieces.extend(self.make_footer(transformed, file))
             result = "".join(str(x) for x in string_pieces)
 
+        # Reset the value column:
+        self._value_column = None
         match file:
             case pl.Path():
                 file.write_text(result)
@@ -205,19 +212,45 @@ class BibbleWriter:
             case _:
                 return result
 
-    def _calculate_auto_value_align(self, library: Library) -> int:
-        max_key_len = 0
-        for entry in library.entries:
-            for key in entry.fields_dict:
-                max_key_len = max(max_key_len, len(key))
-        return max_key_len + len(self._val_sep)
+    def _calculate_auto_value_align(self, library: Library) -> None:
+        """
+        Sets the separation between keys and the value separator.
+        If its already set, does nothing.
+        If the format specifies a value, uses that.
+        Otherwise calulates it from the larges field key
+        """
+        if self._value_column is not None:
+            return
 
-    def _align_string(self, key: str) -> str:
-        """The spaces which have to be added after the ` = `."""
-        length = self._format.value_column - len(key) - len(self._val_sep)
-        return "" if length <= 0 else " " * length
+        match self.format.value_column:
+            case int() as x:
+                self._value_column = x
+            case _:
+                max_key_len = 0
+                for entry in library.entries:
+                    for key in entry.fields_dict:
+                        max_key_len = max(max_key_len, len(key))
+                    ##--|
+                else:
+                    self._value_column = max_key_len + len(self._value_sep)
+
+    def _align_key(self, key: str) -> str:
+        """ take {key} and make {key}{padding}{sep},
+        Padding is from '_calculate_auto_value_align', the largest key length.
+        Sep is typically '='.
+
+        eg: _align_key('blah') -> 'blah   = '
+        """
+        match (self.format.value_column - len(key) - len(self._value_sep)):
+            case x if 0 <= x:
+                return f"{self.format.indent}{key}{' '*x}{self._value_sep}"
+            case x:
+                return f"{self.format.indent}{key}{' '*x}{self._value_sep}"
 
     def _run_middlewares(self, library:Library, *, append:Maybe[list[Middleware]]=None) -> Library:
+        """ Run transforms on the library before writing,
+        can handle bidirectional middlewares
+        """
         append = append or []
         # TODO time this
         for middleware in self._middlewares:
