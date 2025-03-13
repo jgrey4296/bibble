@@ -17,8 +17,11 @@ import warnings
 import pytest
 # ##-- end 3rd party imports
 
+from bibtexparser import Library, model
 import bibble._interface as API
-from bibble.io import RstWriter
+from bibble.bidi import BraceWrapper
+from .. import RstWriter
+from importlib.resources import files
 
 # ##-- types
 # isort: off
@@ -51,14 +54,54 @@ if TYPE_CHECKING:
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
+##-- data
+data_path = files(__package__) / "_data"
+##-- end data
+
 # Vars:
+EXAMPLE_EMPTY_LIB : Final[str] = (data_path / "empty_lib.rst").read_text()
+EXAMPLE_LIB : Final[str] = (data_path / "simple_lib.rst").read_text()
 
 # Body:
 
 class TestRstWriter:
 
     def test_sanity(self):
-        assert(True is not False) # noqa: PLR0133
+        assert(True is not False)
+
+    def test_ctor(self):
+        match RstWriter([]):
+            case API.Writer_p():
+                assert(True)
+            case x:
+                 assert(False), x
+
+    def test_write_empty_lib(self):
+        lib = Library([])
+        writer = RstWriter([])
+        match writer.write(lib):
+            case str() as x:
+                assert(bool(x))
+                assert(x.strip() == EXAMPLE_EMPTY_LIB.strip())
+                assert(True)
+            case x:
+                 assert(False), x
+
+    def test_basic_entry_write(self):
+        lib = Library([model.Entry("article", "test_art", [
+            model.Field("year", 1992),
+            model.Field("author", "Bob"),
+            model.Field("title", "Testing Title"),
+            model.Field("tags", "blah,bloo"),
+        ])])
+        writer = RstWriter([])
+        match writer.write(lib):
+            case str() as x:
+                assert(bool(x))
+                assert(x.strip() == EXAMPLE_LIB.strip())
+                assert(True)
+            case x:
+                 assert(False), x
 
     @pytest.mark.skip
     def test_todo(self):

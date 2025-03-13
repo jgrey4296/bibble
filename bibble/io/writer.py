@@ -152,7 +152,7 @@ class BibbleWriter:
     """ A Refactored bibtexparser writer
     Uses visitor pattern
 
-    TODO handle a pair stack on init
+    Note: visit method are responsible for new lines
     """
     _value_sep             : str
     _value_column          : Maybe[int]
@@ -180,10 +180,8 @@ class BibbleWriter:
 
         self.exclude_middlewares(API.WriteTime_p)
 
-
     def write(self, library, *, file:None|pl.Path=None, append:Maybe[list[Middleware]]=None) -> str:
         """ Write the library to a string, and possbly a file """
-
 
         self._calculate_auto_value_align(library)
 
@@ -192,7 +190,8 @@ class BibbleWriter:
                      exit_msg="< Write Transforms:") as ctx:
             transformed = self._run_middlewares(library, append=append)
 
-        string_pieces = self.make_header(transformed, file)
+        string_pieces : list[str] = []
+        string_pieces += self.make_header(transformed, file)
         for i, block in enumerate(transformed.blocks):
             # Get string representation (as list of strings) of block
             string_block_pieces = self.visit(block)
@@ -202,7 +201,7 @@ class BibbleWriter:
                 string_pieces.append(self.format.block_separator)
         else:
             string_pieces.extend(self.make_footer(transformed, file))
-            result = "".join(str(x) for x in string_pieces)
+            result : str = "".join(str(x) for x in string_pieces)
 
         # Reset the value column:
         self._value_column = None

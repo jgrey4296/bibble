@@ -69,22 +69,20 @@ class RstWriter(BibbleWriter):
     _indent     : ClassVar[str]       = " "*3
 
     def _title_add(self, block:Block) -> list[str]:
-        match block.get('title', None):
-            case model.Field(value=str() as title):
+        """ Format and return the title """
+        match block.get('title', None), block.get("subtitle", None):
+            case model.Field(value=str() as title), model.Field(value=str() as subtitle):
+                return [f"{self._indent}:title: {title}: {subtitle}\n"] # type:ignore
+            case model.Field(value=str() as title), _:
+                return [f"{self._indent}:title: {title}\n"] # type: ignore
                 pass
             case _:
                 raise KeyError("no title", block.key)
 
-        match block.get("subtitle", None):
-            case model.Field(value=str() as subtitle):
-                return [f"{self._indent}:title: {title}: {subtitle}"]
-            case _:
-                return [f"{self._indent}:title: {title}"]
-
     def _must_add(self, block:Block, field:str) -> list[str]:
         match block.get(field, None):
             case model.Field(value=val):
-                return [f"{self._indent}:{block.key}: {val}"]
+                return [f"{self._indent}:{block.key}: {val}\n"] # type: ignore
             case _:
                 raise KeyError('Entry missing required field', block.key, field)
 
@@ -95,7 +93,8 @@ class RstWriter(BibbleWriter):
                 case None:
                     continue
                 case model.Field(value=val):
-                    result.append(f"{self._indent}:{key}: {val}")
+                    result.append(f"{self._indent}:{key}: {val}\n") # type: ignore
+
         else:
             return result
 
@@ -109,37 +108,40 @@ class RstWriter(BibbleWriter):
             case "tweet" | "thread":
                 return []
             case _:
-                self._title_add(block)
-                self._must_add("tags")
-                self._can_add("author", "editor", "year", "series")
-                self._can_add("journal", "booktitle", "doi", "url", "isbn", "publisher")
-                self._can_add("incollection", "institution")
+                result += self._title_add(block)
+                result += self._must_add(block, "tags")
+                result += self._can_add(block, "author", "editor", "year", "series")
+                result += self._can_add(block, "journal", "booktitle", "doi", "url", "isbn", "publisher")
+                result += self._can_add(block, "incollection", "institution")
                 # TODO volume, number, pages, chapter
 
-        result += ["", "", "..",
-                    f"{self._indent} Fields:",
-                    "{} {}".format(self._indent, ", ".join(self._fields.keys())), "",
-                    f"{self._indent} Object Keys:",
-                    "{} {}".format(self._indent,
-                                    ", ".join([x for x in dir(block) if "__" not in x]))
+        result += ["\n\n..\n",
+                   f"{self._indent} Fields:\n",
+                   "{} {}\n".format(self._indent, ", ".join(block.fields_dict.keys())),
+                   f"{self._indent} Object Keys:\n",
+                   "{} {}\n".format(self._indent,
+                                    ", ".join([x for x in dir(block) if "__" not in x])),
+                   "\n\n",
                     ]
 
         return result
 
-    def visit_header(self, library:Library, file:Maybe[pl.Path]=None) -> list[str]:
+    def make_header(self, library:Library, file:Maybe[pl.Path]=None) -> list[str]:
         match file:
             case None:
                 title = "A Bibtex File"
             case pl.Path():
                 title = file.stem
 
-        lines = [".. -*- mode: ReST -*-",
-                 f".. _{title}:", "",
-                 "="*len(title), title, "="*len(title), "",
-                 ".. contents:: Entries:",
-                 "   :class: bib_entries",
-                 "   :local:", "",
-                 "For the raw bibtex, see `the file`_.", "",
-                 f".. _`the file`: https://github.com/jgrey4296/bibliography/blob/main/main/{title}.bib", "", "",
+        lines = [".. -*- mode: ReST -*-\n\n",
+                 f".. _{title}:\n\n",
+                 "="*len(title), "\n",
+                 title, "\n",
+                 "="*len(title), "\n\n",
+                 ".. contents:: Entries:\n",
+                 "   :class: bib_entries\n",
+                 "   :local:\n\n",
+                 "For the raw bibtex, see `the file`_.\n\n",
+                 f".. _`the file`: https://github.com/jgrey4296/bibliography/blob/main/main/{title}.bib\n\n",
                  ]
         return lines
