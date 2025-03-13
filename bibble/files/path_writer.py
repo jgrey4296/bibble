@@ -79,7 +79,7 @@ class PathWriter(IdenBlockMiddleware):
 
     _whitelist = ("file",)
 
-    def __init__(self, *, lib_root:pl.Path=None, **kwargs):
+    def __init__(self, *, lib_root:Maybe[pl.Path]=None, **kwargs):
         super().__init__(**kwargs)
         self.set_field_matchers(white=self._whitelist, black=[])
         self._lib_root = lib_root

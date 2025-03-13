@@ -77,10 +77,10 @@ class PathReader(IdenBlockMiddleware):
 
     _whitelist = ("file",)
 
-    def __init__(self, *, lib_root:pl.Path=None, **kwargs):
+    def __init__(self, *, lib_root:Maybe[pl.Path]=None, **kwargs):
         super().__init__(**kwargs)
         self._lib_root = lib_root or pl.Path.cwd()
-        self.set_field_matchers(white=kwargs.pop("whitelist", self._whitelist), black=[])
+        self.set_field_matchers(white=kwargs.pop("whitelist", self._whitelist), black=[])  # type: ignore[attr-defined]
 
     def on_read(self):
         return False
