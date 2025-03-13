@@ -56,7 +56,7 @@ logging = logmod.getLogger(__name__)
 ##-- end logging
 
 class RstWriter(BibbleWriter):
-    """ Write bibtex entries as Rst """
+    """ Write bibtex entries as Rst. """
 
     # These need to match the BibEntryDirective of the sphinx domain
     _entry      : ClassVar[str]       = ".. bibtex:entry:: {}"
