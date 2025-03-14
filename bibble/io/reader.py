@@ -23,7 +23,7 @@ from uuid import UUID, uuid1
 
 # ##-- 3rd party imports
 from jgdv import Mixin, Proto
-from jgdv.util.time_ctx import TimeCtx
+from jgdv.debugging.timeblock_ctx import TimeBlock_ctx
 from bibtexparser.library import Library
 from bibtexparser.splitter import Splitter
 
@@ -130,10 +130,10 @@ class BibbleReader:
             case x:
                 raise TypeError(type(x))
 
-        with TimeCtx(enter_msg="> Bibtex Reading: Start", exit_msg="< Bibtex Reading:"):
+        with TimeBlock_ctx(enter_msg="> Bibtex Reading: Start", exit_msg="< Bibtex Reading:"):
             basic       : Library   = self._read_into(self._lib_class(), source_text)
 
-        with TimeCtx(enter_msg="> Read Transforms: Start", exit_msg="< Read Transforms:"):
+        with TimeBlock_ctx(enter_msg="> Read Transforms: Start", exit_msg="< Read Transforms:"):
             transformed : Library   = self._run_middlewares(basic, append=append)
 
         entry_keys : set = {x.key for x in transformed.entries}

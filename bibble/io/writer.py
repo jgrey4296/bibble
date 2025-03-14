@@ -26,7 +26,7 @@ from uuid import UUID, uuid1
 # ##-- 3rd party imports
 import jgdv
 from jgdv import Proto, Mixin
-from jgdv.util.time_ctx import TimeCtx
+from jgdv.debugging.timeblock_ctx import TimeBlock_ctx
 from bibtexparser import model
 from bibtexparser.model import MiddlewareErrorBlock
 
@@ -185,7 +185,7 @@ class BibbleWriter:
 
         self._calculate_auto_value_align(library)
 
-        with TimeCtx(logger=logging,
+        with TimeBlock_ctx(logger=logging,
                      enter_msg="> Write Transforms: Start",
                      exit_msg="< Write Transforms:") as ctx:
             transformed = self._run_middlewares(library, append=append)
