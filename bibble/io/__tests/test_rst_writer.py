@@ -59,8 +59,8 @@ data_path = files(__package__) / "_data"
 ##-- end data
 
 # Vars:
-EXAMPLE_EMPTY_LIB : Final[str] = (data_path / "empty_lib.rst").read_text()
-EXAMPLE_LIB : Final[str] = (data_path / "simple_lib.rst").read_text()
+EXAMPLE_EMPTY_LIB : Final[pl.Path] = data_path / "empty_lib.rst"
+EXAMPLE_LIB       : Final[pl.Path] = data_path / "simple_lib.rst"
 
 # Body:
 
@@ -82,7 +82,7 @@ class TestRstWriter:
         match writer.write(lib):
             case str() as x:
                 assert(bool(x))
-                assert(x.strip() == EXAMPLE_EMPTY_LIB.strip())
+                assert(x.strip() == EXAMPLE_EMPTY_LIB.read_text().strip())
                 assert(True)
             case x:
                  assert(False), x
@@ -98,7 +98,7 @@ class TestRstWriter:
         match writer.write(lib):
             case str() as x:
                 assert(bool(x))
-                assert(x.strip() == EXAMPLE_LIB.strip())
+                assert(x.strip() == EXAMPLE_LIB.read_text().strip())
                 assert(True)
             case x:
                  assert(False), x
