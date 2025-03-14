@@ -77,7 +77,7 @@ class TitleCleaner(IdenBlockMiddleware):
     """
 
     def on_read(self):
-        return True
+        Never()
 
     def transform_Entry(self, entry, library):
         match entry.get(API_F.TITLE_K):
@@ -107,7 +107,7 @@ class TitleSplitter(IdenBlockMiddleware):
     """
 
     def on_read(self):
-        return True
+        Never()
 
     def transform_Entry(self, entry:Entry, library:Library):
         match entry.get(API_F.TITLE_K), entry.get(API_F.SUBTITLE_K):

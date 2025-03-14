@@ -93,7 +93,7 @@ class KeyLocker(IdenBlockMiddleware):
         self._bad_lock          : str        = f"{self._lock_suffix}{self._lock_suffix}"
 
     def on_read(self):
-        return True
+        Never()
 
     def transform_Entry(self, entry, library) -> list:
         entry = deepcopy(entry)

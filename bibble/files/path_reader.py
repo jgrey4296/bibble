@@ -83,7 +83,7 @@ class PathReader(IdenBlockMiddleware):
         self.set_field_matchers(white=kwargs.pop("whitelist", self._whitelist), black=[])  # type: ignore[attr-defined]
 
     def on_read(self):
-        return False
+        Never()
 
     def transform_Entry(self, entry, library):
         match self.match_on_fields(entry, library):

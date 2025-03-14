@@ -90,7 +90,7 @@ class TagsReader(IdenBlockMiddleware):
         self._clear_on_transform = clear
 
     def on_read(self):
-        return True
+        Never()
 
     def transform(self, library:Library) -> Library:
         if self._clear_on_transform:

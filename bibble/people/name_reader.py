@@ -503,7 +503,7 @@ class NameReader(IdenBlockMiddleware):
             raise ValueError("Can't generate name parts if you don't split authors")
 
     def on_read(self):
-        return True
+        Never()
 
     def transform_Entry(self, entry:Entry, library:Library) -> list[Entry]:
         match self.match_on_fields(entry, library):

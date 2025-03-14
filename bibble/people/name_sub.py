@@ -58,7 +58,7 @@ class NameSubstitutor(FieldSubstitutor):
                          **kwargs)
 
     def on_read(self):
-        return True
+        Never()
 
     def field_h(self, field, entry):
         match field.value:

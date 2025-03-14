@@ -255,7 +255,7 @@ class ReadTime_p(Protocol):
     data
     """
 
-    def on_read(self) -> bool:
+    def on_read(self) -> Never:
         pass
 
 @runtime_checkable
@@ -264,7 +264,7 @@ class WriteTime_p(Protocol):
 
     """
 
-    def on_write(self) -> bool:
+    def on_write(self) -> Never:
         pass
 
 @runtime_checkable

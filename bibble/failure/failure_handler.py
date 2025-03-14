@@ -85,7 +85,7 @@ class FailureHandler(IdenLibraryMiddleware):
                 self.file_target = x
 
     def on_read(self):
-        return True
+        Never()
 
     def transform(self, library):
         total    = len(library.failed_blocks)

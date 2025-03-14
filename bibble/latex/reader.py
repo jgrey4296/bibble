@@ -106,7 +106,7 @@ class LatexReader(IdenBlockMiddleware):
         self.rebuild_decoder()
 
     def on_read(self):
-        return True
+        Never()
 
     def transform_Entry(self, entry: Entry, library: Library) -> list[Block]:
         match self.match_on_fields(entry, library):

@@ -77,7 +77,7 @@ class IsbnValidator(IdenBlockMiddleware):
     """
 
     def on_read(self):
-        return True
+        Never()
 
     def transform_Entry(self, entry, library):
         match entry.get(MAPI.ISBN_K):

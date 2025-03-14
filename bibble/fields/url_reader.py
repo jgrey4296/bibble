@@ -83,7 +83,7 @@ class CleanUrls(IdenBlockMiddleware):
         self.set_field_matchers(white=self._whitelist, black=[])
 
     def on_read(self):
-        return True
+        Never()
 
     def transform_Entry(self, entry:Entry, library:Library):
         match self.match_on_fields(entry, library):
@@ -120,7 +120,7 @@ class ExpandUrls(IdenBlockMiddleware):
     """ TODO expand shortened urls """
 
     def on_read(self):
-        return True
+        Never()
 
     def transform_Entry(self, entry:Entry, library:Library):
         match self.match_on_fields(entry, library):

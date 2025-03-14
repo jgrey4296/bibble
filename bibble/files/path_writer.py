@@ -85,7 +85,7 @@ class PathWriter(IdenBlockMiddleware):
         self._lib_root = lib_root
 
     def on_write(self):
-        return True
+        Never()
 
     def transform_Entry(self, entry:Entry, library:Library):
         match self.match_on_fields(entry, library):

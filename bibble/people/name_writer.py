@@ -91,7 +91,7 @@ class NameWriter(IdenBlockMiddleware):
         self.set_field_matchers(white=self._whitelist, black=[])
 
     def on_write(self):
-        return True
+        Never()
 
     def transform_Entry(self, entry:Entry, library:Library) -> list[Entry]:
         match self.match_on_fields(entry, library):

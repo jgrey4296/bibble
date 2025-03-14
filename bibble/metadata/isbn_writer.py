@@ -79,7 +79,7 @@ class IsbnWriter(IdenBlockMiddleware):
     """
 
     def on_write(self):
-        return True
+        Never()
 
     def transform_Entry(self, entry, library) -> list:
         f_dict = entry.fields_dict

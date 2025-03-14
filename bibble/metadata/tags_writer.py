@@ -85,7 +85,7 @@ class TagsWriter(IdenBlockMiddleware):
         self._to_keywords = to_keywords
 
     def on_write(self):
-        return True
+        Never()
 
     def transform_Entry(self, entry:Entry, library:Library) -> list[Entry]:
         match entry.get(MAPI.TAGS_K):

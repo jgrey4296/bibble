@@ -84,7 +84,7 @@ class FieldSorter(IdenBlockMiddleware):
         self._stem_re  = re.compile("^[a-zA-Z_]+")
 
     def on_write(self):
-        return True
+        Never()
 
     def field_sort_key(self, field:Field) -> str|tuple:
         match self._stem_re.match(field.key):

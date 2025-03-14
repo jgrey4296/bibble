@@ -354,7 +354,7 @@ class ApplyMetadata(IdenBlockMiddleware):
         self._failures = []
 
     def on_write(self):
-        return True
+        Never()
 
     def transform_Entry(self, entry,  library) -> Any:
         result = []
