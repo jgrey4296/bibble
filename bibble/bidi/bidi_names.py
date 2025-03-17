@@ -75,14 +75,14 @@ class BidiNames(IdenBidiMiddleware):
     TODO add NameSubstitutor in between writing
     """
 
-    def __init__(self, *args, lib_root:pl.Path, reader:Maybe[NameReader]=None, writer:Maybe[NameWriter]=None, **kwargs) -> None:
+    def __init__(self, *args, authors:bool=True, parts:bool=True, reader:Maybe[NameReader]=None, writer:Maybe[NameWriter]=None, **kwargs) -> None:
         kwargs.setdefault(API.ALLOW_INPLACE_MOD_K, False)
         super().__init__(*args, **kwargs)
-        self._reader = reader or NameReader(lib_root=lib_root)
-        self._writer = writer or NameWriter(lib_root=lib_root)
+        self._reader = reader or NameReader(parts=parts, authors=authors)
+        self._writer = writer or NameWriter(parts=parts, authors=authors)
 
     def read_transform_Entry(self, entry:Entry, library:Library) -> list[Entry]:
         return self._reader.transform_Entry(entry, library)
 
     def write_transform_Entry(self, entry:Entry, library:Library) -> list[Entry]:
-        return self._writer.transformEntry(entry, library)
+        return self._writer.transform_Entry(entry, library)

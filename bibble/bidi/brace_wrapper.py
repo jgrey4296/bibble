@@ -38,7 +38,7 @@ from bibtexparser import model
 import abc
 import collections.abc
 from typing import TYPE_CHECKING, cast, assert_type, assert_never
-from typing import Generic, NewType
+from typing import Generic, NewType, Never
 # Protocols:
 from typing import Protocol, runtime_checkable
 # Typing Decorators:
@@ -48,7 +48,7 @@ if TYPE_CHECKING:
     from jgdv import Maybe
     from typing import Final
     from typing import ClassVar, Any, LiteralString
-    from typing import Never, Self, Literal
+    from typing import Self, Literal
     from typing import TypeGuard
     from collections.abc import Iterable, Iterator, Callable, Generator
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
@@ -125,6 +125,8 @@ class BraceWrapper(IdenBidiMiddleware):
             field.value = self._unwrap(field.value)
         else:
             return [entry]
+
+        Never()
 
     def read_transform_String(self, string: String, library: Library) -> list[String]:
         string.value = self._unwrap(string.value)

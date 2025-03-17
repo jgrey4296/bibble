@@ -84,4 +84,4 @@ class BidiPaths(IdenBidiMiddleware):
         return self._reader.transform_Entry(entry, library)
 
     def write_transform_Entry(self, entry:Entry, library:Library) -> list[Entry]:
-        return self._writer.transformEntry(entry, library)
+        return self._writer.transform_Entry(entry, library)

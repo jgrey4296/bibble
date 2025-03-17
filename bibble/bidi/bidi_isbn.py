@@ -73,7 +73,7 @@ class BidiIsbn(IdenBidiMiddleware):
     to make a bidirectional isbn middleware
     """
 
-    def __init__(self, *args, lib_root:pl.Path, reader:Maybe[IsbnValidator]=None, writer:Maybe[IsbnWriter]=None, **kwargs) -> None:
+    def __init__(self, *args, reader:Maybe[IsbnValidator]=None, writer:Maybe[IsbnWriter]=None, **kwargs) -> None:
         kwargs.setdefault(API.ALLOW_INPLACE_MOD_K, False)
         super().__init__(*args, **kwargs)
         self._reader = reader or IsbnValidator()
@@ -83,4 +83,4 @@ class BidiIsbn(IdenBidiMiddleware):
         return self._reader.transform_Entry(entry, library)
 
     def write_transform_Entry(self, entry:Entry, library:Library) -> list[Entry]:
-        return self._writer.transformEntry(entry, library)
+        return self._writer.transform_Entry(entry, library)
