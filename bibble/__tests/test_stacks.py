@@ -208,3 +208,16 @@ class TestFullStack:
                 assert(lib2 is lib)
             case x:
                  assert(False), x
+
+
+    def test_read_failure(self, caplog):
+        """ reads a file with two entries with the same key """
+        stack        = build_new_stack(pl.Path.cwd())
+        reader       = BM.io.Reader(stack)
+        match reader.read(data_path / "1320_duplicates.bib"):
+            case Library():
+                assert("Handling 1 failed blocks" in caplog.text)
+                assert("Adjusted 1 duplicate keys" in caplog.text)
+                assert(True)
+            case x:
+                assert(False), x
