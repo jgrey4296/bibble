@@ -33,6 +33,7 @@ from bibble import _interface as API
 from bibble.model import MetaBlock
 from bibble.util.mixins import MiddlewareValidator_m
 from bibble.util import PairStack
+from ._util import Runner_m
 
 # ##-- types
 # isort: off
@@ -54,6 +55,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Callable, Generator
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
 
+    type Logger = logmod.Logger
     type Middleware = API.Middleware_p | API.BidirectionalMiddleware_p
 ##--|
 
@@ -65,7 +67,7 @@ logging = logmod.getLogger(__name__)
 ##-- end logging
 
 @Proto(API.Reader_p)
-@Mixin(MiddlewareValidator_m)
+@Mixin(Runner_m, MiddlewareValidator_m)
 class BibbleReader:
     """ A Refactored bibtexparser reader
 
@@ -73,7 +75,7 @@ class BibbleReader:
     _middlewares : list[Middleware]
     _lib_class   : type[Library]
 
-    def __init__(self, stack:PairStack|list[Middleware], *, lib_base:Maybe[type]=None):
+    def __init__(self, stack:PairStack|list[Middleware], *, lib_base:Maybe[type]=None, logger:Maybe[Logger]=None):
         match stack:
             case PairStack():
                 self._middlewares = stack.read_stack()
@@ -83,8 +85,9 @@ class BibbleReader:
                 raise TypeError(type(x))
 
         self._lib_class : type = lib_base or Library
+        self._logger           = logger or logging
 
-        self.exclude_middlewares(API.ReadTime_p)
+        self.exclude_middlewares(API.WriteTime_p)
         if not issubclass(self._lib_class, Library):
             raise TypeError("Bad library base pased to reader", lib_base)
 
@@ -118,6 +121,10 @@ class BibbleReader:
         """ read source and make a new library.
         if given 'into' lib, add the newly read entries into that libray as well
         """
+        source_text : str
+        basic       : Library
+        transformed : Library
+
         match source:
             case str():
                 source_text = source
@@ -130,22 +137,33 @@ class BibbleReader:
             case x:
                 raise TypeError(type(x))
 
-        with TimeBlock_ctx(enter_msg="> Bibtex Reading: Start", exit_msg="< Bibtex Reading:"):
-            basic       : Library   = self._read_into(self._lib_class(), source_text)
+        with TimeBlock_ctx(enter_msg="--> Bibtex Reading: Start",
+                           exit_msg="<-- Bibtex Reading:",
+                           level=logmod.INFO):
+            basic       = self._read_into(self._lib_class(), source_text)
 
-        with TimeBlock_ctx(enter_msg="> Read Transforms: Start", exit_msg="< Read Transforms:"):
-            transformed : Library   = self._run_middlewares(basic, append=append)
+        with TimeBlock_ctx(enter_msg="--> Read Transforms: Start",
+                           exit_msg="<-- Read Transforms:",
+                           level=logmod.INFO):
+            transformed = self._run_readwares(basic, append=append)
 
         entry_keys : set = {x.key for x in transformed.entries}
         match into:
             case Library():
-                final_lib = into.add(transformed.blocks)
+                 into.add(transformed.blocks)
+                 final_lib = into
             case None:
                 final_lib = transformed
             case x:
                 raise TypeError(type(x))
 
-        # Map source -> keys
+        return self._map_keys(final_lib, source, entry_keys)
+
+    def _map_keys(self, final_lib:Library, source:str|pl.Path, entry_keys:set[str]) -> Library:
+        """ Map source -> keys
+
+        """
+        logging.debug("Mapping %s new keys to source %s", len(entry_keys), source)
         match MetaBlock.find_in(final_lib), source:
             case None, str():
                 final_lib.add(MetaBlock(sources={"raw_text"}, raw_text=entry_keys))
@@ -158,9 +176,12 @@ class BibbleReader:
             case MetaBlock() as b, pl.Path() if 'sources' in b.data:
                 b.data['sources'].add(source)
                 b.data[str(source)] = entry_keys
-            case MetaBlock(), str():
+            case MetaBlock() as b, str():
                 b.data['sources']  = {"raw_text"}
                 b.data["raw_text"] = entry_keys
+            case MetaBlock() as b, pl.Path():
+                b.data['sources'] = {source}
+                b.data[source] = entry_keys
             case x:
                 raise TypeError(type(x))
 
@@ -172,27 +193,3 @@ class BibbleReader:
         library  = splitter.split(library=lib)
         return library
 
-    def _run_middlewares(self, library:Library, *, append:Maybe[list[Middleware]]=None) -> Library:
-        append = append or []
-        for middleware in itz.chain(self._middlewares, append):
-            match middleware:
-                case API.Middleware_p():
-                    library = middleware.transform(library=library)
-                case API.BidirectionalMiddleware_p():
-                    library = middleware.read_transform(library=library)
-                case x:
-                    raise TypeError(type(x))
-
-        else:
-            # Now record the meta key chain in the meta block
-            match MetaBlock.find_in(library):
-                case None:
-                    library.add(MetaBlock(read_stack=[x.metadata_key() for x in itz.chain(self._middlewares, append)]))
-                case MetaBlock() as mb if "read_stack" in mb.data:
-                    mb.data['read_stack'] += [x.metadata_key() for x in itz.chain(self._middlewares, append)]
-                case MetaBlock() as mb:
-                    mb.data['read_stack'] = [x.metadata_key() for x in itz.chain(self._middlewares, append)]
-                case x:
-                    raise TypeError(type(x))
-
-            return library

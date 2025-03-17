@@ -39,6 +39,7 @@ from bibble.util.mixins import MiddlewareValidator_m
 from bibble.model import MetaBlock
 from bibble.util import PairStack
 
+from ._util import Runner_m
 # ##-- end 1st party imports
 
 # ##-- types
@@ -147,7 +148,7 @@ class _Visitors_m:
     ##--|
 
 @Proto(jgdv.protos.Visitor_p, API.Writer_p)
-@Mixin(_VisitEntry_m, _Visitors_m, MiddlewareValidator_m)
+@Mixin(_VisitEntry_m, _Visitors_m, Runner_m, MiddlewareValidator_m)
 class BibbleWriter:
     """ A Refactored bibtexparser writer
     Uses visitor pattern
@@ -159,9 +160,10 @@ class BibbleWriter:
     _middlewares           : list[Middleware]
     format                 : BibtexFormat
 
-    def __init__(self, stack:PairStack|list[Middleware], *, format:Maybe[BibtexFormat]=None):
-        self._value_sep = API_W.VAL_SEP
+    def __init__(self, stack:PairStack|list[Middleware], *, format:Maybe[BibtexFormat]=None, logger:Maybe[Logger]=None):
+        self._value_sep    = API_W.VAL_SEP
         self._value_column = None
+        self._logger       = logger or logging
         match stack:
             case PairStack():
                 self._middlewares = stack.write_stack()
@@ -178,7 +180,7 @@ class BibbleWriter:
             case x:
                 raise TypeError(type(x))
 
-        self.exclude_middlewares(API.WriteTime_p)
+        self.exclude_middlewares(API.ReadTime_p)
 
     def write(self, library, *, file:None|pl.Path=None, append:Maybe[list[Middleware]]=None) -> str:
         """ Write the library to a string, and possbly a file """
@@ -186,9 +188,10 @@ class BibbleWriter:
         self._calculate_auto_value_align(library)
 
         with TimeBlock_ctx(logger=logging,
-                     enter_msg="> Write Transforms: Start",
-                     exit_msg="< Write Transforms:") as ctx:
-            transformed = self._run_middlewares(library, append=append)
+                           enter_msg="--> Write Transforms: Start",
+                           exit_msg="<-- Write Transforms:",
+                           level=logmod.INFO) as ctx:
+            transformed = self._run_writewares(library, append=append)
 
         string_pieces : list[str] = []
         string_pieces += self.make_header(transformed, file)
@@ -247,20 +250,3 @@ class BibbleWriter:
             case x:
                 return f"{self.format.indent}{key}{' '*x}{self._value_sep}"
 
-    def _run_middlewares(self, library:Library, *, append:Maybe[list[Middleware]]=None) -> Library:
-        """ Run transforms on the library before writing,
-        can handle bidirectional middlewares
-        """
-        append = append or []
-        # TODO time this
-        for middleware in self._middlewares:
-            match middleware:
-                case API.Middleware_p():
-                    library = middleware.transform(library=library)
-                case API.BidirectionalMiddleware_p():
-                    library = middleware.write_transform(library=library)
-                case x:
-                    raise TypeError(type(x))
-
-        else:
-            return library
