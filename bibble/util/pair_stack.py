@@ -134,3 +134,24 @@ class PairStack:
     def write_stack(self) -> list[Middleware]:
         """ Return the write stack """
         return self._write_time[::-1]
+
+    def has_read_transform(self, mid:type[Middleware]|Middleware) -> bool:
+        match mid:
+            case type():
+                return any(isinstance(x, mid) for x in self._read_time)
+            case API.Middleware_p():
+                return mid in self._read_time
+            case _:
+                return False
+
+    def has_write_transform(self, mid:type[Middleware]|Middleware) -> bool:
+        match mid:
+            case type():
+                return any(isinstance(x, mid) for x in self._write_time)
+            case API.Middleware_p():
+                return mid in self._write_time
+            case _:
+                return False
+
+    def __contains__(self, other:type[Middleware]|Middleware) -> bool:
+        return self.has_read_transform(other) or self.has_write_transform(other)

@@ -115,3 +115,6 @@ class NameParts_d:
         parts['von_last'] = " ".join(name for name in [parts['von'], parts['last']] if name)
         ordered = [parts[x] for x in format]
         return JOIN_STR.join(escape_last_slash(name) for name in ordered if name)
+
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__} : {self.merge()}>"
