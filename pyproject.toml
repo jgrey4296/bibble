@@ -118,10 +118,13 @@ ignore_missing_imports = true
 
 ##-- pytest
 [tool.pytest.ini_options]
-log_cli       = false
-log_level     = "DEBUG"
-log_cli_level = "DEBUG"
+addopts         = ["--ignore-glob=related_/*"]
+cache_dir       = ".temp/pytest_cache"
+log_file        = ".temp/logs/pytest.log"
 
+log_cli         = false
+log_level       = "DEBUG"
+log_cli_level   = "DEBUG"
 ##-- end pytest
 
 ##-- bumpver
