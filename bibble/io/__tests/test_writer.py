@@ -137,7 +137,7 @@ class TestBibbleWriter:
                 # All lines with values (so not top and last)
                 # must be the start of a value at 'column'.
                 # ie: '{'
-                assert(all([x[column] == "{" for x in x.splitlines()[1:-1]]))
+                assert(all([x[column] == "{" for x in x.strip().splitlines()[1:-1]]))
                 assert(True)
             case x:
                  assert(False), x
