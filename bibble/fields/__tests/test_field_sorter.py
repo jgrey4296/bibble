@@ -22,7 +22,7 @@ class TestFieldSorter:
 
     @pytest.fixture(scope="function")
     def sorter(self):
-        return FieldSorter(["title", "author", "editor"], ["doi", "url", "file"])
+        return FieldSorter(first=["title", "author", "editor"], last=["doi", "url", "file"])
 
     @pytest.fixture(scope="function")
     def entry(self):

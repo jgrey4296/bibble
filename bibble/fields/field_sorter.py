@@ -77,7 +77,7 @@ class FieldSorter(IdenBlockMiddleware):
     _first_defaults : ClassVar[list[str]] = []
     _last_defaults  : ClassVar[list[str]] = []
 
-    def __init__(self, first:list[str], last:[str], **kwargs):
+    def __init__(self, *, first:Maybe[list[str]]=None, last:Maybe[list[str]]=None, **kwargs):
         super().__init__(**kwargs)
         self._firsts   = first or self._first_defaults
         self._lasts    = last or self._last_defaults
