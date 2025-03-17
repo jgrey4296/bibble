@@ -15,7 +15,7 @@ import warnings
 
 from bibtexparser import model, Library
 import bibble._interface as API
-from ..entry_sorter import EntrySorterMiddleware
+from ..entry_sorter import EntrySorter
 
 # ##-- 3rd party imports
 import pytest
@@ -62,7 +62,7 @@ class TestEntrySorter:
         assert(True is not False) # noqa: PLR0133
 
     def test_ctor(self):
-        match EntrySorterMiddleware(key=lambda x: x.fields_dict['year'].value):
+        match EntrySorter(key=lambda x: x.fields_dict['year'].value):
             case API.Middleware_p():
                 assert(True)
             case x:

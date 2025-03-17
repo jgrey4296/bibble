@@ -69,16 +69,22 @@ logging = logmod.getLogger(__name__)
 # Body:
 
 @Proto(API.Middleware_p)
-class EntrySorterMiddleware(IdenBlockMiddleware):
+class EntrySorter(IdenBlockMiddleware):
     """ Reorder the entries in a library according to a sort key
+    Key defaults to sort by the entry key
 
     eg: sort by year, or type, or author
     ie: EntrySorterMiddleware(key=lambda x: x.fields_dict['year'].value)
     """
 
-    def __init__(self, *args, key:Callable, **kwargs) -> None:
+    def __init__(self, *args, key:Maybe[Callable]=None, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self._key_fn = key
+        match key:
+            case x if callable(x):
+                self._key_fn = key
+            case _:
+                self._key_fn = lambda x: x.key
+
 
     def transform(self, library:Library) -> Library:
         l2 = super().transform(library)
