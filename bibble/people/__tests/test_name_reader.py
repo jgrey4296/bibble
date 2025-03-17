@@ -68,7 +68,6 @@ class TestSplitAuthors:
             case x:
                  assert(False), x
 
-
     def test_no_split(self):
         obj = _SplitAuthors_m()
         match obj._split_authors("{bob and jim}"):
@@ -77,7 +76,6 @@ class TestSplitAuthors:
             case x:
                  assert(False), x
 
-
     def test_split_some(self):
         obj = _SplitAuthors_m()
         match obj._split_authors("andy and {bob and jim} and jill"):
@@ -85,7 +83,6 @@ class TestSplitAuthors:
                 assert(True)
             case x:
                  assert(False), x
-
 
     def test_split_nothing(self):
         obj = _SplitAuthors_m()
@@ -108,7 +105,6 @@ class TestNameToParts:
             case x:
                  assert(False), x
 
-
     def test_first_last(self):
         obj = _NameToParts_m()
         match obj._name_to_parts("Bob Builder"):
@@ -118,7 +114,6 @@ class TestNameToParts:
             case x:
                  assert(False), x
 
-
     def test_first_initials_last(self):
         obj = _NameToParts_m()
         match obj._name_to_parts("Bob A. B. C. Builder"):
@@ -127,7 +122,6 @@ class TestNameToParts:
                 assert(np.last == ["Builder"])
             case x:
                  assert(False), x
-
 
     def test_first_von_last(self):
         obj = _NameToParts_m()
@@ -139,7 +133,6 @@ class TestNameToParts:
             case x:
                  assert(False), x
 
-
     def test_first_de_la_last(self):
         obj = _NameToParts_m()
         match obj._name_to_parts("Bob de la Builder"):
@@ -150,7 +143,6 @@ class TestNameToParts:
             case x:
                  assert(False), x
 
-
     def test_last_first(self):
         obj = _NameToParts_m()
         match obj._name_to_parts("Builder, Bob"):
@@ -159,7 +151,6 @@ class TestNameToParts:
                 assert(np.last == ["Builder"])
             case x:
                  assert(False), x
-
 
     def test_von_last_first(self):
         obj = _NameToParts_m()
@@ -170,7 +161,6 @@ class TestNameToParts:
                 assert(np.von == ["von"])
             case x:
                  assert(False), x
-
 
     def test_von_last_jr_first(self):
         obj = _NameToParts_m()
@@ -183,7 +173,6 @@ class TestNameToParts:
             case x:
                  assert(False), x
 
-
     def test_last_first_initials(self):
         obj = _NameToParts_m()
         match obj._name_to_parts("Builder, Bob A. B. C."):
@@ -193,7 +182,6 @@ class TestNameToParts:
             case x:
                  assert(False), x
 
-
     def test_wrapped(self):
         obj = _NameToParts_m()
         match obj._name_to_parts("{The Order}"):
@@ -201,7 +189,6 @@ class TestNameToParts:
                 assert(np.last == ["{The Order}"])
             case x:
                  assert(False), x
-
 
 class TestNameReader:
 
@@ -219,7 +206,7 @@ class TestNameReader:
         authors = model.Field("author", "Bill and Bob")
         entry   = model.Entry("test", "test:blah", [authors])
         lib     = Library([entry])
-        mid     = NameReader(split_authors=True, name_parts=False)
+        mid     = NameReader(authors=True, parts=False)
         match mid.transform(lib):
             case Library() as l2:
                 assert(l2 is lib)
@@ -228,12 +215,11 @@ class TestNameReader:
             case x:
                  assert(False), x
 
-
     def test_name_parts(self):
         authors = model.Field("author", "Bill and Bob")
         entry   = model.Entry("test", "test:blah", [authors])
         lib     = Library([entry])
-        mid     = NameReader(split_authors=True, name_parts=True)
+        mid     = NameReader(authors=True, parts=True)
         match mid.transform(lib):
             case Library() as l2:
                 assert(l2 is lib)
@@ -248,7 +234,6 @@ class TestNameReader:
                 assert(b.last == ["Bob"])
             case x:
                  assert(False), x
-            
 
     @pytest.mark.skip
     def test_todo(self):

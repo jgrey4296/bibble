@@ -494,10 +494,10 @@ class NameReader(IdenBlockMiddleware):
     """
     _whitelist = ("author", "editor", "translator")
 
-    def __init__(self, *, split_authors:bool=True, name_parts:bool=True, **kwargs):
+    def __init__(self, *, parts:bool=True, authors:bool=True,  **kwargs):
         super().__init__(**kwargs)
-        self._do_split_authors = split_authors
-        self._do_name_parts = name_parts
+        self._do_split_authors = authors
+        self._do_name_parts = parts
         self.set_field_matchers(white=self._whitelist, black=[])
         if self._do_name_parts and not self._do_split_authors:
             raise ValueError("Can't generate name parts if you don't split authors")

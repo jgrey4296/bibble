@@ -92,11 +92,11 @@ class TagsWriter(IdenBlockMiddleware):
             case None:
                 self._logger.warning("Entry has No Tags on write: %s", entry.key)
                 entry.set_field(model.Field(MAPI.TAGS_K, ""))
-            case model.Field(value=val) if not bool(val):
+            case model.Field(value=val) if not bool(val): # type: ignore
                 self._logger.warning("Entry has No Tags on write: %s", entry.key)
                 entry.set_field(model.Field(MAPI.TAGS_K, ""))
             case model.Field(value=set() as vals):
-                entry.set_field(model.Field(MAPI.TAGS_K, ",".join(sorted(vals))))
+                entry.set_field(model.Field(MAPI.TAGS_K, ",".join(sorted(vals)))) # type: ignore
 
         if self._to_keywords:
             entry.set_field(model.Field(MAPI.KEYWORDS_K, entry.get(MAPI.TAGS_K).value))
