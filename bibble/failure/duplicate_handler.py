@@ -85,16 +85,21 @@ class DuplicateKeyHandler(IdenLibraryMiddleware):
     """ take duplicate entries and edit their key to be unique """
 
     def transform(self, library:Library):
+        if not bool(library.failed_blocks):
+            return library
+
         key_count, field_count = 0, 0
+        self.logger().info("Handling %s failed blocks", len(library.failed_blocks))
         for failed in library.failed_blocks:
             match failed:
                 case model.DuplicateBlockKeyBlock():
                     self._dedup_key(failed, library)
-                    key_count        += 0
+                    key_count   += 1
                 case model.DuplicateFieldKeyBlock():
                     self._dedup_fields(failed, library)
                     field_count += 1
                 case _:
+                    self.logger().info("Skipping block: %s", failed)
                     pass
         else:
             self.logger().info("Adjusted %s duplicate keys ", key_count)

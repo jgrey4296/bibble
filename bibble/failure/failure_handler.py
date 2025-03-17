@@ -64,7 +64,6 @@ if TYPE_CHECKING:
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-@Proto(API.ReadTime_p)
 class FailureHandler(IdenLibraryMiddleware):
     """ Middleware to Filter failed blocks of a library,
     either to a logger output, or to a file
@@ -84,9 +83,6 @@ class FailureHandler(IdenLibraryMiddleware):
             case pl.Path() as x:
                 self.file_target = x
 
-    def on_read(self):
-        Never()
-
     def transform(self, library):
         total    = len(library.failed_blocks)
         reported = []
@@ -96,9 +92,9 @@ class FailureHandler(IdenLibraryMiddleware):
                 case bmodel.FailedBlock():
                     report = block.visit(i=i, total=total, source_file=source_file)[0]
                 case model.ParsingFailedBlock() if source_file:
-                    report = f"({i}/{total}) Bad Block: : {block.start_line} : {source_file}"
+                    report = f"({i}/{total}) Bad Block: : {block.start_line} : {source_file} : {block.error}"
                 case model.ParsingFailedBlock():
-                    report = f"({i}/{total}) Bad Block: : {block.start_line}"
+                    report = f"({i}/{total}) Bad Block: : {block.start_line} : {block.error}"
                 case x:
                     raise TypeError(type(x))
             ##--|
