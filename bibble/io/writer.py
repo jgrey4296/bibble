@@ -188,8 +188,8 @@ class BibbleWriter:
         self._calculate_auto_value_align(library)
 
         with TimeBlock_ctx(logger=logging,
-                           enter_msg="--> Write Transforms: Start",
-                           exit_msg="<-- Write Transforms:",
+                           enter="--> Write Transforms: Start",
+                           exit="<-- Write Transforms:",
                            level=logmod.INFO) as ctx:
             transformed = self._run_writewares(library, append=append)
 

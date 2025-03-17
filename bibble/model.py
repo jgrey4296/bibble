@@ -85,7 +85,6 @@ class MetaBlock(model.Block):
         return []
 
 
-@Proto(API.CustomWriteBlock_p)
 class FailedBlock(model.MiddlewareErrorBlock):
     """ Records errors encountered by a middleware """
 
@@ -109,7 +108,7 @@ class FailedBlock(model.MiddlewareErrorBlock):
         key = self.ignore_error_block.key
         return f"<{self.__class__.__name__}: {key}>"
 
-    def visit(self, *, i:int, total:int, source_file:Maybe[str|pl.Path]=None, **kwargs) -> list[str]:
+    def report(self, *, i:int, total:int, source_file:Maybe[str|pl.Path]=None, **kwargs) -> list[str]:
         match source_file:
             case None:
                 report = f"({i}/{total}) [{self.source_middleware}] Bad <{self._block_type}>: {self.start_line}"
@@ -119,3 +118,4 @@ class FailedBlock(model.MiddlewareErrorBlock):
                 raise TypeError(type(x))
 
         return [report]
+

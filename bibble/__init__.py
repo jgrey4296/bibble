@@ -4,6 +4,7 @@ __version__ = "0.1.0"
 
 from . import model
 from bibble.library import BibbleLib
+from bibble.util.pair_stack import PairStack
 from bibble import metadata as metadata
 from bibble import bidi
 from bibble import files

@@ -137,13 +137,13 @@ class BibbleReader:
             case x:
                 raise TypeError(type(x))
 
-        with TimeBlock_ctx(enter_msg="--> Bibtex Reading: Start",
-                           exit_msg="<-- Bibtex Reading:",
+        with TimeBlock_ctx(enter="--> Bibtex Reading: Start",
+                           exit="<-- Bibtex Reading:",
                            level=logmod.INFO):
             basic       = self._read_into(self._lib_class(), source_text)
 
-        with TimeBlock_ctx(enter_msg="--> Read Transforms: Start",
-                           exit_msg="<-- Read Transforms:",
+        with TimeBlock_ctx(enter="--> Read Transforms: Start",
+                           exit="<-- Read Transforms:",
                            level=logmod.INFO):
             transformed = self._run_readwares(basic, append=append)
 
