@@ -119,8 +119,10 @@ class LatexWriter(IdenBlockMiddleware):
         match self.match_on_fields(entry, library):
             case model.Entry() as x:
                 return [x]
-            case list() as errs:
-                return [entry, self.make_error_block(entry, errs)]
+            case Exception() as err:
+                return [entry, self.make_error_block(entry, err)]
+            case x:
+                raise TypeError(type(x))
 
     def field_h(self, field:model.Field, entry) -> Result[list[Field], Exception]:
         match self.transform_strlike(field.value):
