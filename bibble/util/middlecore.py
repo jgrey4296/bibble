@@ -172,12 +172,11 @@ class IdenBlockMiddleware(_BaseMiddleware):
                     continue
 
             match transform(block, library):
-                case [] | None:
-                    # Transform gave nothing, so keep the original block.
-                    # (it might have been modified)
+                case None: # remove block
+                    continue
+                case []: # Keep original (it might have been modified)
                     blocks.append(block)
-                case [*xs]:
-                    # new blocks
+                case [*xs]: # new blocks
                     blocks += xs
                 case x:
                     raise TypeError(type(x), i, block)
