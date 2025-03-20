@@ -1,5 +1,5 @@
 # -*- mode:conf-toml; -*-
-[starutp]
+[startup]
 doot-version = "0.13"
 loaders                  = { commands="default", task="default", parser="default"}
 location_check           = { make_missing=true }

@@ -1,3 +1,5 @@
+## pyproject.toml -*- mode: Toml -*-
+
 [project]
 name            = "bibble"
 version         = "0.1.0"
@@ -82,26 +84,6 @@ include    = ["bibble"]
 ##-- end build-system
 
 # Tools #######################################################################
-
-##-- pyright
-[tool.pyright]
-# strict = bibble.*
-verboseOutput               = true
-typeCheckingMode            = "strict"
-pythonVersion               = "3.12"
-
-reportUnusedImport          = false
-reportAssertAlwaysTrue      = "information"
-reportMissingParameterType  = "warning"
-reportMissingTypeArgument   = "warning"
-reportMissingTypeStubs      = "warning"
-reportUnknownMemberType     = "warning"
-reportUnknownParameterType  = "information"
-reportUnknownVariableType   = "warning"
-reportUnnecessaryCast       = "information"
-reportUnnecessaryIsInstance = "warning"
-
-##-- end pyright
 
 ##-- mypy
 # https://mypy.readthedocs.io/en/stable/config_file.html#config-file

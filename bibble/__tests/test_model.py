@@ -91,7 +91,7 @@ class TestFailureBlock:
 
     def test_visit(self):
         obj = bmodel.FailedBlock(block=model.Entry("test", "blah", []), error=ValueError("test"), source="testing")
-        match obj.visit(i=0, total=0):
+        match obj.report(i=0, total=0):
             case [str()]:
                 assert(True)
             case x:
