@@ -16,26 +16,26 @@ classifiers     = [
 ]
 
 dependencies   = [
+    "bibtexparser>=2.0.0b8",
+    "internetarchive>=5.3.1",
+    "isbn-hyphenate>=1.0.4",
     "jgdv>=1.0",
-    "tqdm",
-    "pyisbn",
-    "selenium",
-    "jsonlines",
-    "isbn_hyphenate",
-    "waybackpy",
-    "bibtexparser>=1.0.0b4",
-    "internetarchive",
+    "jsonlines>=4.0.0",
+    "pyisbn>=1.3.1",
+    "selenium>=4.30.0",
+    "tqdm>=4.67.1",
+    "waybackpy>=3.0.6",
 ]
 
 [project.optional-dependencies]
-docs = [
-    "Sphinx >=7.4.0",
-    "sphinx-rtd-theme",
-    "myst_parser >= 4.0.0",
-
+dev = [
+    "myst-parser>=4.0.1",
+    "pytest>=8.3.5",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    "sphinx>=8.2.3",
+    "sphinx-rtd-theme>=3.0.2",
 ]
-# dev  = [ "pipreqs"]
-test = [ "pytest > 7.0.0" ]
 
 ##-- urls
 [project.urls]
@@ -159,5 +159,8 @@ import_footer_firstparty  = "##-- end 1st party imports"
 import_footer_localfolder = ""
 
 add_imports            = []
-
 ##-- end isort
+
+[tool.uv.sources]
+jgdv = { path = "../../../../../../../../home/john/github/python/jgdv", editable = true }
+
