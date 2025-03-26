@@ -183,7 +183,9 @@ class BibbleWriter:
         self.exclude_middlewares(API.ReadTime_p)
 
     def write(self, library, *, file:None|pl.Path=None, append:Maybe[list[Middleware]]=None) -> str:
-        """ Write the library to a string, and possbly a file """
+        """ Write the library to a string, and possbly a file
+        # TODO write failure reports to a separate file
+        """
 
         self._calculate_auto_value_align(library)
 
