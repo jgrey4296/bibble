@@ -120,7 +120,8 @@ class _BaseMiddleware:
 
         match self._extra:
             case {"tqdm":True}:
-                iterator = tqdm.tqdm(enumerate(library.blocks))
+                iterator = tqdm.tqdm(enumerate(library.blocks),
+                                     total=len(library.blocks))
             case _:
                 iterator = enumerate(library.blocks)
 

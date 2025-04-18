@@ -395,7 +395,7 @@ class ApplyMetadata(IdenBlockMiddleware):
         except (ValueError, ChildProcessError) as err:
             self._failures.append(ValueError("Epub meta update failed", epub, *err.args))
             self._logger.warning("Epub Update failed: %s : %s", epub, err)
-        finally:
+        else:
             if not epub.exists():
                 raise FileNotFoundError("File has gone missing", epub)
 
@@ -414,6 +414,9 @@ class ApplyMetadata(IdenBlockMiddleware):
             self._failures.append(ValueError("Pdf Meta update failed", pdf, *err.args))
             self._logger.warning("Pdf Update Failed: %s : %s", pdf, err)
             return []
+        else:
+            if not pdf.exists():
+                raise FileNotFoundError("File has gone missing", pdf)
 
 ##--|
 
