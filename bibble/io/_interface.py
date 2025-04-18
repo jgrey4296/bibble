@@ -36,7 +36,9 @@ if TYPE_CHECKING:
 
 # Vars:
 VAL_SEP      : Final[str] = " = "
-FAIL_COMMENT : Final[str] = "% WARNING Parsing failed for the following {n} lines."
+FAIL_COMMENT : Final[str] = "% WARNING Processing failed for the following {n} lines.\n% Error: {err}.\n% Raw Original:"
+FAIL_PARTIAL : Final[str] = "% Partially Processed Block:"
+FAIL_END     : Final[str] = "% End of Error Report"
 
 # Body:
 

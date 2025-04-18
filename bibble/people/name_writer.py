@@ -98,7 +98,7 @@ class NameWriter(IdenBlockMiddleware):
             case model.Entry() as x:
                 return [x]
             case Exception() as err:
-                return [entry, self.make_error_block(entry, err)]
+                return [self.make_error_block(entry, err)]
             case x:
                 raise TypeError(type(x))
 

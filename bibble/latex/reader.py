@@ -113,7 +113,7 @@ class LatexReader(IdenBlockMiddleware):
             case model.Entry() as x:
                 return [x]
             case ValueError() as err:
-                return [entry, self.make_error_block(entry, err)]
+                return [self.make_error_block(entry, err)]
 
     def field_h(self, field:Field, entry) -> Result[list[Field], Exception]:
         match self.transform_strlike(field.value):

@@ -380,7 +380,6 @@ class ApplyMetadata(IdenBlockMiddleware):
             case x:
                 self._failures.append(TypeError("Unknown File Type", entry.key, x))
                 self._logger.warning("Found a file that wasn't an epub or pdf: %s", x)
-                result.append(entry)
 
         for x in self._failures:
             result.append(self.make_error_block(entry, x))

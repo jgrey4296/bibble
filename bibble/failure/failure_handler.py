@@ -76,12 +76,13 @@ class FailureHandler(IdenLibraryMiddleware):
         file_target = kwargs.pop("file", None)
         super().__init__(**kwargs)
         match file_target:
-            case None:
-                self.file_target = None
             case str() as x:
                 self.file_target = pl.Path(x)
             case pl.Path() as x:
                 self.file_target = x
+            case _:
+                self.file_target = None
+
 
     def transform(self, library):
         total    = len(library.failed_blocks)
