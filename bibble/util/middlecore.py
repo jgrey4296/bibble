@@ -26,6 +26,7 @@ from uuid import UUID, uuid1
 from weakref import ref
 import atexit # for @atexit.register
 import faulthandler
+import sys
 # ##-- end stdlib imports
 
 import tqdm
@@ -120,9 +121,11 @@ class _BaseMiddleware:
                 raise TypeError(type(x))
 
         match self._extra:
-            case {"tqdm":True}:
+            case {"tqdm":True} if sys.stdout.isatty():
                 iterator = tqdm.tqdm(enumerate(library.blocks),
-                                     total=len(library.blocks))
+                                     desc=type(self).__name__,
+                                     total=len(library.blocks),
+                                     ncols=API.TQDM_WIDTH)
             case _:
                 iterator = enumerate(library.blocks)
 
@@ -189,6 +192,7 @@ class IdenBlockMiddleware(_BaseMiddleware):
                     blocks += xs
                 case x:
                     raise TypeError(type(x), i, block)
+
         else:
             # Remove the old blocks
             library.remove(library.blocks[:])

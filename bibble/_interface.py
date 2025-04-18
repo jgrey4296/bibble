@@ -81,6 +81,8 @@ ALLOW_PARALLEL_K    : Final[str] = "allow_parallel_execution"
 LOGGER_K            : Final[str] = "logger"
 KEEP_MATH_K         : Final[str] = "keep_math"
 ENCLOSE_URLS_K      : Final[str] = "enclose_urls"
+
+TQDM_WIDTH          : Final[int] = 150
 ##--|
 ## Enums / Flags
 
