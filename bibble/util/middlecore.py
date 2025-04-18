@@ -30,6 +30,7 @@ import faulthandler
 
 import tqdm
 import bibble._interface as API
+from bibble.model import MetaBlock
 import jgdv
 from jgdv import Proto
 from bibtexparser.library import Library
@@ -127,6 +128,13 @@ class _BaseMiddleware:
 
         return library, iterator
 
+    def handle_meta_entry(self, library:Library) -> None:
+        """ An optional entry hook for middlewares,
+        which is given the library's metablock before transform is called.
+
+        Use case: conditionally setting PathWriter suppress paths
+        """
+        pass
 class IdenLibraryMiddleware(_BaseMiddleware):
     """ Identity Library Middleware, does nothing """
 
@@ -192,10 +200,33 @@ class IdenBlockMiddleware(_BaseMiddleware):
 class IdenBidiMiddleware(_BaseMiddleware):
 
     _transform_cache : dict[str, list[Callable]]
+    _reader : Maybe[API.Middleware]
+    _writer : Maybe[API.Middleware]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._reader          = None
+        self._writer          = None
         self._transform_cache = dict()
+
+
+    def handle_meta_entry(self, library:Library) -> None:
+        match self._reader:
+            case None:
+                pass
+            case mw if not hasattr(mw, "handle_meta_entry"):
+                pass
+            case mw:
+                mw.handle_meta_entry(library)
+
+        match self._writer:
+            case None:
+                pass
+            case mw if not hasattr(mw, "handle_meta_entry"):
+                pass
+            case mw:
+                mw.handle_meta_entry(library)
+
 
     def get_transforms_for(self, block:Block, *, direction:Maybe[str]=None) -> list[Callable]:
         """ Get all transforms of the form {direction}_transform_{Type},
