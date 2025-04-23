@@ -1,14 +1,14 @@
 # -*- mode:conf-toml; -*-
 [startup]
-doot-version = "0.13"
-loaders                  = { commands="default", task="default", parser="default"}
-location_check           = { make_missing=true }
-sources = {tasks=[".tasks", "~/.config/.templates/doot/repo_chores"], code=[]}
-sleep   = { tasks=0.2, subtask=1, batch=1 }
+doot-version       = "1.0"
+loaders            = { commands="default", task="default", parser="default"}
+location_check     = { make_missing=true }
+sources            = {tasks=[".tasks", "~/.config/.templates/doot/repo_chores"], code=[]}
+sleep              = { tasks=0.2, subtask=1, batch=1 }
 
 [startup.plugins]
 # Allows for defining aliases
-command        = { tasks="doot.cmds.list_cmd:ListCmd", pl="doot.cmds.plugins_cmd:PluginsCmd" }
+command        = { tasks="doot.cmds.list_cmd:ListCmd" }
 
 [settings.commands]
 # Settings for commands, like telling the 'run' command what backends to use
