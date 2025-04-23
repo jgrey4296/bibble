@@ -82,6 +82,8 @@ class Runner_m:
         for middleware in itz.chain(self._middlewares, append):
             fail_count = len(library.failed_blocks)
             self._logger.debug("- Running Write Middleware: %s", middleware.metadata_key())
+            if hasattr(middleware, "handle_meta_entry"):
+                middleware.handle_meta_entry(library)
             match middleware:
                 case API.Middleware_p():
                     library = middleware.transform(library=library)
@@ -103,6 +105,8 @@ class Runner_m:
         fail_count = len(library.failed_blocks)
         for middleware in itz.chain(self._middlewares, append):
             self._logger.debug("- Running Read Middleware: %s", middleware.metadata_key())
+            if hasattr(middleware, "handle_meta_entry"):
+                middleware.handle_meta_entry(library)
             match middleware:
                 case API.Middleware_p():
                     library = middleware.transform(library=library)

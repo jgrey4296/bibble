@@ -95,9 +95,7 @@ class IsbnValidator(IdenBlockMiddleware):
                     self._logger.warning("ISBN validation fail: %s : %s", entry.key, val)
                     entry.set_field(model.Field(MAPI.INVALID_ISBN_K, val))
                     entry.set_field(model.Field(MAPI.ISBN_K, ""))
-                    return [entry,
-                            self.make_error_block(entry, err),
-                            ]
+                    return [self.make_error_block(entry, err)]
             case model.Field(value=str() as val):
                 del entry[MAPI.ISBN_K]
                 return [entry]

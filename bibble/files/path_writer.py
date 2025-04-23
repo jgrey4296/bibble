@@ -36,6 +36,7 @@ from bibtexparser.middlewares.middleware import (BlockMiddleware, LibraryMiddlew
 import bibble._interface as API
 from bibble.util.mixins import ErrorRaiser_m, FieldMatcher_m
 from bibble.util.middlecore import IdenBlockMiddleware
+from bibble.model import MetaBlock
 
 # ##-- end 1st party imports
 
@@ -75,14 +76,38 @@ logging = logmod.getLogger(__name__)
 class PathWriter(IdenBlockMiddleware):
     """
       Relativize library paths back to strings
+
+    Can suppress errors from certain path roots on relativize,
+    using MetaBlock data:
+    MetaBlock(PathWriter.SuppressKey=[pl.Path()...])
+
     """
 
-    _whitelist = ("file",)
+    _whitelist  = ("file",)
+    SuppressKey = "PathWriter.suppress"
+    _suppress_in : list[pl.Path]
 
     def __init__(self, *, lib_root:Maybe[pl.Path]=None, **kwargs):
         super().__init__(**kwargs)
         self.set_field_matchers(white=self._whitelist, black=[])
-        self._lib_root = lib_root
+        self._lib_root    = lib_root
+        self._suppress_in = []
+
+    def handle_meta_entry(self, library:Library):
+        match MetaBlock.find_in(library):
+            case None:
+                return
+            case block if PathWriter.SuppressKey not in block.data:
+                return
+            case block:
+                pass
+
+        match block.data[PathWriter.SuppressKey]:
+            case list() as xs:
+                self._suppress_in += xs
+                return
+            case x:
+                raise TypeError(f"{PathWriter.SuppressKey} is not a list, but a {type(x)}")
 
     def on_write(self):
         Never()
@@ -107,7 +132,20 @@ class PathWriter(IdenBlockMiddleware):
                     as_str = val.relative_to(self._lib_root)
                     field.value = as_str
                 except ValueError:
-                    field.value = str(val)
-                    return ValueError(f"Failed to Relativize path {entry.key}: {val}")
+                    if self._suppress_relative_fail(val):
+                        pass
+                    else:
+                        field.value = str(val)
+                        return ValueError(f"Failed to Relativize path {entry.key}: {val}")
 
         return [field]
+
+    def _suppress_relative_fail(self, val:pl.Path) -> bool:
+        for x in self._suppress_in:
+            try:
+                val.relative_to(x)
+                return True
+            except ValueError:
+                pass
+        else:
+            return False

@@ -142,9 +142,13 @@ class _Visitors_m:
         return ["@comment{", block.comment, "}\n"]
 
     def visit_failed_block(self, block:model.ParsingFailedBlock) -> list[str]:
-        lines = len(block.raw.splitlines())
-        parsing_failed_comment = self.format.parsing_failed_comment.format(n=lines)
-        return [parsing_failed_comment, "\n", block.raw, "\n"]
+        format_line            = self.format.parsing_failed_comment
+        lines                  = len(block.raw.splitlines())
+        err                    = f"<{block.error.__class__.__name__}> : {block.error}"
+        parsing_failed_comment = format_line.format(n=lines, err=err)
+        return [parsing_failed_comment, "\n",
+                block.raw, "\n",
+                API_W.FAIL_END, "\n"]
     ##--|
 
 @Proto(jgdv.protos.Visitor_p, API.Writer_p)

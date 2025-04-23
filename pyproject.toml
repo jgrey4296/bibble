@@ -1,15 +1,15 @@
 ## pyproject.toml -*- mode: Toml -*-
 
 [project]
-name            = "bibble"
+name            = "bibtex-bibble"
 version         = "0.1.0"
 description     = ""
 readme          = "README.md"
 requires-python = ">=3.12"
-license         = {file = "LICENSE"}
+license-files   = ["LICENSE"]
 keywords        = []
 authors         = [
-  {name  = "John Grey", email = "jgrey.n.plus.one@gmail.com"},
+  {name         = "John Grey", email = "jgrey.n.plus.one@gmail.com"},
 ]
 classifiers     = [
   "Programming Language :: Python"
@@ -53,7 +53,7 @@ changelog     = "https://github.com/bibble/blob/master/CHANGELOG.md"
 [project.gui-scripts]
 # spam-gui      = "spam:main_gui"
 
-[project.entry-points."nothing"]
+# [project.entry-points."nothing"]
 # tomatoes      = "spam:main_tomatoes"
 
 ##-- end scripts
@@ -61,8 +61,8 @@ changelog     = "https://github.com/bibble/blob/master/CHANGELOG.md"
 ##-- build-system
 [build-system]
 requires = [
-         "setuptools >= 63.1.0",
-         "wheel >= 0.37.1"
+    "setuptools >= 63.1.0",
+    "wheel >= 0.37.1"
 ]
 
 build-backend = "setuptools.build_meta"
@@ -80,6 +80,10 @@ include    = ["bibble"]
 "bibble.__data"    = ["*.so"]
 
 [tool.setuptools.exclude-package-data]
+
+[tool.distutils.egg_info]
+# from https://github.com/pypa/setuptools/discussions/3347#discussioncomment-6556887
+egg_base = ".temp/egg-info"
 
 ##-- end build-system
 
@@ -162,5 +166,5 @@ add_imports            = []
 ##-- end isort
 
 [tool.uv.sources]
-jgdv = { path = "../../../../../../../../home/john/github/python/jgdv", editable = true }
+jgdv = { path = "../../../python/jgdv", editable = true }
 

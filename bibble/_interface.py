@@ -81,6 +81,8 @@ ALLOW_PARALLEL_K    : Final[str] = "allow_parallel_execution"
 LOGGER_K            : Final[str] = "logger"
 KEEP_MATH_K         : Final[str] = "keep_math"
 ENCLOSE_URLS_K      : Final[str] = "enclose_urls"
+
+TQDM_WIDTH          : Final[int] = 150
 ##--|
 ## Enums / Flags
 
@@ -168,22 +170,8 @@ class BlockMiddleware_p(Protocol):
     def transform_implicit_comment(self, comment:model.ImplicitComment, library:Library) -> list[Block]:
         pass
 
+
 ##--| New Middleware protocols:
-
-@runtime_checkable
-class PairStack_p(Protocol):
-    """ Protocol for both storing both read and write middlewares
-
-    """
-
-    def add(self, *args:BidiMiddleware, read:Maybe[list|Middleware]=None, write:Maybe[list|Middleware]=None) -> Self:
-        pass
-
-    def read_stack(self) -> list[Middleware]:
-        pass
-
-    def write_stack(self) -> list[Middleware]:
-        pass
 
 @runtime_checkable
 class BidirectionalMiddleware_p(Protocol):
@@ -214,6 +202,21 @@ class AdaptiveMiddleware_p(Protocol):
         pass
 
 ##--| IO Protocols
+
+@runtime_checkable
+class PairStack_p(Protocol):
+    """ Protocol for both storing both read and write middlewares
+
+    """
+
+    def add(self, *args:BidiMiddleware, read:Maybe[list|Middleware]=None, write:Maybe[list|Middleware]=None) -> Self:
+        pass
+
+    def read_stack(self) -> list[Middleware]:
+        pass
+
+    def write_stack(self) -> list[Middleware]:
+        pass
 
 @runtime_checkable
 class Reader_p(Protocol):

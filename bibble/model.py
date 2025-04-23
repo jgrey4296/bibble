@@ -29,7 +29,6 @@ from jgdv import Maybe, Proto
 
 # ##-- 1st party imports
 import bibble._interface as API
-from bibble.util import middlecore
 # ##-- end 1st party imports
 
 # ##-- types
@@ -70,7 +69,7 @@ class MetaBlock(model.Block):
 
     @classmethod
     def find_in(cls, lib:Library) -> Maybe[Self]:
-        """ Find a block of this cls in a given """
+        """ Find a block of this cls in a given library """
         for block in lib.blocks:
             if isinstance(block, cls):
                 return block
@@ -92,12 +91,10 @@ class FailedBlock(model.MiddlewareErrorBlock):
         super().__init__(block, error)
         self._block_type = type(block).__name__
         match source:
+            case API.Middleware_p() as mw:
+                self.source_middleware = type(source).__name__
             case type():
                 self.source_middleware = source.__name__
-            case middlecore.IdenLibraryMiddleware():
-                self.source_middleware = type(source).__name__
-            case middlecore.IdenBlockMiddleware():
-                self.source_middleware = type(source).__name__
             case str():
                 self.source_middleware = source
             case x:
@@ -111,9 +108,9 @@ class FailedBlock(model.MiddlewareErrorBlock):
     def report(self, *, i:int, total:int, source_file:Maybe[str|pl.Path]=None, **kwargs) -> list[str]:
         match source_file:
             case None:
-                report = f"({i}/{total}) [{self.source_middleware}] Bad <{self._block_type}>: {self.start_line}"
+                report = f"({i}/{total}) [{self.source_middleware}] Bad <{self._block_type}>: {self.start_line} : {self.error}"
             case str() | pl.Path():
-                report = f"({i}/{total}) [{self.source_middleware}] Bad <{self._block_type}>: {source_file}:{self.start_line}"
+                report = f"({i}/{total}) [{self.source_middleware}] Bad <{self._block_type}>: {source_file}:{self.start_line} : {self.error}"
             case x:
                 raise TypeError(type(x))
 
