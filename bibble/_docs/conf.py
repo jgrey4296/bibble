@@ -35,7 +35,7 @@ exclude_patterns = [
 
 # -- Project information -----------------------------------------------------
 
-project   = 'bib-middleware'
+project   = 'bibble'
 copyright = '2024, John Grey'
 author    = 'John Grey'
 release   = '0.13.0'

@@ -132,6 +132,7 @@ tag_scope          = "default"
                    '^current_version\s+=\s+"{version}"'
 ]
 "bibble/__init__.py" = ['^__version__\s+=\s+"{version}"']
+"bibble/_docs/conf.py" = ['^release\s+=\s+"{version}"']
 
 ##-- end bumpver
 
