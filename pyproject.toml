@@ -2,7 +2,7 @@
 
 [project]
 name            = "bibtex-bibble"
-version         = "0.0.1"
+version         = "0.1.1"
 description     = ""
 readme          = "README.md"
 requires-python = ">=3.12"
@@ -118,7 +118,7 @@ log_cli_level   = "DEBUG"
 
 ##-- bumpver
 [tool.bumpver]
-current_version    = "0.1.0"
+current_version    = "0.1.1"
 version_pattern    = "MAJOR.MINOR.PATCH"
 commit_message     = "[bump]: version {old_version} -> {new_version}"
 tag_message        = "{new_version}"
