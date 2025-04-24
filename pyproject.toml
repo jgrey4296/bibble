@@ -167,5 +167,4 @@ add_imports            = []
 ##-- end isort
 
 [tool.uv.sources]
-jgdv = { path = "../../../python/jgdv", editable = true }
 
