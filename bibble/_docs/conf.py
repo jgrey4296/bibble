@@ -38,7 +38,7 @@ exclude_patterns = [
 project   = 'bibble'
 copyright = '2024, John Grey'
 author    = 'John Grey'
-release   = '0.13.0'
+release   = "0.1.0"
 
 root_doc = "index"
 
