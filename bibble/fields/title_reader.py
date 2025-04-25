@@ -112,7 +112,7 @@ class TitleSplitter(IdenBlockMiddleware):
     def transform_Entry(self, entry:Entry, library:Library):
         match entry.get(API_F.TITLE_K), entry.get(API_F.SUBTITLE_K):
             case None, _:
-                self._logging.warning("Entry has no title: %s", entry.key)
+                self._logger.warning("Entry has no title: %s", entry.key)
             case model.Field(value=title), model.Field(value=subtitle):
                 entry.set_field(model.Field(API_F.TITLE_K, title.strip()))
                 entry.set_field(model.Field(API_F.SUBTITLE_K, subtitle.strip()))
