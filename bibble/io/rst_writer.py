@@ -81,8 +81,8 @@ class RstWriter(BibbleWriter):
 
     def _must_add(self, block:Block, field:str) -> list[str]:
         match block.get(field, None):
-            case model.Field(value=val):
-                return [f"{self._indent}:{block.key}: {val}\n"] # type: ignore
+            case model.Field(key=key, value=val):
+                return [f"{self._indent}:{key}: {val}\n"] # type: ignore
             case _:
                 raise KeyError('Entry missing required field', block.key, field)
 
@@ -99,7 +99,7 @@ class RstWriter(BibbleWriter):
             return result
 
     def visit_entry(self, block:Block) -> list[str]:
-        result = [self._entry.format(block.key)]
+        result = [self._entry.format(block.key), "\n"]
         match block.entry_type:
             case "case" | "legal" | "judicial" | "law":
                 return []
