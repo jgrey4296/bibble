@@ -105,71 +105,51 @@ class Capability_f(enum.Flag):
 class Library_p(Protocol):
     """ The core methods of a library """
 
-    def add(self, blocks:list[Block], fail_on_duplicate_key: bool = False) -> None:
-        pass
+    def add(self, blocks:list[Block], fail_on_duplicate_key:bool = False) -> None: ...
 
-    def remove(self, blocks:list[Block]) -> None:
-        pass
+    def remove(self, blocks:list[Block]) -> None: ...
 
-    def replace(self, old_block:Block, new_block:Block, fail_on_duplicate_key:bool=True) -> None:
-        pass
+    def replace(self, old_block:Block, new_block:Block, fail_on_duplicate_key:bool=True) -> None: ...
 
-    def blocks(self) -> list[Block]:
-        pass
+    def blocks(self) -> list[Block]: ...
 
-    def failed_blocks(self) -> list[FailedBlock]:
-        pass
+    def failed_blocks(self) -> list[FailedBlock]: ...
 
-    def strings(self) -> list[StringBlock]:
-        pass
+    def strings(self) -> list[StringBlock]: ...
 
-    def strings_dict(self) -> dict[str, StringBlock]:
-        pass
+    def strings_dict(self) -> dict[str, StringBlock]: ...
 
-    def entries(self) -> list[Entry]:
-        pass
+    def entries(self) -> list[Entry]: ...
 
-    def entries_dict(self) -> dict[str, Entry]:
-        pass
+    def entries_dict(self) -> dict[str, Entry]: ...
 
-    def preambles(self) -> list[Preamble]:
-        pass
+    def preambles(self) -> list[Preamble]: ...
 
-    def comments(self) -> list[CommentBlock]:
-        pass
+    def comments(self) -> list[CommentBlock]: ...
 
 @runtime_checkable
 class Middleware_p(Protocol):
     """ A Middleware is something with a 'transform' method """
 
-    def transform(self, library:Library) -> Library:
-        pass
+    def transform(self, library:Library_p) -> Library_p: ...
 
 @runtime_checkable
 class BlockMiddleware_p(Protocol):
     """ A (non-adaptive) block middleware has 'transform_x' methods """
 
-    def transform(self, library:Library) -> Library:
-        pass
+    def transform(self, library:Library_p) -> Library_p: ...
 
-    def transform_block(self, block:Block, library:Library) -> list[Block]:
-        pass
+    def transform_block(self, block:Block, library:Library_p) -> list[Block]: ...
 
-    def transform_entry(self, entry:Entry, library:Library) -> list[Block]:
-        pass
+    def transform_entry(self, entry:Entry, library:Library_p) -> list[Block]: ...
 
-    def transform_string(self, string:model.StringBlock, library:Library) -> list[Block]:
-        pass
+    def transform_string(self, string:model.StringBlock, library:Library_p) -> list[Block]: ...
 
-    def transform_preamble(self, preamble:model.Preamble, library:Library) -> list[Block]:
-        pass
+    def transform_preamble(self, preamble:model.Preamble, library:Library_p) -> list[Block]: ...
 
-    def transform_explicit_comment(self, comment:model.ExplicitComment, library:Library) -> list[Block]:
-        pass
+    def transform_explicit_comment(self, comment:model.ExplicitComment, library:Library_p) -> list[Block]: ...
 
-    def transform_implicit_comment(self, comment:model.ImplicitComment, library:Library) -> list[Block]:
-        pass
-
+    def transform_implicit_comment(self, comment:model.ImplicitComment, library:Library_p) -> list[Block]: ...
 
 ##--| New Middleware protocols:
 
@@ -181,11 +161,9 @@ class BidirectionalMiddleware_p(Protocol):
     eg: Latex Decoding, then Encoding
     """
 
-    def read_transform(self, library:Library) -> Library:
-        pass
+    def read_transform(self, library:Library_p) -> Library_p: ...
 
-    def write_transform(self, library:Library) -> Library:
-        pass
+    def write_transform(self, library:Library_p) -> Library_p: ...
 
 @runtime_checkable
 class AdaptiveMiddleware_p(Protocol):
@@ -198,8 +176,7 @@ class AdaptiveMiddleware_p(Protocol):
 
     """
 
-    def get_transforms_for(self, block:Block, *, direction:Maybe[str]=None) -> list[Callable[[Block, Library], list[Block]]]:
-        pass
+    def get_transforms_for(self, block:Block, *, direction:Maybe[str]=None) -> list[Callable[[Block, Library_p], list[Block]]]: ...
 
 ##--| IO Protocols
 
@@ -209,14 +186,11 @@ class PairStack_p(Protocol):
 
     """
 
-    def add(self, *args:BidiMiddleware, read:Maybe[list|Middleware]=None, write:Maybe[list|Middleware]=None) -> Self:
-        pass
+    def add(self, *args:BidiMiddleware, read:Maybe[list|Middleware]=None, write:Maybe[list|Middleware]=None) -> Self: ...
 
-    def read_stack(self) -> list[Middleware]:
-        pass
+    def read_stack(self) -> list[Middleware]: ...
 
-    def write_stack(self) -> list[Middleware]:
-        pass
+    def write_stack(self) -> list[Middleware]: ...
 
 @runtime_checkable
 class Reader_p(Protocol):
@@ -224,11 +198,9 @@ class Reader_p(Protocol):
     parses the read bibtex, running middlewares on the parsed bibtex
     """
 
-    def read(self, source:str|pl.Path, *, into:Maybe[Library]=None, append:Maybe[list[Middleware]]=None) -> Maybe[Library]:
-        pass
+    def read(self, source:str|pl.Path, *, into:Maybe[Library]=None, append:Maybe[list[Middleware]]=None) -> Maybe[Library]: ...
 
-    def read_dir(self, source:pl.Path, *, ext:str, into:Maybe[Library]=None, append:Maybe[list[Middleware]]=None) -> Maybe[Library]:
-        pass
+    def read_dir(self, source:pl.Path, *, ext:str, into:Maybe[Library]=None, append:Maybe[list[Middleware]]=None) -> Maybe[Library]: ...
 
 @runtime_checkable
 class Writer_p(Protocol):
@@ -237,8 +209,7 @@ class Writer_p(Protocol):
     (eg: RstWriter)
     """
 
-    def write(self, library:Library, *, file:Maybe[pl.Path]=None, append:Maybe[list[Middleware]]=None) -> str:
-        pass
+    def write(self, library:Library, *, file:Maybe[pl.Path]=None, append:Maybe[list[Middleware]]=None) -> str: ...
 
 ##--| Middleware protocols
 
@@ -249,8 +220,7 @@ class CustomWriteBlock_p(Protocol):
 
     """
 
-    def visit(self, writer:Writer_p) -> list[str]:
-        pass
+    def visit(self, writer:Writer_p) -> list[str]: ...
 
 @runtime_checkable
 class ReadTime_p(Protocol):
@@ -258,8 +228,7 @@ class ReadTime_p(Protocol):
     data
     """
 
-    def on_read(self) -> Never:
-        pass
+    def on_read(self) -> Never: ...
 
 @runtime_checkable
 class WriteTime_p(Protocol):
@@ -267,8 +236,7 @@ class WriteTime_p(Protocol):
 
     """
 
-    def on_write(self) -> Never:
-        pass
+    def on_write(self) -> Never: ...
 
 @runtime_checkable
 class EntrySkipper_p(Protocol):
@@ -279,11 +247,9 @@ class EntrySkipper_p(Protocol):
     eg: for only processing type='article' entries, not books
     """
 
-    def set_entry_skiplist(self, whitelist:list[str]) -> None:
-        pass
+    def set_entry_skiplist(self, whitelist:list[str]) -> None: ...
 
-    def should_skip_entry(self, entry:Entry, library:Library) -> bool:
-        pass
+    def should_skip_entry(self, entry:Entry, library:Library) -> bool: ...
 
 @runtime_checkable
 class FieldMatcher_p(Protocol):
@@ -293,24 +259,19 @@ class FieldMatcher_p(Protocol):
     on each field that matches in an entry.
     """
 
-    def set_field_matchers(self, *, white:list[str], black:list[str]) -> Self:
-        pass
+    def set_field_matchers(self, *, white:list[str], black:list[str]) -> Self: ...
 
-    def match_on_fields(self, entry: Entry, library: Library) -> Result[Entry, Exception]:
-        pass
+    def match_on_fields(self, entry: Entry, library: Library) -> Result[Entry, Exception]: ...
 
-    def field_h(self, field:Field, entry:Entry) -> Result[list[Field], Exception]:
-        pass
+    def field_h(self, field:Field, entry:Entry) -> Result[list[Field], Exception]: ...
 
 @runtime_checkable
 class StrTransformer_p(Protocol):
     """ Describes the StringTransform_m """
 
-    def transform_strlike(self, slike:StrLike) -> Result[StrLike, Exception]:
-        pass
+    def transform_strlike(self, slike:StrLike) -> Result[StrLike, Exception]: ...
 
-    def _transform_raw_str(self, python_string:str) -> Result[str, Exception]:
-        pass
+    def _transform_raw_str(self, python_string:str) -> Result[str, Exception]: ...
 
 @runtime_checkable
 class DependentMiddleware_p(Protocol):
@@ -320,10 +281,8 @@ class DependentMiddleware_p(Protocol):
     eg: metadata applicator requires path reader
     """
 
-    def requires_in_same_stack(self) -> list[type]:
+    def requires_in_same_stack(self) -> list[type]: ...
         """ The given types need to be in the same stack """
-        pass
 
-    def requires_in_parse_stack(self) -> list[type]:
+    def requires_in_parse_stack(self) -> list[type]: ...
         """ The given types need to be in the parse stack """
-        pass
