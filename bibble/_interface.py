@@ -282,7 +282,7 @@ class DependentMiddleware_p(Protocol):
     """
 
     def requires_in_same_stack(self) -> list[type]: ...
-        """ The given types need to be in the same stack """
+    """ The given types need to be in the same stack """
 
     def requires_in_parse_stack(self) -> list[type]: ...
-        """ The given types need to be in the parse stack """
+    """ The given types need to be in the parse stack """
