@@ -2,9 +2,9 @@
 
 .. _index:
 
-================================
-bib-middleware: The Documentation
-================================
+======
+Bibble
+======
 
 
 .. contents:: Contents
@@ -14,16 +14,16 @@ bib-middleware: The Documentation
 Introduction
 ------------
 
-Testing one  two three.
-Lorem ipsum dolor sit amet, consectetuer adipiscing elit.  Donec hendrerit tempor tellus.  Donec pretium posuere tellus.  Proin quam nisl, tincidunt et, mattis eget, convallis nec, purus.  Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.  Nulla posuere.  Donec vitae dolor.  Nullam tristique diam non turpis.  Cras placerat accumsan nulla.  Nullam rutrum.  Nam vestibulum accumsan nisl.
+Bibble is a library of extension middlewares for `bibtexparser`_,
+to simplify processing of `bibtex`_ files.
 
 
 Overview
 --------
 
-Pellentesque dapibus suscipit ligula.  Donec posuere augue in quam.  Etiam vel tortor sodales tellus ultricies commodo.  Suspendisse potenti.  Aenean in sem ac leo mollis blandit.  Donec neque quam, dignissim in, mollis nec, sagittis eu, wisi.  Phasellus lacus.  Etiam laoreet quam sed arcu.  Phasellus at dui in ligula mollis ultricies.  Integer placerat tristique nisl.  Praesent augue.  Fusce commodo.  Vestibulum convallis, lorem a tempus semper, dui dui euismod elit, vitae placerat urna tortor vitae lacus.  Nullam libero mauris, consequat quis, varius et, dictum id, arcu.  Mauris mollis tincidunt felis.  Aliquam feugiat tellus ut neque.  Nulla facilisis, risus a rhoncus fermentum, tellus tellus lacinia purus, et dictum nunc justo sit amet elit.
+The main areas of the library are:
 
-
+1. :ref:`Bidirectional Middlewares <bidi>`
 
 Repo and Issues
 ---------------
@@ -47,15 +47,20 @@ Indices and Tables
 .. .. Main Sidebar Toctree
 .. toctree::
    :maxdepth: 3
+   :glob:
    :hidden:
 
-   getting_started
-   cli
+   [a-z]*/index
 
-   examples/overview
-   architecture/overview
-   FAQ <faq>
-   api
+   _docs/*
+   genindex
+   modindex
+   API Reference <_docs/_autoapi/bibble/index>
 
 
 .. .. Links
+
+.. _bibtexparser: https://bibtexparser.readthedocs.io/en/main/
+
+.. _bibtex: https://www.bibtex.com
+

@@ -26,7 +26,8 @@ from uuid import UUID, uuid1
 # ##-- 3rd party imports
 import jgdv
 from jgdv import Proto, Mixin
-from jgdv.debugging.timeblock_ctx import TimeBlock_ctx
+from jgdv._abstract.protocols.general import Visitor_p
+from jgdv.debugging.timing import TimeCtx
 from bibtexparser import model
 from bibtexparser.model import MiddlewareErrorBlock
 
@@ -151,7 +152,7 @@ class _Visitors_m:
                 API_W.FAIL_END, "\n"]
     ##--|
 
-@Proto(jgdv.protos.Visitor_p, API.Writer_p)
+@Proto(Visitor_p, API.Writer_p)
 @Mixin(_VisitEntry_m, _Visitors_m, Runner_m, MiddlewareValidator_m)
 class BibbleWriter:
     """ A Refactored bibtexparser writer
@@ -193,12 +194,11 @@ class BibbleWriter:
 
         self._calculate_auto_value_align(library)
 
-        with TimeBlock_ctx(logger=logging,
-                           enter="--> Write Transforms: Start",
-                           exit="<-- Write Transforms:",
-                           level=logmod.INFO) as ctx:
+        with TimeCtx(logger=logging, level=logmod.INFO) as ctx:
+            ctx.msg("--> Write Transforms: Start")
             transformed = self._run_writewares(library, append=append)
 
+        ctx.msg("<-- Write Transforms took: %s", ctx.total_s)
         string_pieces : list[str] = []
         string_pieces += self.make_header(transformed, file)
         for i, block in enumerate(transformed.blocks):

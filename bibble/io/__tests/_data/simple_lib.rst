@@ -14,8 +14,9 @@ For the raw bibtex, see `the file`_.
 
 .. _`the file`: https://github.com/jgrey4296/bibliography/blob/main/main/A Bibtex File.bib
 
-.. bibtex:entry:: test_art   :title: Testing Title
-   :test_art: blah,bloo
+.. bibtex:entry:: test_art
+   :title: Testing Title
+   :tags: blah,bloo
    :author: Bob
    :year: 1992
 

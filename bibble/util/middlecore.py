@@ -33,6 +33,7 @@ import tqdm
 import bibble._interface as API
 from bibble.model import MetaBlock
 import jgdv
+from jgdv._abstract.protocols.general import DILogger_p
 from jgdv import Proto
 from bibtexparser.library import Library
 from bibtexparser import model
@@ -77,7 +78,7 @@ logging = logmod.getLogger(__name__)
 
 # Body:
 
-@Proto(jgdv.protos.DILogger_p)
+@Proto(DILogger_p)
 class _BaseMiddleware:
     """
     The base middleware.
