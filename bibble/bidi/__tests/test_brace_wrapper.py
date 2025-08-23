@@ -18,7 +18,7 @@ import pytest
 # ##-- end 3rd party imports
 
 from bibble import _interface as API
-from ..brace_wrapper import BraceWrapper
+from .. import BraceWrapper
 from bibtexparser import Library, model
 
 # ##-- types

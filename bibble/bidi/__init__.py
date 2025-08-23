@@ -5,9 +5,9 @@ Most are simple wrappers around the paired unidirectional middlewares.
 But some, like BraceWrapper, is purely bidirection
 
 """
-from .bidi_paths    import BidiPaths
-from .bidi_isbn     import BidiIsbn
-from .bidi_latex    import BidiLatex
-from .brace_wrapper import BraceWrapper
-from .bidi_names    import BidiNames
-from .bidi_tags     import BidiTags
+from .paths    import BidiPaths
+from .isbn     import BidiIsbn
+from .latex    import BidiLatex
+from .braces   import BraceWrapper
+from .names    import BidiNames
+from .tags     import BidiTags
