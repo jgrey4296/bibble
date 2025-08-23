@@ -27,7 +27,6 @@ dependencies   = [
     "waybackpy>=3.0.6",
 ]
 
-
 ##-- urls
 [project.urls]
 homepage      = "https://jgrey4296.github.io/bibble"
@@ -66,7 +65,6 @@ namespaces = false
 where      = ["."]
 include    = ["bibble*"]
 exclude    = ["bibble._docs*"]
-
 
 [tool.setuptools.package-data]
 "*" = ["*"]
@@ -201,6 +199,11 @@ directory  = "bibble/_docs/_changes"
 filename   = "CHANGELOG.md"
 template   = "bibble/_docs/_templates/news.md"
 create_add_extension = true
+
+##-- end towncrier
+
+##-- uv
+[tool.uv]
 
 [dependency-groups]
 dev = [
