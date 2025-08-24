@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-__version__ = "0.1.1"
+from importlib import metadata
+
+__version__ = metadata.version("bibtex-bibble")
 
 from . import model
 from bibble.library import BibbleLib

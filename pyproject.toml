@@ -27,16 +27,6 @@ dependencies   = [
     "waybackpy>=3.0.6",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "myst-parser>=4.0.1",
-    "pytest>=8.3.5",
-    "pytest-cov>=6.0.0",
-    "pytest-mock>=3.14.0",
-    "sphinx>=8.2.3",
-    "sphinx-rtd-theme>=3.0.2",
-]
-
 ##-- urls
 [project.urls]
 homepage      = "https://jgrey4296.github.io/bibble"
@@ -76,7 +66,6 @@ where      = ["."]
 include    = ["bibble*"]
 exclude    = ["bibble._docs*"]
 
-
 [tool.setuptools.package-data]
 "*" = ["*"]
 "bibble.__data" = ["*.so"]
@@ -95,13 +84,15 @@ egg_base = ".temp/egg-info"
 ##-- mypy
 # https://mypy.readthedocs.io/en/stable/config_file.html#config-file
 [tool.mypy]
-python_version         = "3.12"
-follow_imports         = "skip"
-cache_dir              = ".temp/mypy_cache"
-incremental            = true
+python_version          = "3.12"
+follow_imports          = "skip"
+cache_dir               = ".temp/mypy_cache"
+enable_error_code       = ["explicit-override"]
+disable_error_code      = []
+incremental             = true
 
-warn_unused_configs    = true
-ignore_missing_imports = true
+warn_unused_configs     = true
+ignore_missing_imports  = true
 
 ##-- end mypy
 
@@ -116,28 +107,60 @@ log_level       = "DEBUG"
 log_cli_level   = "DEBUG"
 ##-- end pytest
 
-##-- bumpver
-[tool.bumpver]
-current_version    = "0.1.1"
-version_pattern    = "MAJOR.MINOR.PATCH"
-commit_message     = "[bump]: version {old_version} -> {new_version}"
-tag_message        = "{new_version}"
-tag_scope          = "default"
-commit             = true
-tag                = false
-# pre_commit_hook  = ""
-# post_commit_hook = ""
-# push             = true
+##-- coverage
+# https://pytest-cov.readthedocs.io/en/latest/config.html
+# add "addopts = '--cov-report xml --cov={}' " for pytest
+[tool.coverage.run]
+branch            = true  # measure branch coverage
+cover_pylib       = false # measure stdlib
+relative_files    = false 
+data_file         = ".temp/coverage/coverage_cache" # cache
+disable_warnings  = []
+omit              = [ # files to not measure
+    "*/__tests/*",
+    "*__init__.py",
+    "*_interface.py",
+    
+] 
 
-[tool.bumpver.file_patterns]
-"pyproject.toml"   = [
-                   '^version\s+=\s+"{version}"',
-                   '^current_version\s+=\s+"{version}"'
-]
-"bibble/__init__.py" = ['^__version__\s+=\s+"{version}"']
-"bibble/_docs/conf.py" = ['^release\s+=\s+"{version}"']
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_also = [
+    # Don't complain about missing debug-only code:
+    "def __repr__",
+    "if self\\.debug",
+    "^import",
+    "^from",
 
-##-- end bumpver
+    # Don't complain if tests don't hit defensive assertion code:
+    "raise AssertionError",
+    "raise NotImplementedError",
+
+    # Don't complain if non-runnable code isn't run:
+    "if 0:",
+    "if False:",
+    "if __name__ == .__main__.:",
+
+    # Don't complain about abstract methods, they aren't run:
+    "@(abc\\.)?abstractmethod",
+    ]
+
+ignore_errors = true
+# fail_under  = 20 # coverage percentage
+format        = "text" # or "markdown", "total"
+show_missing  = true # for in the report
+skip_empty    = true # skip files like __init__.py
+
+[tool.coverage.html]
+directory = ".temp/coverage/html_report" # where to write output
+
+[tool.coverage.xml]
+output    = ".temp/coverage/coverage.xml" # where to write output
+
+[tool.coverage.json]
+output        = ".temp/coverage/coverage.json"  # where to write output
+pretty_print  = true
+##-- end coverage
 
 ##-- isort
 # https://pycqa.github.io/isort/docs/configuration/options.html
@@ -169,5 +192,42 @@ import_footer_localfolder = ""
 add_imports            = []
 ##-- end isort
 
-[tool.uv.sources]
+##-- towncrier
+[tool.towncrier]
+package    = "bibble"
+directory  = "bibble/_docs/_changes"
+filename   = "CHANGELOG.md"
+template   = "bibble/_docs/_templates/news.md"
+create_add_extension = true
 
+##-- end towncrier
+
+##-- uv
+[tool.uv]
+
+[dependency-groups]
+dev = [
+    "ipython>=9.4.0",
+    "sh>=2.2.2",
+    "towncrier>=24.8.0",
+    ]
+test =[
+    "pydot>=4.0.1",
+    "pytest>=8.3.5",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    "tox>=4.28.4",
+    "tox-uv>=1.27.0",
+    "ruff>=0.12.8",
+]
+docs = [
+    "myst-parser>=4.0.1",
+    "sphinx>=8.2.3",
+    "sphinx-autoapi>=3.6.0",
+    "sphinx-rtd-theme>=3.0.2",
+    "pydot>=4.0.1",
+    "tox>=4.28.4",
+    "tox-uv>=1.27.0",
+]
+
+##-- end uv
