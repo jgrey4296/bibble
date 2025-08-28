@@ -55,18 +55,118 @@ if TYPE_CHECKING:
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
+SPACE          : Final[str] = " "
+INDENT_AMOUNT  : Final[int] = 3
+##--|
 class RstWriter(BibbleWriter):
     """ Write bibtex entries as Rst. """
 
     # These need to match the BibEntryDirective of the sphinx domain
+    _label      : ClassVar[str]       = ".. _{}:"
     _entry      : ClassVar[str]       = ".. bibtex:entry:: {}"
     _entry_args : ClassVar[list[str]] = ["title","author", "editor", "year", "tags",
                                          "journal", "booktitle", "within",
                                          "platform", "publisher", "institution",
                                          "series", "url", "doi", "isbn", "edition",
-                                         "crossref"
+                                         "crossref", "identifier",
                                          ]
-    _indent     : ClassVar[str]       = " "*3
+    _indent     : ClassVar[str]       = SPACE*INDENT_AMOUNT
+
+    def visit_entry(self, block:Block) -> list[str]:
+        result = [
+            self._entry.format(block.key), "\n",
+            ]
+        match block.entry_type:
+            case "case" | "legal" | "judicial" | "law":
+                result += self._build_legal_entry(block)
+            case "standard" | "online" | "blog" | "dataset":
+                result += self._build_online_entry(block)
+            case "tweet" | "thread":
+                result += self._build_social_media_entry(block)
+            case _:
+                result += self._build_simple_entry(block)
+
+        # Debug info:
+        # result += self._build_debug_info(block)
+        return result
+
+    def make_header(self, library:Library, title:Maybe[str]=None) -> list[str]:
+        match title:
+            case None:
+                title = "A Bibtex File"
+            case str():
+                pass
+
+        lines = [".. -*- mode: ReST -*-\n\n",
+                 f".. _{title}:\n\n",
+                 "="*len(title), "\n",
+                 title, "\n",
+                 "="*len(title), "\n\n",
+                 ".. contents:: Entries:\n",
+                 "   :class: bib_entries\n",
+                 "   :local:\n\n",
+                 # TODO mode this to a template:
+                 # f"For the raw bibtex, see `the raw file <raw_{title}>`_.\n\n",
+                 # f".. _`raw_{title}`: https://github.com/jgrey4296/bibliography/blob/main/main/{title}.bib\n\n",
+                 ]
+        return lines
+
+
+    def _build_simple_entry(self, block:Block) -> list[str]:
+        result = []
+        result += self._title_add(block)
+        result += self._must_add(block, "tags")
+        result += self._can_add(block, "author", "editor", "year", "series")
+        result += self._can_add(block, "journal", "booktitle", "doi", "url", "isbn", "publisher")
+        result += self._can_add(block, "incollection", "institution", "crossref")
+        # TODO volume, number, pages, chapter
+        return result
+
+    def _build_legal_entry(self, block:Block) -> list[str]:
+        assert(block.entry_type in ["case", "legal","judicial", "law"])
+        result = []
+        result += self._can_add(block, "title", "short_parties")
+        result += self._must_add(block, "tags")
+        result += self._can_add(block, "author", "editor", "year", "series")
+        result += self._can_add(block, "journal", "booktitle", "doi", "url", "isbn", "publisher")
+        result += self._can_add(block, "incollection", "institution")
+        # TODO volume, number, pages, chapter
+        return result
+
+    def _build_online_entry(self, block:Block) -> list[str]:
+        assert(block.entry_type in ["standard", "online", "blog", "dataset"])
+        result = []
+        result += self._title_add(block)
+        result += self._must_add(block, "tags")
+        result += self._can_add(block, "author", "editor", "year", "series", "url")
+        result += self._can_add(block, "journal", "booktitle", "doi", "isbn", "publisher")
+        result += self._can_add(block, "incollection", "institution", "identifier")
+        # TODO volume, number, pages, chapter
+        return result
+
+    def _build_social_media_entry(self, block:Block) -> list[str]:
+        assert(block.entry_type in ["tweet","thread"])
+        result = []
+        result += self._title_add(block)
+        result += self._must_add(block, "tags")
+        result += self._can_add(block, "author", "editor", "year", "series")
+        result += self._can_add(block, "journal", "booktitle", "doi", "url", "isbn", "publisher")
+        result += self._can_add(block, "incollection", "institution")
+        # TODO volume, number, pages, chapter
+        return result
+
+
+    def _build_debug_info(self, block:Block) -> list[str]:
+        result = ["\n\n..\n",
+                  f"{self._indent} Fields:\n",
+                  "{} {}\n".format(self._indent, ", ".join(block.fields_dict.keys())),
+                  f"{self._indent} Object Keys:\n",
+                  "{} {}\n".format(self._indent,
+                                   ", ".join([x for x in dir(block) if "__" not in x])),
+                  "\n\n",
+                  ]
+        return result
+
 
     def _title_add(self, block:Block) -> list[str]:
         """ Format and return the title """
@@ -97,51 +197,3 @@ class RstWriter(BibbleWriter):
 
         else:
             return result
-
-    def visit_entry(self, block:Block) -> list[str]:
-        result = [self._entry.format(block.key), "\n"]
-        match block.entry_type:
-            case "case" | "legal" | "judicial" | "law":
-                return []
-            case "standard" | "online" | "blog" | "dataset":
-                return []
-            case "tweet" | "thread":
-                return []
-            case _:
-                result += self._title_add(block)
-                result += self._must_add(block, "tags")
-                result += self._can_add(block, "author", "editor", "year", "series")
-                result += self._can_add(block, "journal", "booktitle", "doi", "url", "isbn", "publisher")
-                result += self._can_add(block, "incollection", "institution")
-                # TODO volume, number, pages, chapter
-
-        result += ["\n\n..\n",
-                   f"{self._indent} Fields:\n",
-                   "{} {}\n".format(self._indent, ", ".join(block.fields_dict.keys())),
-                   f"{self._indent} Object Keys:\n",
-                   "{} {}\n".format(self._indent,
-                                    ", ".join([x for x in dir(block) if "__" not in x])),
-                   "\n\n",
-                    ]
-
-        return result
-
-    def make_header(self, library:Library, file:Maybe[pl.Path]=None) -> list[str]:
-        match file:
-            case None:
-                title = "A Bibtex File"
-            case pl.Path():
-                title = file.stem
-
-        lines = [".. -*- mode: ReST -*-\n\n",
-                 f".. _{title}:\n\n",
-                 "="*len(title), "\n",
-                 title, "\n",
-                 "="*len(title), "\n\n",
-                 ".. contents:: Entries:\n",
-                 "   :class: bib_entries\n",
-                 "   :local:\n\n",
-                 "For the raw bibtex, see `the file`_.\n\n",
-                 f".. _`the file`: https://github.com/jgrey4296/bibliography/blob/main/main/{title}.bib\n\n",
-                 ]
-        return lines

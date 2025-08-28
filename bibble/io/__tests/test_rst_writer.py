@@ -2,7 +2,7 @@
 """
 
 """
-# ruff: noqa: ANN201, ARG001, ANN001, ARG002, ANN202
+# ruff: noqa: B011
 
 # Imports
 from __future__ import annotations
@@ -59,8 +59,8 @@ data_path = files(__package__) / "_data"
 ##-- end data
 
 # Vars:
-EXAMPLE_EMPTY_LIB : Final[pl.Path] = data_path / "empty_lib.rst"
-EXAMPLE_LIB       : Final[pl.Path] = data_path / "simple_lib.rst"
+EXAMPLE_EMPTY_LIB : Final[pl.Path] = cast("pl.Path", data_path) / "empty_lib.rst"
+EXAMPLE_LIB       : Final[pl.Path] = cast("pl.Path", data_path) / "simple_lib.rst"
 
 # Body:
 

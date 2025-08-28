@@ -62,6 +62,7 @@ if TYPE_CHECKING:
     from typing import TypeGuard
     from collections.abc import Iterable, Iterator, Callable, Generator
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
+    from logmod import Logger
 
     from bibtexparser.library import Library
     from bibtexparser.writer import BibtexFormat
@@ -76,37 +77,8 @@ if TYPE_CHECKING:
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-class _VisitEntry_m:
-
-    def make_header(self, library, file:None|pl.Path=None) -> list[str]:
-        return []
-
-    def make_footer(self, library, file:None|pl.Path=None) -> list[str]:
-        return []
-
-    def visit(self, block) -> list[str]:
-        match block:
-            case x if isinstance(x, API.CustomWriteBlock_p):
-                assert(hasattr(x, "visit"))
-                return x.visit(self)
-            case MetaBlock():
-                return []
-            case model.Entry():
-                return self.visit_entry(block)
-            case model.String():
-                return self.visit_string(block)
-            case model.Preamble():
-                return self.visit_preamble(block)
-            case model.ExplicitComment():
-                return self.visit_expl_comment(block)
-            case model.ImplicitComment():
-                return self.visit_impl_comment(block)
-            case model.ParsingFailedBlock():
-                return self.visit_failed_block(block)
-            case MiddlewareErrorBlock():
-                return []
-            case _:
-                raise ValueError(f"Unknown block type: {type(block)}")
+EMPTY_JOIN : Final[str] = ""
+##--|
 
 class _Visitors_m:
 
@@ -115,7 +87,7 @@ class _Visitors_m:
         field: model.Field
         for i, field in enumerate(block.fields):
             res.append(self._align_key(field.key))
-            res.append(field.value)
+            res.append(str(field.value))
             if self.format.trailing_comma or i < len(block.fields) - 1:
                 res.append(",")
                 res.append("\n")
@@ -153,7 +125,7 @@ class _Visitors_m:
     ##--|
 
 @Proto(Visitor_p, API.Writer_p)
-@Mixin(_VisitEntry_m, _Visitors_m, Runner_m, MiddlewareValidator_m)
+@Mixin(_Visitors_m, Runner_m, MiddlewareValidator_m)
 class BibbleWriter:
     """ A Refactored bibtexparser writer
     Uses visitor pattern
@@ -169,6 +141,7 @@ class BibbleWriter:
         self._value_sep    = API_W.VAL_SEP
         self._value_column = None
         self._logger       = logger or logging
+        self._join_char    = EMPTY_JOIN
         match stack:
             case PairStack():
                 self._middlewares = stack.write_stack()
@@ -187,7 +160,7 @@ class BibbleWriter:
 
         self.exclude_middlewares(API.ReadTime_p)
 
-    def write(self, library, *, file:None|pl.Path=None, append:Maybe[list[Middleware]]=None) -> str:
+    def write(self, library:Library, *, file:None|pl.Path=None, append:Maybe[list[Middleware]]=None, title:Maybe[str]=None) -> str:
         """ Write the library to a string, and possbly a file
         # TODO write failure reports to a separate file
         """
@@ -199,27 +172,73 @@ class BibbleWriter:
             transformed = self._run_writewares(library, append=append)
 
         ctx.msg("<-- Write Transforms took: %s", ctx.total_s)
-        string_pieces : list[str] = []
-        string_pieces += self.make_header(transformed, file)
-        for i, block in enumerate(transformed.blocks):
-            # Get string representation (as list of strings) of block
-            string_block_pieces = self.visit(block)
-            string_pieces.extend(string_block_pieces)
-            # Separate Blocks
-            if i < len(transformed.blocks) - 1:
-                string_pieces.append(self.format.block_separator)
-        else:
-            string_pieces.extend(self.make_footer(transformed, file))
-            result : str = "".join(str(x) for x in string_pieces)
+
+        header  = self.make_header(transformed, title)
+        body    = self.make_body(transformed)
+        footer  = self.make_footer(transformed, file)
+        lib     = self.make_lib(header=header, body=body, footer=footer)
 
         # Reset the value column:
         self._value_column = None
         match file:
             case pl.Path():
-                file.write_text(result)
-                return result
+                file.write_text(lib)
+                return lib
             case _:
-                return result
+                return lib
+
+    def write_as_data(self, library:Library, *, file:None|pl.Path=None, append:Maybe[list[Middleware]]=None, title:Maybe[str]=None) -> Any:
+        """ Instead of writing the library out as a string, write it as data
+
+        eg: creating a docutils structure.
+        """
+        raise NotImplementedError()
+
+    def make_header(self, library, title:Maybe[str]) -> list[str]:
+        return []
+
+    def make_body(self, library) -> list[str]:
+        total_entries = len(library.blocks) - 2
+        body : list[str] = []
+        for i, block in enumerate(library.blocks):
+            # Get string representation (as list of strings) of block
+            pieces = self.visit(block)
+            body.extend(pieces)
+            # Separate Blocks
+            if i < total_entries:
+                body.append(self.format.block_separator)
+        else:
+            return body
+
+    def make_footer(self, library, file:None|pl.Path=None) -> list[str]:
+        return []
+
+    def make_lib(self, *, header:list[str], body:list[str], footer:list[str]) -> str:
+        return self._join_char.join([*header, *body, *footer])
+
+    def visit(self, block) -> list[str]:
+        match block:
+            case x if isinstance(x, API.CustomWriteBlock_p):
+                assert(hasattr(x, "visit"))
+                return x.visit(self)
+            case MetaBlock():
+                return []
+            case model.Entry():
+                return self.visit_entry(block)
+            case model.String():
+                return self.visit_string(block)
+            case model.Preamble():
+                return self.visit_preamble(block)
+            case model.ExplicitComment():
+                return self.visit_expl_comment(block)
+            case model.ImplicitComment():
+                return self.visit_impl_comment(block)
+            case model.ParsingFailedBlock():
+                return self.visit_failed_block(block)
+            case MiddlewareErrorBlock():
+                return []
+            case _:
+                raise ValueError(f"Unknown block type: {type(block)}")
 
     def _calculate_auto_value_align(self, library: Library) -> None:
         """
@@ -255,4 +274,3 @@ class BibbleWriter:
                 return f"{self.format.indent}{key}{' '*x}{self._value_sep}"
             case x:
                 return f"{self.format.indent}{key}{' '*x}{self._value_sep}"
-
