@@ -24,7 +24,34 @@ Overview
 The main areas of the library are:
 
 1. :ref:`Bidirectional Middlewares <bidi>`
+2. :ref:`Modified Readers and Writers <io>`
+3. Miscellaneous :ref:`middlewares <middlewares>`.
 
+Usage
+-----
+
+.. code:: python
+ 
+   import pathlib as pl
+   import bibble as BM
+   from bibble.io import Reader, JinjaWriter
+
+   # Make a stack of middlewares for reading and writing:
+   stack = BM.PairStack()
+   # stack.add(...)
+   # stack.add(read=[], write=[])
+   
+   # Make a reader and writer:
+   reader = Reader(stack)
+   writer = JinjaWriter(stack)
+
+   # read a bibtex file:
+   lib = reader.read(pl.Path("a/bib/file.bib"))
+   
+   # And write it out:
+   writer.write(lib, file=pl.Path("an/output.bib"))
+
+   
 Repo and Issues
 ---------------
 
@@ -50,8 +77,11 @@ Indices and Tables
    :glob:
    :hidden:
 
+   middlewares
+   model
    [a-z]*/index
-
+   
+   
    _docs/*
    genindex
    modindex

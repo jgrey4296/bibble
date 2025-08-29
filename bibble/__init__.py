@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Bibble, a bibtexparser middleware library.
+"""
 
 from importlib import metadata
 

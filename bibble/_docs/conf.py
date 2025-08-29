@@ -243,7 +243,7 @@ autoapi_template_dir          = "_docs/_templates/autoapi"
 autoapi_root              = "_docs/_autoapi"
 autoapi_dirs              = ["."]
 autoapi_file_patterns     = ["*.py", "*.pyi"]
-autoapi_ignore            = [*exclude_patterns, "*_docs/conf.py"]
+autoapi_ignore            = [*exclude_patterns, "*_docs/conf.py",  "*.rst"]
 autoapi_member_order      = "groupwise" # 'alphabetical' | 'bysource' | 'groupwise'
 autoapi_options           = [
     # "imported-members",
