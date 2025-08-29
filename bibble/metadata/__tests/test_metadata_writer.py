@@ -19,7 +19,14 @@ import pytest
 
 import bibble._interface as API
 from bibtexparser import model, Library
-from .. import ApplyMetadata, FileCheck, _interface as MAPI
+import sh
+
+try:
+    from .. import ApplyMetadata, FileCheck, _interface as MAPI
+except (ImportError, ImportWarning):
+    pytest.skip("Skipping Metadata Writing Tests as an external tool is missing",
+                allow_module_level=True)
+
 
 # ##-- types
 # isort: off

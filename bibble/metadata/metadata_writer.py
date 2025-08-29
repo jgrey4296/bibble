@@ -71,10 +71,13 @@ if TYPE_CHECKING:
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-exiftool = sh.exiftool
-calibre  = sh.ebook_meta
-qpdf     = sh.qpdf
-pdfinfo  = sh.pdfinfo
+try:
+    exiftool = sh.exiftool
+    calibre  = sh.ebook_meta
+    qpdf     = sh.qpdf
+    pdfinfo  = sh.pdfinfo
+except sh.CommandNotFound:
+    raise ImportError("Metadata writing disabled due to missing external tools")
 ##--|
 
 class _EntryFileGetter_m:

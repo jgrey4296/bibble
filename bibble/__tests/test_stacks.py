@@ -18,11 +18,20 @@ import pytest
 # ##-- end 3rd party imports
 
 from importlib.resources import files
-import bibble as BM
 import bibtexparser as BTP
 from bibtexparser import Library
 from bibtexparser import middlewares as ms
 from bibble.util import PairStack
+
+try:
+    import bibble as BM
+    if not hasattr(BM.metadata, "ApplyMetaData"):
+        raise ImportError()
+except (ImportError, ImportWarning):
+    pytest.skip("Skipping Metadata Writing Tests as an external tool is missing",
+                allow_module_level=True)
+
+
 
 # ##-- types
 # isort: off
