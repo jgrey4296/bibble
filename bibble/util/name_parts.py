@@ -3,8 +3,6 @@
 Refactored from bibtexparser.middlewares.names
 
 """
-# ruff: noqa:
-
 # Imports:
 from __future__ import annotations
 

@@ -20,7 +20,6 @@ import logging as logmod
 import pathlib as pl
 import re
 import time
-import types
 from copy import deepcopy
 from uuid import UUID, uuid1
 from weakref import ref
@@ -44,45 +43,52 @@ import bibble.model as bmodel
 
 # ##-- types
 # isort: off
+# General
 import abc
 import collections.abc
-from typing import TYPE_CHECKING, cast, assert_type, assert_never
-from typing import Generic, NewType
-# Protocols:
-from typing import Protocol, runtime_checkable
-# Typing Decorators:
+import typing
+import types
+from typing import cast, assert_type, assert_never
+from typing import Generic, NewType, Never
 from typing import no_type_check, final, override, overload
+# Protocols and Interfaces:
+from typing import Protocol, runtime_checkable
+# isort: on
+# ##-- end types
 
-if TYPE_CHECKING:
-    from jgdv import Maybe, Either, Result, Rx
-    from typing import Final
-    from typing import ClassVar, Any, LiteralString
-    from typing import Never, Self, Literal
+# ##-- type checking
+# isort: off
+if typing.TYPE_CHECKING:
+    from typing import Final, ClassVar, Any, Self
+    from typing import Literal, LiteralString
     from typing import TypeGuard
     from collections.abc import Iterable, Iterator, Callable, Generator
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
 
-##--|
+    from jgdv import Maybe, Either, Result, Rx
+    type Middleware = API.Middleware_p | API.BidirectionalMiddleware_p
 
-# isort: on
-# ##-- end types
+## isort: on
+# ##-- end type checking
+
 
 ##-- logging
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
 # Vars:
-EMPTY     : Final[Rx]  = re.compile(r"^$")
-OR_REG    : Final[str] = r"|"
-ANY_REG   : Final[Rx]  = re.compile(r".")
+EMPTY       : Final[Rx]   = re.compile(r"^$")
+OR_REG      : Final[str]  = r"|"
+ANY_REG     : Final[Rx]   = re.compile(r".")
 # Body:
 
 class MiddlewareValidator_m:
     """ For ensuring the middlewares of a reader/writer  are appropriate,
     by excluding certain middlewares.
     """
+    _middlewares : list[Middleware]
 
-    def exclude_middlewares(self, proto:Protocol):
+    def exclude_middlewares(self, proto:type):
         if not issubclass(proto, Protocol):
             raise TypeError("Tried to validate middlewares with a non-protocol", proto)
         failures = []
@@ -132,11 +138,11 @@ class FieldMatcher_m:
         return self
 
     def match_on_fields(self, entry: API.Entry, library: API.Library) -> Result[API.Entry, Exception]:
-        errors = []
+        errors : list[str] = []
         whitelist, blacklist = self._field_white_re, self._field_black_re
         for field in entry.fields:
             match field:
-                case model.Field(key=key) if whitelist.match(key) and not blacklist.match(key):
+                case model.Field(key=str() as key) if whitelist.match(key) and not blacklist.match(key):
                     res = self.field_h(field, entry)
                 case _:
                     continue
@@ -163,7 +169,7 @@ class EntrySkipper_m:
     Be able to skip entries by their type
     """
 
-    def set_entry_skiplists(self, *, white:list[str]=None, black:list[str]=None) -> None:
+    def set_entry_skiplists(self, *, white:Maybe[list[str]]=None, black:Maybe[list[str]]=None) -> None:
         self._entry_whitelist = [x.lower() for x in white or []]
         self._entry_blacklist = [x.lower() for x in black or []]
 

@@ -19,6 +19,7 @@ description   = "run linters"
 skip_install  = true
 commands      = [
     ["uv", "run", "ruff", "check",
+    "--config", "ruff.toml",
     "--output-format", "concise",
     {replace="posargs", default=[], extend=true},
     ],

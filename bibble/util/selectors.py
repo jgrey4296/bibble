@@ -52,7 +52,7 @@ if TYPE_CHECKING:
     from typing import TypeGuard
     from collections.abc import Iterable, Iterator, Callable, Generator
     from collections.abc import Sequence, Mapping, MutableMapping, Hashable
-    
+
     from bibtexparser.libary import Library
 
 ##--|
@@ -79,35 +79,38 @@ class SelectN(LibraryMiddleware):
 class SelectEntriesByType(LibraryMiddleware):
     """ Select entries of a particular type """
     default_targets = ("article",)
+    _entry_targets  : list[str]
 
-    def __init__(self, *, targets:list[str]):
+    def __init__(self, *, targets:Maybe[Iterable[str]]=None):
         super().__init__()
-        self._entry_target = target.lower()
+        self._entry_targets = [x.lower() for x in (targets or self.default_targets)]
 
     def transform(self, library):
-        chosen = [x for x in library.entries if x.entry_type.lower() == self._entry_target]
+        chosen = [x for x in library.entries if x.entry_type.lower() in self._entry_targets]
         return Library(chosen)
 
 class SelectTags(LibraryMiddleware):
     """ Select entries of with a particular tag """
+    _targets : set[str]
 
-    def __init__(self, *, tags:set[str]):
+    def __init__(self, *, tags:Iterable[str]):
         super().__init__()
-        self._targets = set(targets or [])
+        self._targets = set(tags)
 
     def transform(self, library:Library) -> Library:
         chosen = [x for x in library.entries if bool(x.fields_dict['tags'].value & self._targets)]
         return Library(chosen)
 
 class SelectAuthor(LibraryMiddleware):
-    """ TODO select entries by a set of authors 
-    
+    """ TODO select entries by a set of authors
+
     should run name split on them
     """
+    _targets : set[str]
 
-    def __init__(self, *, authors:set[str]):
+    def __init__(self, *, authors:Iterable[str]):
         super().__init__()
-        self._targets = set(targets or [])
+        self._targets = set(authors)
 
     def transform(self, library):
         raise NotImplementedError()

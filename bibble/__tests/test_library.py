@@ -2,8 +2,6 @@
 """
 
 """
-# ruff: noqa: ANN201, ARG001, ANN001, ARG002, ANN202
-
 # Imports
 from __future__ import annotations
 
@@ -58,7 +56,7 @@ logging = logmod.getLogger(__name__)
 class TestBibbleLib:
 
     def test_sanity(self):
-        assert(True is not False) # noqa: PLR0133
+        assert(True is not False)
 
     @pytest.mark.skip
     def test_todo(self):

@@ -3,8 +3,6 @@
 Refactored core middleware classes from bibtexparser
 
 """
-# ruff: noqa:
-
 # Imports:
 from __future__ import annotations
 

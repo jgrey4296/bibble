@@ -14,9 +14,9 @@ import datetime
 from collections.abc import Sequence, Callable
 import tomllib
 from typing import Literal
-from docutils import nodes
-from docutils.parsers.rst import directives
-from docutils.statemachine import StringList
+from docutils import nodes # type: ignore[import-untyped]
+from docutils.parsers.rst import directives # type: ignore[import-untyped]
+from docutils.statemachine import StringList # type: ignore[import-untyped]
 from sphinx.locale import __
 from sphinx.util.docutils import SphinxDirective
 # Types ----------------------------------

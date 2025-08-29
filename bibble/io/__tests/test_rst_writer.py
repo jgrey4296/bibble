@@ -2,8 +2,6 @@
 """
 
 """
-# ruff: noqa: B011
-
 # Imports
 from __future__ import annotations
 
