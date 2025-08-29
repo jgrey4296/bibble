@@ -67,6 +67,11 @@ logging = logmod.getLogger(__name__)
 def main():
     """
     Generalised release process
+
+    Doesn't run if there are uncommitted changes.
+    Bumps the version (using uv).
+    Then Generates and commits a changelog using towncrier.
+    Finally it tags the head with the release number.
     """
     bump_level   : str
     new_version  : str
@@ -75,7 +80,7 @@ def main():
         case "":
             pass
         case _:
-            print("There are unstaged changes")
+            print("There are uncommitted changes")
             exit(-1)
 
     match sys.argv:

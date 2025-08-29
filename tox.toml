@@ -98,7 +98,7 @@ commands      = [
 ]
 
 [env.release]
-description  = "Generate a release"
+description  = "Generate a release: LEVEL={minor,major,patch} tox -e release"
 set_env      = [
    {replace="ref", of=["env_run_base", "set_env"]},
    {LEVEL={replace="env", name="LEVEL", default="minor"}},
