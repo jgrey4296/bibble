@@ -71,7 +71,7 @@ packages   = ["bibble"]
 artifacts  = ["*.so"]
 exclude    = [
     ".temp", "**.rst",
-    "bibble/*/__tests", " bibble/__tests",
+    "bibble/*/__tests", "bibble/__tests",
     "bibble/_docs",
 ]
 
