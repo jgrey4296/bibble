@@ -106,3 +106,6 @@ set_env      = [
 commands     = [
     ["python", ".tasks/release.py", "--bump", "{env:LEVEL}"]
 ]
+
+[env.build]
+commands = [["uv", "build", "--out-dir", ".temp/build"]]
