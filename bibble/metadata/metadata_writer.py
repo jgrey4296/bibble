@@ -111,7 +111,7 @@ class _EntryFileGetter_m:
             case BTP.model.Field(value=pl.Path() as path):
                 return path
             case BTP.model.Field(value=str() as pathstr):
-                return pl.Path(pathstr)
+                return pl.Path(pathstr.removeprefix("{").removesuffix("}"))
             case _:
                 return None
 
@@ -173,7 +173,6 @@ class _Pdf_Update_m:
         assert(hasattr(self, "_logger"))
         # Build args:
         args = self._entry_to_exiftool_args(entry)
-
         self._logger.debug("Pdf update args: %s : %s", path, args)
         # Call
         try:
@@ -245,7 +244,6 @@ class _Pdf_Update_m:
         # XMP-bib:
         # The custom full bibtex entry
         args += [f'-bibtex={entry.raw}']
-
         # General
         match fields:
             case {"title": t, "subtitle": st}:
@@ -261,10 +259,19 @@ class _Pdf_Update_m:
             case {"editor": a}:
                 args += ['-author={}'.format(a.value)]
 
-        args += ['-Year={}'.format(fields['year'].value)]
+        args += ['-year={}'.format(fields['year'].value)]
+
 
         if 'tags' in fields:
-            args += ['-Keywords={}'.format(",".join(fields['tags'].value))]
+            tags = fields['tags'].value
+            if isinstance(tags, str):
+                args += ['-Keywords={}'.format(tags),
+                         '-xmp:Tags={}'.format(tags),
+                         ]
+            if isinstance(tags, list):
+                args += ['-Keywords={}'.format(", ".join(tags)),
+                         '-xmp:Tags={}'.format(", ".join(tags)),
+                         ]
         if 'isbn' in fields:
             args += ['-ISBN={}'.format(fields['isbn'].value)]
         if 'edition' in fields:
@@ -321,6 +328,13 @@ class _Epub_Update_m:
             case {"editor":list()|NameParts()|NameParts_d() as bad}:
                 raise TypeError("Editor Should have been reduced already", entry.key, bad)
 
+        if 'tags' in fields:
+            tags = fields['tags'].value
+            if isinstance(tags, str):
+                args += ['--tags={}'.format(tags)]
+            if isinstance(tags, list):
+                args += ['--tags={}'.format(", ".join(tags))]
+
         if 'publisher' in fields:
             args += ["--publisher={}".format(fields['publisher'].value)]
         if 'series' in fields:
@@ -333,8 +347,6 @@ class _Epub_Update_m:
             args += ['--isbn={}'.format(fields['isbn'].value)]
         if 'doi' in fields:
             args += ['--identifier=doi:{}'.format(fields['doi'].value)]
-        if 'tags' in fields:
-            args += ['--tags={}'.format(",".join(fields['tags'].value))]
         if 'year' in fields:
             args += ['--date={}'.format(fields['year'].value)]
 
@@ -356,11 +368,12 @@ class ApplyMetadata(IdenBlockMiddleware):
     _backup   : Maybe[pl.path]
     _failures : list[Exception]
 
-    def __init__(self, *, backup:Maybe[pl.Path]=None, **kwargs):
+    def __init__(self, *, backup:Maybe[pl.Path]=None, force:bool=False, **kwargs):
         super().__init__(**kwargs)
         self._extra.setdefault("tqdm", True)
-        self._backup   = backup
-        self._failures = []
+        self._backup        = backup
+        self._failures      = []
+        self._force_update  = force
 
     def on_write(self):
         Never()
@@ -374,7 +387,7 @@ class ApplyMetadata(IdenBlockMiddleware):
                 update = BTP.model.Field(MAPI.ORPHANED_K, True)
                 entry.set_field(update)
                 result.append(entry)
-            case pl.Path() as x if self.metadata_matches_entry(x, entry):
+            case pl.Path() as x if self.metadata_matches_entry(x, entry) and not self._force_update:
                 self._logger.info("No Metadata Update Necessary: %s", x)
             case pl.Path() as x if x.suffix == MAPI.PDF_SUFF:
                 for field in self.process_pdf(x, entry):
