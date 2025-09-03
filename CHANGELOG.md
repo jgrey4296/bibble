@@ -1,3 +1,8 @@
+# Bibble 0.3.2 (2025-09-03)
+
+No significant changes.
+
+
 # Bibble 0.3.1 (2025-08-30)
 
 No significant changes.
