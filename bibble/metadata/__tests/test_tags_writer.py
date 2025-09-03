@@ -77,7 +77,7 @@ class TestTagsWriter:
             case Library() as l2:
                 assert(l2 is lib)
                 assert(not bool(lib.failed_blocks))
-                assert(l2.entries[0].fields[0].value == "ai,literature,machine_learning")
+                assert(l2.entries[0].fields[0].value == "ai, literature, machine_learning")
             case x:
                  assert(False), x
 
@@ -91,7 +91,7 @@ class TestTagsWriter:
                 assert(l2 is lib)
                 assert(not bool(lib.failed_blocks))
                 assert("keywords" in l2.entries[0].fields_dict)
-                assert(l2.entries[0].fields_dict['keywords'].value == "ai,literature,machine_learning")
+                assert(l2.entries[0].fields_dict['keywords'].value == "ai, literature, machine_learning")
             case x:
                  assert(False), x
 
