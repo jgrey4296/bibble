@@ -19,19 +19,23 @@ import time
 import types
 import weakref
 from uuid import UUID, uuid1
+import warnings
 
 # ##-- end stdlib imports
 
 # ##-- 3rd party imports
 import bibtexparser
 import bibtexparser.model as model
-import isbn_hyphenate
 import pyisbn
 from bibtexparser import middlewares as ms
 from bibtexparser.middlewares.middleware import (BlockMiddleware, LibraryMiddleware)
 from jgdv import Mixin, Proto
 
 # ##-- end 3rd party imports
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", category=SyntaxWarning)
+    import isbn_hyphenate
 
 import bibble._interface as API
 from . import _interface as MAPI
