@@ -95,11 +95,10 @@ class IsbnValidator(IdenBlockMiddleware):
                     else:
                         return [entry]
                 except pyisbn.IsbnError as err:
-                    # TODO add a fail block
                     self._logger.warning("ISBN validation fail: %s : %s", entry.key, val)
                     entry.set_field(model.Field(MAPI.INVALID_ISBN_K, val))
                     entry.set_field(model.Field(MAPI.ISBN_K, ""))
-                    return [self.make_error_block(entry, err)]
+                    return [entry]
             case model.Field(value=str() as val):
                 del entry[MAPI.ISBN_K]
                 return [entry]

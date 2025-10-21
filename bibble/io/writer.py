@@ -37,7 +37,7 @@ from bibtexparser.model import MiddlewareErrorBlock
 from bibble import _interface as API
 from . import _interface as API_W
 from bibble.util.mixins import MiddlewareValidator_m
-from bibble.model import MetaBlock
+from bibble.model import MetaBlock, FailedBlock
 from bibble.util import PairStack
 
 from ._util import Runner_m
@@ -78,9 +78,20 @@ logging = logmod.getLogger(__name__)
 ##-- end logging
 
 EMPTY_JOIN : Final[str] = ""
+DEFAULT_ACTIVE : Final[set] = set([
+    MetaBlock,
+    model.Entry,
+    model.String,
+    model.Preamble,
+    model.ExplicitComment,
+    model.ImplicitComment,
+])
 ##--|
 
 class _Visitors_m:
+
+    def visit_metablock(self, block:MetaBlock) -> list[str]:
+        return []
 
     def visit_entry(self, block:model.Entry) -> list[str]:
         res = ["@", block.entry_type, "{", block.key, ",\n"]
@@ -114,15 +125,38 @@ class _Visitors_m:
     def visit_expl_comment(self, block:model.ExplicitComment) -> list[str]:
         return ["@comment{", block.comment, "}\n"]
 
-    def visit_failed_block(self, block:model.ParsingFailedBlock) -> list[str]:
-        format_line            = self.format.parsing_failed_comment
-        lines                  = len(block.raw.splitlines())
-        err                    = f"<{block.error.__class__.__name__}> : {block.error}"
-        parsing_failed_comment = format_line.format(n=lines, err=err)
+    def visit_failed_block(self, block:FailedBlock) -> list[str]:
+        lines                   = self.visit_entry(block._ignore_error_block)
+        line_count              = len(lines)
+        err                     = f"<{block.error.__class__.__name__}>  : {block.error}"
+        format_line             = self.format.parsing_failed_comment
+        parsing_failed_comment  = format_line.format(n=line_count, err=err)
+        return [parsing_failed_comment, "\n",
+                block.raw, "\n\n",
+                *lines, "\n",
+                API_W.FAIL_END, "\n"]
+
+
+    def visit_middleware_error_block(self, block:model.MiddlewareErrorBlock) -> list[str]:
+        format_line             = self.format.parsing_failed_comment
+        line_count              = len(block.raw.splitlines())
+        err                     = f"<{block.error.__class__.__name__}>  : {block.error}"
+        parsing_failed_comment  = format_line.format(n=line_count, err=err)
         return [parsing_failed_comment, "\n",
                 block.raw, "\n",
                 API_W.FAIL_END, "\n"]
-    ##--|
+
+    def visit_parsing_failed_block(self, block:model.ParsingFailedBlock) -> list[str]:
+        format_line             = self.format.parsing_failed_comment
+        line_count              = len(block.raw.splitlines())
+        err                     = f"<{block.error.__class__.__name__}>  : {block.error}"
+        parsing_failed_comment  = format_line.format(n=line_count, err=err)
+        return [parsing_failed_comment, "\n",
+                block.raw, "\n",
+                API_W.FAIL_END, "\n"]
+
+
+##--|
 
 @Proto(Visitor_p, API.Writer_p)
 @Mixin(_Visitors_m, Runner_m, MiddlewareValidator_m)
@@ -132,16 +166,18 @@ class BibbleWriter:
 
     Note: visit method are responsible for new lines
     """
-    _value_sep             : str
-    _value_column          : Maybe[int]
-    _middlewares           : list[Middleware]
-    format                 : BibtexFormat
+    _value_sep      : str
+    _value_column   : Maybe[int]
+    _middlewares    : list[Middleware]
+    format          : BibtexFormat
+    _active_blocks  : set[type[model.Block]]
 
-    def __init__(self, stack:PairStack|list[Middleware], *, format:Maybe[BibtexFormat]=None, logger:Maybe[Logger]=None):
-        self._value_sep    = API_W.VAL_SEP
-        self._value_column = None
-        self._logger       = logger or logging
-        self._join_char    = EMPTY_JOIN
+    def __init__(self, stack:PairStack|list[Middleware], *, format:Maybe[BibtexFormat]=None, logger:Maybe[Logger]=None, active_blocks:Maybe[Iterable[type[model.Block]]]=None):
+        self._value_sep         = API_W.VAL_SEP
+        self._value_column      = None
+        self._logger            = logger or logging
+        self._join_char         = EMPTY_JOIN
+        self._active_blocks     = active_blocks or DEFAULT_ACTIVE
         match stack:
             case PairStack():
                 self._middlewares = stack.write_stack()
@@ -160,11 +196,13 @@ class BibbleWriter:
 
         self.exclude_middlewares(API.ReadTime_p)
 
+    def set_active(self, active:Iterable[type[model.Block]]) -> None:
+        self._active_blocks = set(active)
+
     def write(self, library:Library, *, file:None|pl.Path=None, append:Maybe[list[Middleware]]=None, title:Maybe[str]=None) -> str:
         """ Write the library to a string, and possbly a file
         # TODO write failure reports to a separate file
         """
-
         self._calculate_auto_value_align(library)
 
         with TimeCtx(logger=logging, level=logmod.INFO) as ctx:
@@ -194,6 +232,20 @@ class BibbleWriter:
         """
         raise NotImplementedError()
 
+    def write_failures(self, library:Library, *, file:Maybe[pl.Path]=None, append:bool=False) -> str:
+        """ Write failed blocks to a separate file """
+        curr_blocks = self._active_blocks
+        self._active_blocks = set([FailedBlock, model.ParsingFailedBlock, model.MiddlewareErrorBlock])
+        result = self.write(library, append=append)
+        self._active_blocks = curr_blocks
+        if not file:
+            return result
+
+        with file.open('a') as f:
+            f.write(result)
+
+        return result
+
     def make_header(self, library, title:Maybe[str]) -> list[str]:
         return []
 
@@ -205,7 +257,7 @@ class BibbleWriter:
             pieces = self.visit(block)
             body.extend(pieces)
             # Separate Blocks
-            if i < total_entries:
+            if i <= total_entries:
                 body.append(self.format.block_separator)
         else:
             return body
@@ -221,24 +273,33 @@ class BibbleWriter:
             case x if isinstance(x, API.CustomWriteBlock_p):
                 assert(hasattr(x, "visit"))
                 return x.visit(self)
-            case MetaBlock():
-                return []
-            case model.Entry():
+            ##--| Standard blocks
+            case MetaBlock() if MetaBlock in self._active_blocks:
+                return self.visit_metablock(block)
+            case model.Entry() if model.Entry in self._active_blocks:
                 return self.visit_entry(block)
-            case model.String():
+            case model.String() if model.String in self._active_blocks:
                 return self.visit_string(block)
-            case model.Preamble():
+            case model.Preamble() if model.Preamble in self._active_blocks:
                 return self.visit_preamble(block)
-            case model.ExplicitComment():
+            case model.ExplicitComment() if model.ExplicitComment in self._active_blocks:
                 return self.visit_expl_comment(block)
-            case model.ImplicitComment():
+            case model.ImplicitComment() if model.ImplicitComment in self._active_blocks:
                 return self.visit_impl_comment(block)
-            case model.ParsingFailedBlock():
+            ##--| Failures
+            case FailedBlock() if FailedBlock in self._active_blocks:
                 return self.visit_failed_block(block)
-            case MiddlewareErrorBlock():
+            case model.MiddlewareErrorBlock() if model.MiddlewareErrorBlock in self._active_blocks:
+                return self.visit_middleware_error_block(block)
+            case model.ParsingFailedBlock() if model.ParsingFailedBlock in self._active_blocks:
+                return self.visit_parsing_failed_block(block)
+            case model.ParsingFailedBlock() if block._ignore_error_block is not None:
+                return self.visit(block._ignore_error_block)
+            case model.ParsingFailedBlock():
                 return []
             case _:
-                raise ValueError(f"Unknown block type: {type(block)}")
+                logging.info(f"Skipping block type: {type(block)}")
+                return []
 
     def _calculate_auto_value_align(self, library: Library) -> None:
         """

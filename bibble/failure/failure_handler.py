@@ -64,7 +64,7 @@ if TYPE_CHECKING:
 logging = logmod.getLogger(__name__)
 ##-- end logging
 
-class FailureHandler(IdenLibraryMiddleware):
+class FailureLogHandler(IdenLibraryMiddleware):
     """ Middleware to Filter failed blocks of a library,
     either to a logger output, or to a file
     Put at end of parse stack
@@ -72,8 +72,59 @@ class FailureHandler(IdenLibraryMiddleware):
     Will log out where the failed blocks start by line.
     """
 
-    def __init__(self, **kwargs):
-        file_target = kwargs.pop("file", None)
+    def transform(self, library):
+        total    = len(library.failed_blocks)
+        reported = []
+        for i, block in enumerate(library.failed_blocks, start=1):
+            source_file = self._find_source_file(block, library)
+            match block:
+                case bmodel.FailedBlock():
+                    report = block.report(i=i, total=total, source_file=source_file)[0]
+                case model.ParsingFailedBlock() if source_file:
+                    report = f"({i}/{total}) Bad Block: : {block.start_line} : {source_file} : {block.error}"
+                case model.ParsingFailedBlock():
+                    report = f"({i}/{total}) Bad Block: : {block.start_line} : {block.error}"
+                case x:
+                    raise TypeError(type(x))
+            ##--|
+            reported.append((report, block.error, block.raw))
+            self._logger.warning(report)
+        else:
+            return library
+
+    def _find_source_file(self, block, library) -> Maybe[str]:
+        match block:
+            case model.Entry():
+                target_key = block.key
+            case _:
+                return None
+
+        match bmodel.MetaBlock.find_in(library):
+            case None:
+                return None
+            case bmodel.MetaBlock() as meta if 'sources' not in meta.data:
+                return None
+            case bmodel.MetaBlock() as meta:
+                data = meta.data
+                sources = meta.data['sources']
+
+        for source in sources:
+            if source in data and target_key in data[source]:
+                return source
+            ##--|
+        else:
+            return None
+
+
+class FailureWriteHandler(IdenLibraryMiddleware):
+    """ Middleware to Filter failed blocks of a library,
+    either to a logger output, or to a file
+    Put at end of parse stack
+
+    Will log out where the failed blocks start by line.
+    """
+
+    def __init__(self, file_target:Maybe[str|pl.Path]=None, **kwargs):
         super().__init__(**kwargs)
         match file_target:
             case str() as x:
@@ -100,7 +151,6 @@ class FailureHandler(IdenLibraryMiddleware):
                     raise TypeError(type(x))
             ##--|
             reported.append((report, block.error, block.raw))
-            self._logger.info(report)
         else:
             self.write_failures_to_file(reported)
         return library

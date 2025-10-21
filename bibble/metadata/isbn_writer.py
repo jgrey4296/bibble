@@ -99,7 +99,7 @@ class IsbnWriter(IdenBlockMiddleware):
             entry.set_field(model.Field(MAPI.ISBN_K, isbn))
             return [entry]
         except isbn_hyphenate.IsbnError as err:
-            self._logger.warning("Writing ISBN failed: %s : %s", f_dict[MAPI.ISBN_K].value, err)
-            return [entry,
-                    self.make_error_block(entry, err)
-                    ]
+            self._logger.warning("Writing ISBN failed: %s :  %s : %s", entry.key, f_dict[MAPI.ISBN_K].value, err)
+            entry.set_field(model.Field(MAPI.INVALID_ISBN_K, f_dict[MAPI.ISBN_K].value))
+            entry.set_field(model.Field(MAPI.ISBN_K, ""))
+            return [entry]
