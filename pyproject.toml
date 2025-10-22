@@ -191,16 +191,6 @@ import_footer_localfolder = ""
 add_imports            = []
 ##-- end isort
 
-##-- towncrier
-[tool.towncrier]
-package    = "bibble"
-directory  = "bibble/_docs/_changes"
-filename   = "CHANGELOG.md"
-template   = "bibble/_docs/_templates/news.md"
-create_add_extension = true
-
-##-- end towncrier
-
 ##-- uv
 [tool.uv]
 
