@@ -6,6 +6,7 @@
 
 :data        : data
 :docs        : bibble/_docs
+:changes     : bibble/_docs/_changes
 :github      : .github/workflows
 :tasks       : .tasks
 :temp        : .temp
