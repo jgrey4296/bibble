@@ -1,3 +1,10 @@
+# bibble 0.3.3 (2025-10-22)
+
+### Misc
+
+- [refactor]: failure handling
+
+
 # Bibble 0.3.2 (2025-09-03)
 
 No significant changes.

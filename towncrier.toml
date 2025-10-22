@@ -6,7 +6,7 @@
 ## https://towncrier.readthedocs.io/en/stable/configuration.html
 [tool.towncrier]
 name                  = "bibble"
-version               = "0.3.2"
+version               = "0.3.3"
 directory             = "bibble/_docs/_changes"
 filename              = "CHANGELOG.md"
 template              = "bibble/_docs/_templates/news.md"
