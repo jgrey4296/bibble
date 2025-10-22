@@ -108,6 +108,8 @@ class TestJinjaWriter:
         expect = [
             "A Simple Header",
             "Testing Title : 1992",
+            "",
+            "",
             "A Simple Footer",
         ]
         writer = JinjaWriter([], templates=TEST_TEMPLATES)
@@ -130,6 +132,8 @@ class TestJinjaWriter:
             "A Simple Header",
             "blah",
             "Testing Title : 1992",
+            "",
+            "",
             "bloo",
             "A Simple Footer",
         ]

@@ -124,9 +124,9 @@ class FailureWriteHandler(IdenLibraryMiddleware):
     Will log out where the failed blocks start by line.
     """
 
-    def __init__(self, file_target:Maybe[str|pl.Path]=None, **kwargs):
+    def __init__(self, *, file:Maybe[str|pl.Path]=None, **kwargs):
         super().__init__(**kwargs)
-        match file_target:
+        match file:
             case str() as x:
                 self.file_target = pl.Path(x)
             case pl.Path() as x:

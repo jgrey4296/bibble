@@ -21,7 +21,7 @@ import bibble._interface as API
 from bibtexparser import model
 from bibtexparser.library import Library
 from bibble.model import FailedBlock
-from .. import FailureHandler
+from .. import FailureLogHandler, FailureWriteHandler
 
 # ##-- types
 # isort: off
@@ -56,20 +56,20 @@ logging = logmod.getLogger(__name__)
 
 # Body:
 
-class TestFailureHandler:
+class TestFailureLogHandler:
 
     def test_sanity(self):
         assert(True is not False) # noqa: PLR0133
 
     def test_ctor(self):
-        match FailureHandler(file="blah"):
+        match FailureLogHandler():
             case API.Middleware_p() as fh:
-                assert(fh.file_target == pl.Path("blah"))
+                assert(True)
             case x:
-                 assert(False), x
+                assert(False), x
 
     def test_good_library(self, caplog):
-        obj = FailureHandler()
+        obj = FailureLogHandler()
         lib = Library()
         match obj.transform(lib):
             case Library():
@@ -80,7 +80,7 @@ class TestFailureHandler:
         assert("Bad Block" not in caplog.text)
 
     def test_bad_library(self, caplog):
-        obj = FailureHandler()
+        obj = FailureLogHandler()
         lib = Library()
         bad_entry = model.Entry("test", "blah", [], 0, "this is some raw text")
         lib.add(FailedBlock(block=bad_entry, error=ValueError("Couldn't parse"), source="test"))
@@ -92,8 +92,32 @@ class TestFailureHandler:
 
         assert("Bad <Entry>" in caplog.text)
 
+
+class TestFailureWriteHandler:
+
+    def test_sanity(self):
+        assert(True is not False) # noqa: PLR0133
+
+    def test_ctor(self):
+        match FailureWriteHandler(file="blah"):
+            case API.Middleware_p() as fh:
+                assert(fh.file_target == pl.Path("blah"))
+            case x:
+                 assert(False), x
+
+    def test_good_library(self, caplog):
+        obj = FailureWriteHandler()
+        lib = Library()
+        match obj.transform(lib):
+            case Library():
+                assert(True)
+            case x:
+                 assert(False), x
+
+        assert("Bad Block" not in caplog.text)
+
     def test_bad_library_write(self, caplog, tmp_path):
-        obj = FailureHandler(file=tmp_path / "failure.log")
+        obj = FailureWriteHandler(file=tmp_path / "failure.log")
         assert(not obj.file_target.exists())
         lib = Library()
         bad_entry = model.Entry("test", "blah", [], 0, "this is some raw text")
@@ -104,7 +128,6 @@ class TestFailureHandler:
             case x:
                  assert(False), x
 
-        assert("(1/1) [test] Bad <Entry>: 0" in caplog.text)
         assert(obj.file_target.exists())
         log_text = obj.file_target.read_text()
 
@@ -114,4 +137,3 @@ class TestFailureHandler:
                   "this is some raw text",
                   ]:
             assert(x in log_text), x
-

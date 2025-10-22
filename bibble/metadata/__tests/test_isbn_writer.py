@@ -86,10 +86,13 @@ class TestIsbnWriter:
         entry = model.Entry("test", "test", [field])
         lib   = Library([entry])
         mid   = IsbnWriter()
+        assert("invalid_isbn" not in entry.fields_dict)
         match mid.transform(lib):
             case Library() as l2:
                 assert(l2 is lib)
-                assert(bool(l2.failed_blocks))
+                assert(not bool(l2.failed_blocks))
+                assert("invalid_isbn" in entry.fields_dict)
+                assert(entry.fields_dict['isbn'].value == "")
             case x:
                  assert(False), x
                  
