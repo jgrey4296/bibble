@@ -102,6 +102,9 @@ class JinjaWriter(BibbleWriter):
                 loaders = [DEFAULT_LOADER]
             case pl.Path() as x:
                 loaders = [jinja2.FileSystemLoader(x), DEFAULT_LOADER]
+            case [*xs]:
+                loaders = [jinja2.FileSystemLoader(x) for x in xs]
+                loaders.append(DEFAULT_LOADER)
         self._env = jinja2.Environment(
             loader=jinja2.ChoiceLoader(loaders),
             autoescape=jinja2.select_autoescape(),
