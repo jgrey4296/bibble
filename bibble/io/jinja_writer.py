@@ -98,13 +98,13 @@ class JinjaWriter(BibbleWriter):
         super().__init__(stack, format=format, logger=logger)
         self._join_char = NEWLINE
         match templates:
+            case str()|pl.Path() as x:
+                loaders = [jinja2.FileSystemLoader(pl.Path(x)), DEFAULT_LOADER]
+            case [*xs]:
+                loaders = [jinja2.FileSystemLoader(pl.Path(x)) for x in xs]
+                loaders.append(DEFAULT_LOADER)
             case None:
                 loaders = [DEFAULT_LOADER]
-            case pl.Path() as x:
-                loaders = [jinja2.FileSystemLoader(x), DEFAULT_LOADER]
-            case [*xs]:
-                loaders = [jinja2.FileSystemLoader(x) for x in xs]
-                loaders.append(DEFAULT_LOADER)
         self._env = jinja2.Environment(
             loader=jinja2.ChoiceLoader(loaders),
             autoescape=jinja2.select_autoescape(),
