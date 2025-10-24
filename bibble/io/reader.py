@@ -141,7 +141,7 @@ class BibbleReader:
             timer.msg("--> Bibtex Reading: Start")
             basic       = self._read_into(self._lib_class(), source_text)
 
-            timer.msg("<-- Bibtex Reading took: %s", timer.total_s)
+        timer.msg("<-- Bibtex Reading took: %s", timer.total_ms)
 
         with TimeCtx(level=logmod.INFO) as timer:
             timer.msg("--> Read Transforms: Start")
