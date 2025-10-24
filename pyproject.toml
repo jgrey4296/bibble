@@ -31,6 +31,9 @@ dependencies   = [
 
 [tool.uv]
 
+[tool.uv.sources]
+jgdv = { git = "https://github.com/jgrey4296/jgdv" }
+
 [dependency-groups]
 dev = [
     "ipython>=9.4.0",

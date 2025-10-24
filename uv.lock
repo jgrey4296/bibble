@@ -58,7 +58,7 @@ wheels = [
 
 [[package]]
 name = "bibtex-bibble"
-version = "0.3.2"
+version = "0.3.3"
 source = { editable = "." }
 dependencies = [
     { name = "bibtexparser" },
@@ -103,7 +103,7 @@ requires-dist = [
     { name = "bibtexparser", specifier = ">=2.0.0b8" },
     { name = "internetarchive", specifier = ">=5.3.1" },
     { name = "isbn-hyphenate", specifier = ">=1.0.4" },
-    { name = "jgdv", specifier = ">=1.0" },
+    { name = "jgdv", git = "https://github.com/jgrey4296/jgdv" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "jsonlines", specifier = ">=4.0.0" },
     { name = "pyisbn", specifier = ">=1.3.1" },
@@ -435,8 +435,8 @@ wheels = [
 
 [[package]]
 name = "jgdv"
-version = "1.3.2"
-source = { registry = "https://pypi.org/simple" }
+version = "1.3.3"
+source = { git = "https://github.com/jgrey4296/jgdv#2660918e7787624b5d9bd2538da7f0e5b9552ac6" }
 dependencies = [
     { name = "networkx" },
     { name = "packaging" },
@@ -446,10 +446,6 @@ dependencies = [
     { name = "sh" },
     { name = "stackprinter" },
     { name = "sty" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/4b/1d/1acbca481c95c73741836a50050ad7528e6d3b3d0f21779b4c8a86ad8aed/jgdv-1.3.2.tar.gz", hash = "sha256:df908783022f3ebee446d51daf1f10371e41c4f93ffcabc78e33698564f5992e", size = 204656, upload-time = "2025-08-15T03:36:08.34Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/45/71/462cca6df6bf3ae7cbfccb3dc91222a801d2a7edbe4bcece5a92e18b510b/jgdv-1.3.2-py3-none-any.whl", hash = "sha256:21ae22c082983746fdffe064c831ea7b287d4f4caf665758d629643848950a15", size = 320754, upload-time = "2025-08-15T03:36:06.492Z" },
 ]
 
 [[package]]
