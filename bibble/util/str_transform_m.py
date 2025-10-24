@@ -111,7 +111,7 @@ class StringTransform_m:
                     case str() as x:
                         slike.value = x
                         res = slike
-            case str() as sval if sval.startswith(OBRACE) and x.endswith(CBRACE):
+            case str() as sval if sval.startswith(OBRACE) and sval.endswith(CBRACE):
                 match self._transform_raw_str(sval[0:-1]):
                     case ValueError() as err:
                         res = err
