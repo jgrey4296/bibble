@@ -108,7 +108,7 @@ class UnicodeHelper_m:
     @staticmethod
     def build_decode_rule(pair:tuple) -> MacroTextSpec:
         name, replacement = pair
-        return MacroTextSpec("url", simplify_repl="%s")
+        return MacroTextSpec(name, simplify_repl=replacement)
 
     @staticmethod
     def build_encoder(*, rules:list[str|U2LRule], kwargs:dict) -> UnicodeToLatexEncoder:

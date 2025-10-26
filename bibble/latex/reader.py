@@ -108,14 +108,17 @@ class LatexReader(IdenBlockMiddleware):
     def on_read(self):
         Never()
 
-    def transform_Entry(self, entry: Entry, library: Library) -> list[Block]:
+    def transform_Entry(self, entry:Entry, library:Library) -> list[Block]:
         match self.match_on_fields(entry, library):
             case model.Entry() as x:
                 return [x]
             case ValueError() as err:
                 return [self.make_error_block(entry, err)]
 
-    def field_h(self, field:Field, entry) -> Result[list[Field], Exception]:
+    def field_h(self, field:Field, entry:Entry) -> Result[list[Field], Exception]:
+        if field.value.startswith("{") and field.value.endswith("}"):
+            return [field]
+            
         match self.transform_strlike(field.value):
             case Exception() as err:
                 return err

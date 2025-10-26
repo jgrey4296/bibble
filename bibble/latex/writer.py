@@ -115,7 +115,7 @@ class LatexWriter(IdenBlockMiddleware):
     def on_write(self):
         Never()
 
-    def transform_Entry(self, entry: Entry, library: Library) -> list[Block]:
+    def transform_Entry(self, entry:Entry, library:Library) -> list[Block]:
         match self.match_on_fields(entry, library):
             case model.Entry() as x:
                 return [x]
@@ -124,7 +124,9 @@ class LatexWriter(IdenBlockMiddleware):
             case x:
                 raise TypeError(type(x))
 
-    def field_h(self, field:model.Field, entry) -> Result[list[Field], Exception]:
+    def field_h(self, field:model.Field, entry:Entry) -> Result[list[Field], Exception]:
+        if field.value.startswith("{") and field.value.endswith("}"):
+            return [field]
         match self.transform_strlike(field.value):
             case Exception() as err:
                 return err
